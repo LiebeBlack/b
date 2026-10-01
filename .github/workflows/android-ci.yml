@@ -13,8 +13,12 @@ concurrency:
 permissions:
   contents: read
 
+# La plataforma de API 37 se publica como "android-37.0": NO existe "platforms;android-37".
+# Es el fallo que hacía que este paso se quedara sin plataforma instalada (el job seguía
+# adelante porque nada de aquí aborta, pero se perdía la comprobación explícita).
 env:
-  ANDROID_API: "37"
+  ANDROID_API: "37.0"
+  ANDROID_BUILD_TOOLS: "37.0.0"
   GRADLE_VERSION: "9.6.0"
 
 jobs:
@@ -47,19 +51,30 @@ jobs:
         run: |
           SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
           SDKMANAGER="$(find "$SDK/cmdline-tools" -maxdepth 3 -name sdkmanager -type f 2>/dev/null | sort | tail -n1)"
+          # CLI nuevo de cmdline-tools (el que sustituye a sdkmanager, deprecado en 2026).
+          # Ojo con la sintaxis: el CLI nuevo separa los paquetes con "/", no con ";".
+          ANDROID_CLI="$(find "$SDK/cmdline-tools" -maxdepth 3 -name android -type f 2>/dev/null | sort | tail -n1)"
           echo "SDK: $SDK"
           echo "sdkmanager: ${SDKMANAGER:-<no encontrado>}"
+          echo "android CLI: ${ANDROID_CLI:-<no encontrado>}"
           # Nada de aquí aborta el job: lo peor que puede pasar es que AGP descargue lo que
           # le falte por su cuenta (android.builder.sdkDownload=true).
-          if [ -n "$SDKMANAGER" ]; then
+          if [ -n "$ANDROID_CLI" ]; then
+            "$ANDROID_CLI" --sdk="$SDK" sdk install "platforms/android-${ANDROID_API}" \
+              "build-tools/${ANDROID_BUILD_TOOLS}" "platform-tools" || true
+            "$ANDROID_CLI" --sdk="$SDK" sdk install --licenses || true
+          elif [ -n "$SDKMANAGER" ]; then
             "$SDKMANAGER" --version || true
             yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
-            "$SDKMANAGER" --install "platforms;android-${ANDROID_API}" "platform-tools" || true
+            "$SDKMANAGER" --install "platforms;android-${ANDROID_API}" \
+              "build-tools;${ANDROID_BUILD_TOOLS}" "platform-tools" || true
           else
-            echo "Sin sdkmanager: se usa el SDK preinstalado de la imagen y la descarga de AGP."
+            echo "Sin cmdline-tools: se usa el SDK preinstalado de la imagen y la descarga de AGP."
           fi
           echo "--- plataformas instaladas ---"
           ls "$SDK/platforms" || true
+          echo "--- build-tools instalados ---"
+          ls "$SDK/build-tools" || true
           echo "--- licencias aceptadas ---"
           ls "$SDK/licenses" || true
 
