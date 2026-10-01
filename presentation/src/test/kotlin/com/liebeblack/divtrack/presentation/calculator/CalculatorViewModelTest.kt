@@ -1,5 +1,6 @@
 package com.liebeblack.divtrack.presentation.calculator
 
+import com.liebeblack.divtrack.core.common.utils.CurrencyFormatters
 import com.liebeblack.divtrack.domain.model.ExchangeRate
 import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.domain.usecase.CalculateConversionUseCase
@@ -7,6 +8,7 @@ import com.liebeblack.divtrack.domain.usecase.ObserveRatesUseCase
 import com.liebeblack.divtrack.domain.usecase.ObserveSettingsUseCase
 import com.liebeblack.divtrack.domain.usecase.SyncRatesUseCase
 import com.liebeblack.divtrack.domain.usecase.UpdateSettingsUseCase
+import java.time.Instant
 import com.liebeblack.divtrack.presentation.fake.FakeRateRepository
 import com.liebeblack.divtrack.presentation.fake.FakeSettingsRepository
 import com.liebeblack.divtrack.presentation.rule.MainDispatcherRule
@@ -70,16 +72,21 @@ class CalculatorViewModelTest {
 
     @Test
     fun `la fila de tasa muestra la edad del dato publicado`() = runTest {
+        val updatedAtMillis = 1_800_000_000_000L
         rateRepository.rates.value = listOf(
-            rate(RateSource.OFICIAL, 36.5, previousClose = null, updatedAtMillis = 1_800_000_000_000L),
+            rate(RateSource.OFICIAL, 36.5, previousClose = null, updatedAtMillis = updatedAtMillis),
         )
         val viewModel = createViewModel()
         collectState(viewModel)
 
         val state = viewModel.state.value
 
-        // 1,8e12 ms = 15 ene 2027 08:00 UTC = 04:00 en Caracas (el formato de la app).
-        assertEquals("15 ene · 04:00", state.selectedRateAgeText)
+        // El ViewModel solo transporta la marca de tiempo a través del formateador es-VE de
+        // `:core:common`: comparar contra el formateador (y no contra un literal tipo "15 ene
+        // · 04:00") mantiene el test inmune a los datos CLDR del JVM que lo ejecute.
+        val expected = CurrencyFormatters.timestamp(Instant.ofEpochMilli(updatedAtMillis))
+        assertEquals(expected, state.selectedRateAgeText)
+        assertTrue(expected.isNotEmpty())
     }
 
     @Test
