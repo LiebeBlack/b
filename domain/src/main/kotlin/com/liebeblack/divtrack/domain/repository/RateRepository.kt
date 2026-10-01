@@ -2,6 +2,7 @@ package com.liebeblack.divtrack.domain.repository
 
 import com.liebeblack.divtrack.core.common.result.Result
 import com.liebeblack.divtrack.domain.model.ExchangeRate
+import com.liebeblack.divtrack.domain.model.ProviderDiagnostics
 import com.liebeblack.divtrack.domain.model.SyncSummary
 import kotlinx.coroutines.flow.Flow
 
@@ -13,14 +14,15 @@ import kotlinx.coroutines.flow.Flow
  *   escribe y sigue funcionando sin conexión.
  * - [refreshRates] intenta la red; si responde, escribe en Room (lo que re-emite a la UI);
  *   si falla, NO toca los datos y devuelve [Result.Error] para que la UI avise.
- *
- * El contrato expone **una sola** operación de escritura. Antes había también una lectura y
- * una importación de series históricas que solo consumía la pantalla de Histórico: al
- * eliminarla, mantenerlas habría dejado dos métodos públicos sin ningún llamador.
+ * - [testProviders] consulta cada fuente sin escribir nada: es el diagnóstico de la
+ *   pantalla de Ajustes y una conexión que responde JSON sin pares utilizables cuenta
+ *   como fallida, no como sana.
  */
 interface RateRepository {
 
     fun observeRates(): Flow<List<ExchangeRate>>
 
     suspend fun refreshRates(): Result<SyncSummary>
+
+    suspend fun testProviders(): ProviderDiagnostics
 }

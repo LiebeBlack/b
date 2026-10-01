@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.liebeblack.divtrack.core.common.utils.AppConstants
+import com.liebeblack.divtrack.core.common.utils.ProviderIds
 import com.liebeblack.divtrack.core.common.utils.SourceKeys
 import com.liebeblack.divtrack.core.datastore.model.UserPreferences
 import java.io.IOException
@@ -37,6 +38,11 @@ interface UserPreferencesDataSource {
     suspend fun setSyncIntervalMinutes(minutes: Int)
 
     suspend fun setLastSyncAt(millis: Long)
+
+    /** Vacío = orden automático por prioridad del proyecto. */
+    suspend fun setPreferredProvider(providerId: String)
+
+    suspend fun setSyncOnWifiOnly(enabled: Boolean)
 }
 
 @Singleton
@@ -79,6 +85,15 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         dataStore.edit { it[Keys.LAST_SYNC_AT] = millis }
     }
 
+    override suspend fun setPreferredProvider(providerId: String) {
+        val normalised = providerId.trim().takeIf { it in ProviderIds.ordered }.orEmpty()
+        dataStore.edit { it[Keys.PREFERRED_PROVIDER] = normalised }
+    }
+
+    override suspend fun setSyncOnWifiOnly(enabled: Boolean) {
+        dataStore.edit { it[Keys.SYNC_ON_WIFI_ONLY] = enabled }
+    }
+
     private fun normaliseThemeMode(value: String): String = when (value.uppercase()) {
         UserPreferences.THEME_LIGHT -> UserPreferences.THEME_LIGHT
         UserPreferences.THEME_DARK -> UserPreferences.THEME_DARK
@@ -93,6 +108,8 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         syncIntervalMinutes = this[Keys.SYNC_INTERVAL]
             ?: AppConstants.SYNC_DEFAULT_INTERVAL_MINUTES,
         lastSyncAtMillis = this[Keys.LAST_SYNC_AT],
+        preferredProviderId = this[Keys.PREFERRED_PROVIDER].orEmpty(),
+        syncOnWifiOnly = this[Keys.SYNC_ON_WIFI_ONLY] ?: false,
     )
 
     private object Keys {
@@ -102,5 +119,7 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         val AUTO_SYNC = booleanPreferencesKey("auto_sync_enabled")
         val SYNC_INTERVAL = intPreferencesKey("sync_interval_minutes")
         val LAST_SYNC_AT = longPreferencesKey("last_sync_at")
+        val PREFERRED_PROVIDER = stringPreferencesKey("preferred_provider_id")
+        val SYNC_ON_WIFI_ONLY = booleanPreferencesKey("sync_on_wifi_only")
     }
 }

@@ -8,8 +8,12 @@ package com.liebeblack.divtrack.domain.scheduler
  */
 interface SyncScheduler {
 
-    /** Programa (o reprograma) la sincronización periódica. El intervalo mínimo lo impone WorkManager. */
-    suspend fun schedulePeriodic(intervalMinutes: Int)
+    /**
+     * Programa (o reprograma) la sincronización periódica. El intervalo mínimo lo impone WorkManager.
+     *
+     * @param wifiOnly `true` = solo con red no medida (wifi): los datos móviles no se gastan solos.
+     */
+    suspend fun schedulePeriodic(intervalMinutes: Int, wifiOnly: Boolean)
 
     suspend fun cancelPeriodic()
 }

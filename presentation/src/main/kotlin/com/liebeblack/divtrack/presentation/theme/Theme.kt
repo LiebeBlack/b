@@ -24,8 +24,6 @@ data class DivTrackColors(
     val trendFlat: Color,
     val officialAccent: Color,
     val parallelAccent: Color,
-    val chartOficial: Color,
-    val chartParalelo: Color,
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -88,8 +86,6 @@ private val DarkExtraColors = DivTrackColors(
     trendFlat = TrendFlat,
     officialAccent = OfficialAccent,
     parallelAccent = ParallelAccent,
-    chartOficial = Sky,
-    chartParalelo = Amber,
 )
 
 private val LightExtraColors = DivTrackColors(
@@ -98,8 +94,6 @@ private val LightExtraColors = DivTrackColors(
     trendFlat = TrendFlat,
     officialAccent = SkyDeep,
     parallelAccent = Amber,
-    chartOficial = SkyDeep,
-    chartParalelo = Amber,
 )
 
 val LocalDivTrackColors = staticCompositionLocalOf { DarkExtraColors }

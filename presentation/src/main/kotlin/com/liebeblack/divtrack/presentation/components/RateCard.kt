@@ -20,9 +20,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.liebeblack.divtrack.domain.model.TrendDirection
+import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.theme.DivTrackThemeTokens
 import com.liebeblack.divtrack.presentation.theme.Spacing
 import com.liebeblack.divtrack.presentation.theme.tabular
@@ -44,6 +46,7 @@ fun RateCard(
     updatedAtText: String?,
     accentColor: Color,
     modifier: Modifier = Modifier,
+    isStale: Boolean = false,
 ) {
     val colors = DivTrackThemeTokens.colors
     val trendColor = when (trend) {
@@ -116,11 +119,25 @@ fun RateCard(
                         Text(
                             text = updatedAtText,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (isStale) {
+                                // La edad del dato es la información: el cierre de ayer
+                                // se lee distinto cuando el banco lleva un día sin publicar.
+                                MaterialTheme.colorScheme.tertiary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                         )
                     }
                 }
 
+                if (isStale) {
+                    Spacer(modifier = Modifier.height(Spacing.xs))
+                    Text(
+                        text = stringResource(R.string.rate_stale_warning),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
             }
         }
     }

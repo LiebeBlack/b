@@ -11,3 +11,8 @@ annotation class DolarApiRetrofit
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class YadioRetrofit
+
+/** Retrofit apuntando a ExchangeRate-API (fallback independiente del oficial). */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ExchangeRateApiRetrofit

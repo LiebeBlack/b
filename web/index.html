@@ -420,7 +420,7 @@
             <div class="t">Frecuencia</div>
             <div class="seg" style="margin-top:6px"><span>15 min</span><span class="on">30 min</span><span>60 min</span><span>120 min</span></div>
           </div>
-          <div class="legal">Versión 1.0.0 · dolarapi.com · yadio.io</div>
+          <div class="legal">Versión 1.0.0 · dolarapi.com · yadio.io · open.er-api.com</div>
         </div>
         <span class="cap">Ajustes</span>
       </div>
@@ -444,7 +444,7 @@
       </li>
       <li>
         <strong>Se consultan los proveedores</strong>
-        <span>DolarAPI Venezuela (oficial y paralelo) y Yadio como respaldo del paralelo. Los proveedores se descubren por inyección y se ordenan por prioridad.</span>
+        <span>DolarAPI Venezuela (oficial y paralelo), Yadio como respaldo del paralelo y ExchangeRate-API (open.er-api.com) como respaldo independiente del oficial. Los proveedores se descubren por inyección, se ordenan por prioridad y el usuario puede elegir cuál se consulta primero en Ajustes. Entre pasadas rige un circuit breaker: el que falla descansa 10 minutos y se reintenta solo. Si el banco deja de publicar (la fuente responde 200 con el cierre de ayer), gana el dato más fresco entre fuentes y la app lo avisa.</span>
       </li>
       <li>
         <strong>La resolución es por tasa, no por proveedor</strong>
@@ -637,10 +637,10 @@
       <table>
         <thead><tr><th>Comprobación</th><th>Resultado</th></tr></thead>
         <tbody>
-          <tr><td>APIs de tasas, probadas en vivo</td><td><span class="pill ok">OK</span> DolarAPI VE (oficial 860,18 · paralelo 955,35) y Yadio responden 200</td></tr>
-          <tr><td>Fuentes descartadas por evidencia</td><td><span class="pill ok">OK</span> <code>pydolarve.org</code> no resuelve por DNS · <code>api.dolarvzla.com</code> responde 401</td></tr>
+          <tr><td>APIs de tasas, probadas en vivo</td><td><span class="pill ok">OK</span> DolarAPI VE (oficial 860,18 · paralelo 955,71), Yadio y ExchangeRate-API (<code>rates["VES"]</code> 860,18) responden 200</td></tr>
+          <tr><td>Fuentes descartadas por evidencia</td><td><span class="pill ok">OK</span> <code>pydolarve.org</code> no resuelve por DNS · <code>api.dolarvzla.com</code> responde 401 · <code>criptoya.com/api/USD/VES</code> responde 422</td></tr>
           <tr><td>Recursos de texto</td><td><span class="pill ok">OK</span> 79 referenciadas = 79 definidas · es-VE e inglés con los mismos argumentos</td></tr>
-          <tr><td>Estructura del código</td><td><span class="pill ok">OK</span> 112/112 archivos con <code>package</code> = ruta, llaves balanceadas, 0 imports sin uso</td></tr>
+          <tr><td>Estructura del código</td><td><span class="pill ok">OK</span> todos los archivos con <code>package</code> = ruta, llaves balanceadas, 0 imports sin uso</td></tr>
           <tr><td>Grafo de inyección</td><td><span class="pill ok">OK</span> 25 clases con <code>@Inject constructor</code> más un campo <code>@Inject</code>: toda dependencia tiene proveedor</td></tr>
           <tr><td>Interfaz completa</td><td><span class="pill ok">OK</span> cada botón, selector, interruptor y gesto está cableado a una intención · 0 <code>onClick</code> vacíos, 0 <code>TODO</code></td></tr>
           <tr><td>Referencias colgantes</td><td><span class="pill ok">OK</span> 0 tras eliminar el código muerto</td></tr>

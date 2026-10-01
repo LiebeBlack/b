@@ -5,7 +5,7 @@ import com.liebeblack.divtrack.domain.model.ThemeMode
 import com.liebeblack.divtrack.domain.model.UserSettings
 import kotlinx.coroutines.flow.Flow
 
-/** Contrato de preferencias (tema, fuente por defecto, IGTF, sincronización en segundo plano). */
+/** Contrato de preferencias (tema, fuente, IGTF, sincronización, proveedor preferido). */
 interface SettingsRepository {
 
     fun observeSettings(): Flow<UserSettings>
@@ -19,4 +19,9 @@ interface SettingsRepository {
     suspend fun setAutoSyncEnabled(enabled: Boolean)
 
     suspend fun setSyncInterval(minutes: Int)
+
+    /** `null` = orden automático por prioridad del proyecto. */
+    suspend fun setDefaultProvider(providerId: String?)
+
+    suspend fun setSyncOnWifiOnly(enabled: Boolean)
 }

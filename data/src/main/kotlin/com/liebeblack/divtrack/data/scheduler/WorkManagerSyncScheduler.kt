@@ -29,13 +29,13 @@ class WorkManagerSyncScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : SyncScheduler {
 
-    override suspend fun schedulePeriodic(intervalMinutes: Int) {
+    override suspend fun schedulePeriodic(intervalMinutes: Int, wifiOnly: Boolean) {
         val interval = intervalMinutes
             .coerceAtLeast(AppConstants.SYNC_MIN_INTERVAL_MINUTES)
             .toLong()
 
         val request = PeriodicWorkRequestBuilder<RateSyncWorker>(interval, TimeUnit.MINUTES)
-            .setConstraints(defaultConstraints())
+            .setConstraints(defaultConstraints(wifiOnly))
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_SECONDS, TimeUnit.SECONDS)
             .build()
 
@@ -50,8 +50,12 @@ class WorkManagerSyncScheduler @Inject constructor(
         WorkManager.getInstance(context).cancelUniqueWork(PERIODIC_WORK_NAME)
     }
 
-    private fun defaultConstraints(): Constraints = Constraints.Builder()
-        .setRequiredNetworkType(NetworkType.CONNECTED)
+    /**
+     * `CONNECTED` por defecto (cualquier red). Con `wifiOnly`, `UNMETERED`: wifi o red
+     * equivalente sin límite de datos — los datos móviles del usuario no se gastan solos.
+     */
+    private fun defaultConstraints(wifiOnly: Boolean): Constraints = Constraints.Builder()
+        .setRequiredNetworkType(if (wifiOnly) NetworkType.UNMETERED else NetworkType.CONNECTED)
         .build()
 
     private companion object {

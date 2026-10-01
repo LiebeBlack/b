@@ -431,3 +431,79 @@ aparece en el primer intento en lugar de mandar tasas sin cifrar.
 **Y se le da salida al usuario.** Cuando el fallo es de conectividad, el estado de error ofrece
 "Abrir ajustes de red" (una `Intent` del sistema, sin permisos). Un aviso de "sin conexión" sin
 nada que pulsar deja al usuario atascado.
+
+---
+
+## 25. Tres fuentes con dialectos distintos y preferencia de orden
+
+**Contexto.** DolarAPI y Yadio comparten upstream del mercado paralelo y los cortes de ruta
+hacia Venezuela los han tumbado a ambos a la vez. Además, el sistema no distinguía el
+"estilo de lectura" de cada fuente: cada proveedor habla su propio dialecto JSON y ese
+conocimiento tiene que vivir encapsulado en su provider.
+
+**Decisión.**
+
+1. **Tercera fuente independiente.** ExchangeRate-API (`open.er-api.com`) entra como
+   fallback del oficial: no comparte ruta ni upstream con las dos primeras. Los candidatos
+   muertos en vivo se descartaron con evidencia: pyDolarVE (DNS sin resolver) y CriptoYa
+   (HTTP 422). El endpoint quedó verificado devolviendo `rates["VES"]` y
+   `time_last_update_unix` en **segundos** (la app trabaja en ms).
+
+2. **Tres estilos de lectura, un contrato.** DolarAPI publica una *lista* por fuente
+   (`promedio → venta → compra`); Yadio un *mapa* dentro de `USD`; ExchangeRate-API un
+   *envoltorio con estado* (`result`) y mapa plano. Cada DTO + provider encapsula el suyo;
+   `RateProvider` sigue siendo una interfaz de un método.
+
+3. **El orden lo manda el usuario.** Sin preferencia: DolarAPI → Yadio → ExchangeRateAPI.
+   Con preferencia: el elegido primero y el resto por prioridad; la pasada se corta cuando
+   las dos tasas están resueltas. La preferencia vive en DataStore (`preferred_provider_id`,
+   cadena vacía = automático) y el dominio solo ve `null` o un id de `ProviderIds`.
+
+4. **Diagnóstico real en Ajustes.** `testProviders()` consulta las tres APIs de verdad, sin
+   escribir nada: una respuesta HTTP "sana" sin pares utilizables cuenta como caída. La UI
+   muestra qué tasa trajo cada fuente y "Fuentes OK: X de Y".
+
+5. **Solo-wifi.** El trabajo periódico acepta `wifiOnly` y usa `NetworkType.UNMETERED`.
+
+**Por qué no reordenar el mapeo en el registro.** Cada provider ya devuelve `RemoteRate`
+con la clave canónica; el registro solo resuelve *quién primero*. Meter dialectos en el
+registro acoplaría todas las fuentes entre sí: añadir la cuarta fuente tocaría un archivo
+del registro en lugar de uno nuevo + una línea de DI.
+
+---
+
+## 26. El banco que dejó de publicar: frescura, breaker y diagnóstico
+
+**Contexto.** DolarAPI puede responder 200 con JSON perfecto sirviendo el cierre de ayer,
+porque el BCV dejó de publicar. Ningún código HTTP lo delata: la única señal es la marca
+de tiempo del propio dato. A eso se suma el problema opuesto: un proveedor caído retrasa
+cada pasada esperando su timeout una y otra vez.
+
+**Decisión.**
+
+1. **Frescura por fuente.** El oficial (publicación diaria) se considera rancio pasadas
+   24 h; el paralelo (por horas), pasadas 12 h. Sin marca de tiempo no se supone rancio:
+   el aviso falso destruye la confianza en el aviso verdadero.
+
+2. **Gana el dato más fresco.** En una pasada, una tasa resuelta puede ser reemplazada si
+   un proveedor posterior trae marca de tiempo posterior. Y la pasada no se corta cuando
+   las dos tasas "están" sino cuando están **frescas**: con el oficial rancio se sigue
+   preguntando a las fuentes de cola, que es exactamente cómo el dato del día llega aunque
+   el primero sirva el cierre repetido de ayer.
+
+3. **Circuit breaker con auto-recuperación.** Un proveedor que falla queda abierto 10 min:
+   se salta en las pasadas siguientes (nadie espera su timeout) y se reintenta solo al
+   cumplirse el periodo. Si todos estuvieran abiertos, se reintenta el orden completo:
+   el breaker nunca puede dejar la app sin pasada. El estado vive en memoria a propósito:
+   un reinicio de proceso reabre los circuitos, y el fallo más común es de red, no del
+   proveedor.
+
+4. **UI honesta.** El dashboard muestra un banner distinto del de conexión cuando alguna
+   tasa es rancia, y la tarjeta señala su edad ("el banco lleva más de un día sin
+   publicar"). El diagnóstico de Ajustes muestra el último dato de cada fuente: "OK con un
+   dato de ayer" deja de parecer contradictorio y se lee como lo que es.
+
+**Por qué no “usar siempre el proveedor preferido” o “el primero que responde”.** Con el
+banco caído, el primero que responde es precisamente el que repite el cierre de ayer. La
+frescura comparada entre fuentes es la única regla que resuelve el caso sin que nadie
+tenga que mirar la hora en la pantalla.

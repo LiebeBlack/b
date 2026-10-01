@@ -19,4 +19,9 @@ class UpdateSettingsUseCase @Inject constructor(
     suspend fun setAutoSyncEnabled(enabled: Boolean) = repository.setAutoSyncEnabled(enabled)
 
     suspend fun setSyncInterval(minutes: Int) = repository.setSyncInterval(minutes)
+
+    /** `null` vuelve al orden automático. */
+    suspend fun setDefaultProvider(providerId: String?) = repository.setDefaultProvider(providerId)
+
+    suspend fun setSyncOnWifiOnly(enabled: Boolean) = repository.setSyncOnWifiOnly(enabled)
 }

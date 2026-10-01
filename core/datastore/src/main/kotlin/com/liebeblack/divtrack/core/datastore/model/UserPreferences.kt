@@ -1,6 +1,7 @@
 package com.liebeblack.divtrack.core.datastore.model
 
 import com.liebeblack.divtrack.core.common.utils.AppConstants
+import com.liebeblack.divtrack.core.common.utils.ProviderIds
 import com.liebeblack.divtrack.core.common.utils.SourceKeys
 
 /**
@@ -25,6 +26,12 @@ data class UserPreferences(
 
     /** Última sincronización de tasas vigentes. */
     val lastSyncAtMillis: Long? = null,
+
+    /** Proveedor que se consulta primero; vacío = orden automático por prioridad. */
+    val preferredProviderId: String = "",
+
+    /** El trabajo periódico solo corre con wifi (ahorra datos móviles). */
+    val syncOnWifiOnly: Boolean = false,
 ) {
     companion object {
         const val THEME_SYSTEM: String = "SYSTEM"

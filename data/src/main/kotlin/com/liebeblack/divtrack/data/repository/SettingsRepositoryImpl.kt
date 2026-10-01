@@ -33,4 +33,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setSyncInterval(minutes: Int) =
         preferencesDataSource.setSyncIntervalMinutes(minutes)
+
+    override suspend fun setDefaultProvider(providerId: String?) =
+        preferencesDataSource.setPreferredProvider(providerId.orEmpty())
+
+    override suspend fun setSyncOnWifiOnly(enabled: Boolean) =
+        preferencesDataSource.setSyncOnWifiOnly(enabled)
 }

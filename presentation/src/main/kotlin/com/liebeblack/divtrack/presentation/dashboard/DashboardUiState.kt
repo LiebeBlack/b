@@ -20,6 +20,8 @@ data class RateUiModel(
     val valueText: String,
     val deltaText: String?,
     val trend: TrendDirection,
+    /** El proveedor publicó este dato hace más del umbral de su fuente (banco sin publicar). */
+    val isStale: Boolean,
     val providerText: String,
     val updatedAtText: String?,
 )
@@ -47,14 +49,18 @@ data class DashboardUiState(
     val errorText: UiText? = null,
 ) {
     val hasData: Boolean get() = rates.isNotEmpty()
+
+    /** Alguna tasa visible viene del "banco que dejó de publicar": merece aviso permanente. */
+    val hasStaleData: Boolean get() = rates.any { it.isStale }
 }
 
 /** Dominio -> UI. El formateo es-VE se hace una sola vez, aquí, no en cada recomposición. */
-internal fun ExchangeRate.toRateUiModel(): RateUiModel = RateUiModel(
+internal fun ExchangeRate.toRateUiModel(nowMillis: Long = System.currentTimeMillis()): RateUiModel = RateUiModel(
     source = source,
     valueText = CurrencyFormatters.bolivars(value),
     deltaText = changePercent?.takeIf { it.isFinite() }?.let { CurrencyFormatters.percent(it) },
     trend = trend,
+    isStale = isStale(nowMillis),
     providerText = providerId,
     updatedAtText = updatedAtMillis?.let { millis ->
         runCatching { CurrencyFormatters.timestamp(Instant.ofEpochMilli(millis)) }.getOrNull()

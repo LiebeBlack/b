@@ -138,6 +138,17 @@ fun DashboardScreen(
                     }
                 }
 
+                // El banco dejó de publicar: la fuente responde con el cierre de ayer.
+                // Aviso permanente y diferenciado del de conexión, porque la respuesta
+                // correcta del usuario tampoco es revisar su wifi.
+                if (state.hasStaleData) {
+                    item(key = "stale") {
+                        OfflineBanner(
+                            message = stringResource(R.string.msg_stale_official_data),
+                        )
+                    }
+                }
+
                 if (!state.hasData && state.isLoading) {
                     item(key = "loading") { LoadingState() }
                 }
@@ -187,6 +198,7 @@ fun DashboardScreen(
                         updatedAtText = rate.updatedAtText?.let { updated ->
                             stringResource(R.string.rate_updated_at, updated)
                         },
+                        isStale = rate.isStale,
                         accentColor = if (isOfficial) colors.officialAccent else colors.parallelAccent,
                     )
                 }

@@ -2,9 +2,11 @@ package com.liebeblack.divtrack.presentation.settings
 
 import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.domain.model.ThemeMode
+import com.liebeblack.divtrack.domain.usecase.DiagnoseProvidersUseCase
 import com.liebeblack.divtrack.domain.usecase.EnsureSyncScheduledUseCase
 import com.liebeblack.divtrack.domain.usecase.ObserveSettingsUseCase
 import com.liebeblack.divtrack.domain.usecase.UpdateSettingsUseCase
+import com.liebeblack.divtrack.presentation.fake.FakeRateRepository
 import com.liebeblack.divtrack.presentation.fake.FakeSettingsRepository
 import com.liebeblack.divtrack.presentation.fake.FakeSyncScheduler
 import com.liebeblack.divtrack.presentation.rule.MainDispatcherRule
@@ -29,6 +31,7 @@ class SettingsViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val settingsRepository = FakeSettingsRepository()
+    private val rateRepository = FakeRateRepository()
     private val scheduler = FakeSyncScheduler()
 
     @Test
@@ -80,10 +83,37 @@ class SettingsViewModelTest {
         assertEquals(null, scheduler.scheduledIntervalMinutes)
     }
 
+    @Test
+    fun `activar solo wifi guarda la preferencia y reprograma con la restriccion`() = runTest {
+        val viewModel = createViewModel()
+        collectState(viewModel)
+
+        viewModel.onIntent(SettingsIntent.SetWifiOnly(true))
+        advanceUntilIdle()
+
+        assertEquals(true, settingsRepository.settings.value.syncOnWifiOnly)
+        assertEquals(true, scheduler.scheduledWifiOnly)
+    }
+
+    @Test
+    fun `elegir proveedor preferido persiste el id y automatico lo limpia`() = runTest {
+        val viewModel = createViewModel()
+        collectState(viewModel)
+
+        viewModel.onIntent(SettingsIntent.SelectProvider("Yadio"))
+        advanceUntilIdle()
+        assertEquals("Yadio", settingsRepository.settings.value.defaultProviderId)
+
+        viewModel.onIntent(SettingsIntent.SelectProvider(null))
+        advanceUntilIdle()
+        assertEquals(null, settingsRepository.settings.value.defaultProviderId)
+    }
+
     private fun TestScope.createViewModel() = SettingsViewModel(
         observeSettings = ObserveSettingsUseCase(settingsRepository),
         updateSettings = UpdateSettingsUseCase(settingsRepository),
         ensureSyncScheduled = EnsureSyncScheduledUseCase(settingsRepository, scheduler),
+        diagnoseProviders = DiagnoseProvidersUseCase(rateRepository),
     )
 
     /** En `backgroundScope`: la recolección no termina nunca y `runTest` no debe esperarla. */

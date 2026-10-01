@@ -13,9 +13,11 @@ import com.liebeblack.divtrack.core.network.logging.LogcatLogger
 import com.liebeblack.divtrack.core.network.monitor.AndroidConnectivityObserver
 import com.liebeblack.divtrack.core.network.monitor.ConnectivityObserver
 import com.liebeblack.divtrack.core.network.provider.DolarApiProvider
+import com.liebeblack.divtrack.core.network.provider.ExchangeRateApiProvider
 import com.liebeblack.divtrack.core.network.provider.RateProvider
 import com.liebeblack.divtrack.core.network.provider.YadioProvider
 import com.liebeblack.divtrack.core.network.service.DolarApiService
+import com.liebeblack.divtrack.core.network.service.ExchangeRateApiService
 import com.liebeblack.divtrack.core.network.service.YadioService
 import dagger.Binds
 import dagger.Module
@@ -35,7 +37,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 /**
- * Grafo de red. Un único `OkHttpClient` (pool de conexiones y caché compartidos) y dos
+ * Grafo de red. Un único `OkHttpClient` (pool de conexiones y caché compartidos) y tres
  * instancias de Retrofit que solo cambian de `baseUrl`.
  */
 @Module
@@ -108,6 +110,15 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    @ExchangeRateApiRetrofit
+    fun provideExchangeRateApiRetrofit(client: OkHttpClient, json: Json): Retrofit = Retrofit.Builder()
+        .baseUrl(BuildConfig.EXCHANGERATEAPI_BASE_URL)
+        .client(client)
+        .addConverterFactory(json.asConverterFactory(JSON_MEDIA_TYPE.toMediaType()))
+        .build()
+
+    @Provides
+    @Singleton
     fun provideDolarApiService(@DolarApiRetrofit retrofit: Retrofit): DolarApiService =
         retrofit.create(DolarApiService::class.java)
 
@@ -115,6 +126,11 @@ object NetworkModule {
     @Singleton
     fun provideYadioService(@YadioRetrofit retrofit: Retrofit): YadioService =
         retrofit.create(YadioService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideExchangeRateApiService(@ExchangeRateApiRetrofit retrofit: Retrofit): ExchangeRateApiService =
+        retrofit.create(ExchangeRateApiService::class.java)
 
     // --- Multi-proveedor: cada implementación entra en el SET de RateProvider ---
 
@@ -133,6 +149,14 @@ object NetworkModule {
         service: YadioService,
         timeProvider: TimeProvider,
     ): RateProvider = YadioProvider(service = service, timeProvider = timeProvider)
+
+    @Provides
+    @Singleton
+    @IntoSet
+    fun provideExchangeRateApiRateProvider(
+        service: ExchangeRateApiService,
+        timeProvider: TimeProvider,
+    ): RateProvider = ExchangeRateApiProvider(service = service, timeProvider = timeProvider)
 }
 
 /** Bindings de interfaces a implementaciones con constructor inyectable. */

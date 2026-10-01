@@ -37,4 +37,12 @@ class FakeUserPreferencesDataSource(
     override suspend fun setLastSyncAt(millis: Long) {
         state.value = state.value.copy(lastSyncAtMillis = millis)
     }
+
+    override suspend fun setPreferredProvider(providerId: String) {
+        state.value = state.value.copy(preferredProviderId = providerId)
+    }
+
+    override suspend fun setSyncOnWifiOnly(enabled: Boolean) {
+        state.value = state.value.copy(syncOnWifiOnly = enabled)
+    }
 }

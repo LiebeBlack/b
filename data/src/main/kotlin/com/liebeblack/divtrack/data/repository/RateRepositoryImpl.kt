@@ -5,6 +5,7 @@ import com.liebeblack.divtrack.core.common.logging.Logger
 import com.liebeblack.divtrack.core.common.result.Result
 import com.liebeblack.divtrack.core.common.time.TimeProvider
 import com.liebeblack.divtrack.core.common.utils.AppConstants
+import com.liebeblack.divtrack.core.common.utils.ProviderIds
 import com.liebeblack.divtrack.core.database.datasource.RateLocalDataSource
 import com.liebeblack.divtrack.core.datastore.UserPreferencesDataSource
 import com.liebeblack.divtrack.core.network.monitor.ConnectivityObserver
@@ -14,6 +15,7 @@ import com.liebeblack.divtrack.data.mapper.toDomain
 import com.liebeblack.divtrack.data.mapper.toEntity
 import com.liebeblack.divtrack.data.provider.ProviderRegistry
 import com.liebeblack.divtrack.domain.model.ExchangeRate
+import com.liebeblack.divtrack.domain.model.ProviderDiagnostics
 import com.liebeblack.divtrack.domain.model.ProviderFailure
 import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.domain.model.SyncSummary
@@ -21,6 +23,7 @@ import com.liebeblack.divtrack.domain.repository.RateRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
@@ -69,6 +72,20 @@ class RateRepositoryImpl @Inject constructor(
         syncMutex.withLock { performRatesRefresh() }
     }
 
+    /**
+     * Diagnóstico de fuentes para Ajustes: lectura pura de red, sin tocar Room ni los
+     * datos guardados. Respeta el proveedor preferido del usuario.
+     */
+    override suspend fun testProviders(): ProviderDiagnostics = withContext(ioDispatcher) {
+        providerRegistry.testAll(preferredProviderId())
+    }
+
+    /** Preferencia persistida, normalizada: `null` = orden automático. */
+    private suspend fun preferredProviderId(): String? =
+        preferencesDataSource.preferences.first().preferredProviderId
+            .takeIf { it.isNotBlank() }
+            ?.takeIf { it in ProviderIds.ordered }
+
     private suspend fun performRatesRefresh(): Result<SyncSummary> {
         // Fallo rápido: sin conectividad no se espera al timeout para decir "sin conexión".
         // El usuario ve el aviso al instante y se ahorra el trabajo de red. Es una pista,
@@ -79,7 +96,7 @@ class RateRepositoryImpl @Inject constructor(
             return Result.Error(DataError.Network(message = "Sin conexión a internet"))
         }
 
-        val outcome = providerRegistry.fetchLatest()
+        val outcome = providerRegistry.fetchLatest(preferredProviderId())
 
         if (outcome.rates.isEmpty()) {
             val error = mostInformativeFailure(outcome.failures)

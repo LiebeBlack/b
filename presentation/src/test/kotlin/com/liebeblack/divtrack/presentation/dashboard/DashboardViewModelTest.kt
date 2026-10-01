@@ -12,6 +12,7 @@ import com.liebeblack.divtrack.domain.usecase.SyncRatesUseCase
 import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.common.UiText
 import com.liebeblack.divtrack.presentation.fake.FakeRateRepository
+import com.liebeblack.divtrack.presentation.fake.FakeTimeProvider
 import com.liebeblack.divtrack.presentation.rule.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -107,6 +108,7 @@ class DashboardViewModelTest {
         observeRates = ObserveRatesUseCase(rateRepository),
         syncRates = SyncRatesUseCase(rateRepository),
         calculateSpread = CalculateSpreadUseCase(),
+        timeProvider = FakeTimeProvider(),
     )
 
     /**

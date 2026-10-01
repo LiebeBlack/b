@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.liebeblack.divtrack.core.common.error.DataError
 import com.liebeblack.divtrack.core.common.result.Result
 import com.liebeblack.divtrack.core.common.utils.CurrencyFormatters
+import com.liebeblack.divtrack.core.common.time.TimeProvider
 import com.liebeblack.divtrack.domain.model.ExchangeRate
 import com.liebeblack.divtrack.domain.model.Spread
 import com.liebeblack.divtrack.domain.usecase.CalculateSpreadUseCase
@@ -41,6 +42,7 @@ class DashboardViewModel @Inject constructor(
     private val observeRates: ObserveRatesUseCase,
     private val syncRates: SyncRatesUseCase,
     private val calculateSpread: CalculateSpreadUseCase,
+    private val timeProvider: TimeProvider,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardUiState())
@@ -145,7 +147,7 @@ class DashboardViewModel @Inject constructor(
         val spread: Spread = calculateSpread(rates)
         return copy(
             isLoading = false,
-            rates = rates.map { rate -> rate.toRateUiModel() },
+            rates = rates.map { rate -> rate.toRateUiModel(timeProvider.nowMillis()) },
             spreadPercentText = spread.percent?.let { percent -> CurrencyFormatters.percent(percent) },
             spreadAbsoluteText = spread.absolute?.let { absolute -> CurrencyFormatters.bolivars(absolute) },
         )

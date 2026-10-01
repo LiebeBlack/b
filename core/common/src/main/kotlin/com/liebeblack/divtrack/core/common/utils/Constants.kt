@@ -47,6 +47,34 @@ object AppConstants {
     const val HTTP_CONNECT_TIMEOUT_SECONDS: Long = 8
     const val HTTP_READ_TIMEOUT_SECONDS: Long = 12
     const val HTTP_WRITE_TIMEOUT_SECONDS: Long = 8
+
+    /**
+     * Frescura esperada del dato de una fuente.
+     *
+     * El caso a cubrir: DolarAPI responde 200 con JSON perfecto **pero el BCV dejó de
+     * publicar** y la API sirve el cierre de ayer. Ese dato no es "actual": hay que
+     * mostrarlo (es lo mejor disponible), pero señalando su edad y buscando quién sí
+     * publicó algo más reciente.
+     *
+     * - [STALE_RATE_HOURS]: el oficial (BCV) publica ~1 vez/día; más de un día entero sin
+     *   actualizar huele a banco caído. El paralelo se actualiza por horas; el umbral
+     *   compartido es deliberadamente conservador para no marcar ruido.
+     * - [STALE_PARALLEL_HOURS]: umbral más estricto solo para el paralelo, que publica
+     *   varias veces al día.
+     */
+    const val STALE_RATE_HOURS: Long = 24
+    const val STALE_PARALLEL_HOURS: Long = 12
+
+    /**
+     * Circuit breaker de proveedores.
+     *
+     * Si una fuente falla, no se vuelve a molestar durante este periodo: su siguiente turno
+     * en la cola se salta y la pasada no espera su timeout. Cumplido el cooldown, la fuente
+     * se reintenta automáticamente (medio circuito) y, si responde, vuelve al servicio
+     * normal. Sin estado persistente: un reinicio de proceso reabre todos los circuitos,
+     * que es el comportamiento deseado (el fallo más común es de red, no del proveedor).
+     */
+    const val PROVIDER_COOLDOWN_MILLIS: Long = 10L * 60L * 1000L
 }
 
 /**
@@ -58,4 +86,27 @@ object SourceKeys {
     const val PARALELO: String = "paralelo"
 
     val all: List<String> = listOf(OFICIAL, PARALELO)
+}
+
+/**
+ * Proveedores remotos, sus ids estables y su orden de relevancia.
+ *
+ * El `id` viaja por Room y por las preferencias: cambiar el texto obligaría a migrar datos.
+ * El orden de prioridad de la pasada vive aquí para que sea única fuente de verdad
+ * (debe coincidir con el [providerPriority] de cada implementación de red).
+ */
+object ProviderIds {
+    const val DOLARAPI: String = "DolarAPI"
+    const val YADIO: String = "Yadio"
+    const val EXCHANGERATEAPI: String = "ExchangeRateAPI"
+
+    /** Prioridad (menor = se consulta primero). Debe reflejar las constantes de red. */
+    val providerPriority: Map<String, Int> = mapOf(
+        DOLARAPI to 0,
+        YADIO to 10,
+        EXCHANGERATEAPI to 20,
+    )
+
+    /** Orden de consulta: DolarAPI → Yadio → ExchangeRateAPI. */
+    val ordered: List<String> = providerPriority.entries.sortedBy { it.value }.map { it.key }
 }

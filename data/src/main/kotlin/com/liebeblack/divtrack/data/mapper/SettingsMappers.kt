@@ -1,5 +1,6 @@
 package com.liebeblack.divtrack.data.mapper
 
+import com.liebeblack.divtrack.core.common.utils.ProviderIds
 import com.liebeblack.divtrack.core.datastore.model.UserPreferences
 import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.domain.model.ThemeMode
@@ -15,4 +16,8 @@ internal fun UserPreferences.toDomain(): UserSettings = UserSettings(
     igtfEnabled = igtfEnabled,
     autoSyncEnabled = autoSyncEnabled,
     syncIntervalMinutes = syncIntervalMinutes,
+    // Cadena vacía = automático: se normaliza aquí para que el dominio solo vea `null`
+    // o un id conocido de ProviderIds.
+    defaultProviderId = preferredProviderId.takeIf { it in ProviderIds.ordered },
+    syncOnWifiOnly = syncOnWifiOnly,
 )

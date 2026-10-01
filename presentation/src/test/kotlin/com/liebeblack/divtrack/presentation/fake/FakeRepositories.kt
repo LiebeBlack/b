@@ -2,6 +2,7 @@ package com.liebeblack.divtrack.presentation.fake
 
 import com.liebeblack.divtrack.core.common.result.Result
 import com.liebeblack.divtrack.domain.model.ExchangeRate
+import com.liebeblack.divtrack.domain.model.ProviderDiagnostics
 import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.domain.model.SyncSummary
 import com.liebeblack.divtrack.domain.model.ThemeMode
@@ -30,12 +31,20 @@ class FakeRateRepository : RateRepository {
     )
     var refreshCalls: Int = 0
         private set
+    var testProvidersCalls: Int = 0
+        private set
+    var diagnostics: ProviderDiagnostics = ProviderDiagnostics(statuses = emptyList())
 
     override fun observeRates(): Flow<List<ExchangeRate>> = rates
 
     override suspend fun refreshRates(): Result<SyncSummary> {
         refreshCalls++
         return refreshResult
+    }
+
+    override suspend fun testProviders(): ProviderDiagnostics {
+        testProvidersCalls++
+        return diagnostics
     }
 }
 
@@ -67,6 +76,14 @@ class FakeSettingsRepository(
     override suspend fun setSyncInterval(minutes: Int) {
         settings.value = settings.value.copy(syncIntervalMinutes = minutes)
     }
+
+    override suspend fun setDefaultProvider(providerId: String?) {
+        settings.value = settings.value.copy(defaultProviderId = providerId)
+    }
+
+    override suspend fun setSyncOnWifiOnly(enabled: Boolean) {
+        settings.value = settings.value.copy(syncOnWifiOnly = enabled)
+    }
 }
 
 /** Programador simulado: registra lo que WorkManager habría hecho. */
@@ -74,11 +91,14 @@ class FakeSyncScheduler : SyncScheduler {
 
     var scheduledIntervalMinutes: Int? = null
         private set
+    var scheduledWifiOnly: Boolean? = null
+        private set
     var cancelCalls: Int = 0
         private set
 
-    override suspend fun schedulePeriodic(intervalMinutes: Int) {
+    override suspend fun schedulePeriodic(intervalMinutes: Int, wifiOnly: Boolean) {
         scheduledIntervalMinutes = intervalMinutes
+        scheduledWifiOnly = wifiOnly
     }
 
     override suspend fun cancelPeriodic() {

@@ -7,6 +7,7 @@ import java.util.Properties
 // no existe, se usan los endpoints públicos verificados para que CI compruebe sin secretos.
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
@@ -35,6 +36,11 @@ android {
             "String",
             "YADIO_BASE_URL",
             "\"${configuredValue("yadio.baseUrl", "https://api.yadio.io/")}\"",
+        )
+        buildConfigField(
+            "String",
+            "EXCHANGERATEAPI_BASE_URL",
+            "\"${configuredValue("exchangerateapi.baseUrl", "https://open.er-api.com/")}\"",
         )
     }
 
@@ -69,4 +75,8 @@ dependencies {
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+
+    // Deserialización de los fixtures JSON verificados de los tres proveedores.
+    testImplementation(libs.kotlinx.serialization.json)
+    testImplementation(libs.junit)
 }

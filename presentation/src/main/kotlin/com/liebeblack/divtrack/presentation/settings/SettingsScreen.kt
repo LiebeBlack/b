@@ -3,11 +3,17 @@ package com.liebeblack.divtrack.presentation.settings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -19,12 +25,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.liebeblack.divtrack.core.common.utils.CurrencyFormatters
+import com.liebeblack.divtrack.domain.model.ProviderStatus
 import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.domain.model.ThemeMode
 import com.liebeblack.divtrack.presentation.R
@@ -56,6 +65,7 @@ fun SettingsRoute(
         appVersion = appVersion,
         snackbarHostState = snackbarHostState,
         onIntent = viewModel::onIntent,
+        onCheckProviders = viewModel::onCheckProviders,
     )
 }
 
@@ -67,6 +77,7 @@ fun SettingsScreen(
     onIntent: (SettingsIntent) -> Unit,
     modifier: Modifier = Modifier,
     appVersion: String = "",
+    onCheckProviders: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier,
@@ -120,6 +131,25 @@ fun SettingsScreen(
                 onCheckedChange = { enabled -> onIntent(SettingsIntent.SetIgtfDefault(enabled)) },
             )
 
+            SettingsCard(
+                title = stringResource(R.string.settings_provider),
+                helper = stringResource(R.string.settings_provider_helper),
+            ) {
+                SegmentedSelector(
+                    options = ProviderOptions,
+                    selected = state.defaultProviderId ?: AUTOMATIC_PROVIDER_ID,
+                    onSelect = { providerId ->
+                        onIntent(
+                            SettingsIntent.SelectProvider(
+                                providerId.takeUnless { it == AUTOMATIC_PROVIDER_ID },
+                            ),
+                        )
+                    },
+                    label = { providerId -> stringResource(providerLabelRes(providerId)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
             SettingsSwitchRow(
                 title = stringResource(R.string.settings_auto_sync),
                 helper = stringResource(R.string.settings_auto_sync_helper),
@@ -127,8 +157,8 @@ fun SettingsScreen(
                 onCheckedChange = { enabled -> onIntent(SettingsIntent.SetAutoSync(enabled)) },
             )
 
-            // La frecuencia solo se ofrece si la sincronización está encendida: un control
-            // activo que no hace nada es peor que no mostrarlo.
+            // La frecuencia y el ajuste de red solo se ofrecen si la sincronización está
+            // encendida: un control activo que no hace nada es peor que no mostrarlo.
             if (state.autoSyncEnabled) {
                 SettingsCard(title = stringResource(R.string.settings_interval)) {
                     SegmentedSelector(
@@ -141,9 +171,130 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
+
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_wifi_only),
+                    helper = stringResource(R.string.settings_wifi_only_helper),
+                    checked = state.syncOnWifiOnly,
+                    onCheckedChange = { enabled -> onIntent(SettingsIntent.SetWifiOnly(enabled)) },
+                )
             }
 
+            ProvidersStatusCard(
+                state = state,
+                onCheckProviders = onCheckProviders,
+            )
+
             AboutCard(appVersion = appVersion)
+        }
+    }
+}
+
+/**
+ * Diagnóstico de fuentes: un botón que consulta las tres APIs de verdad y pinta el
+ * resultado por proveedor. Se muestra qué rate trajo cada una, para que el usuario pueda
+ * distinguir "está caído" de "respondió pero sin tasas útiles".
+ */
+@Composable
+private fun ProvidersStatusCard(
+    state: SettingsUiState,
+    onCheckProviders: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SettingsCard(
+        title = stringResource(R.string.settings_providers_status_title),
+        helper = stringResource(R.string.settings_providers_status_helper),
+        modifier = modifier,
+    ) {
+        Button(
+            onClick = onCheckProviders,
+            enabled = !state.isCheckingProviders,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            if (state.isCheckingProviders) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+                Spacer(Modifier.width(Spacing.sm))
+            }
+            Text(
+                text = stringResource(
+                    if (state.isCheckingProviders) {
+                        R.string.settings_providers_checking
+                    } else {
+                        R.string.settings_providers_check_now
+                    },
+                ),
+            )
+        }
+
+        val diagnostics = state.providerDiagnostics
+        if (diagnostics != null) {
+            diagnostics.statuses.forEach { status ->
+                ProviderStatusRow(status = status)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProviderStatusRow(status: ProviderStatus, modifier: Modifier = Modifier) {
+    val dotColor = if (status.isOk) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.error
+    }
+    val sourcesText = when {
+        status.sources.isEmpty() -> stringResource(R.string.provider_sources_none)
+        else -> status.sources.joinToString(separator = " · ") { sourceKey ->
+            RateSource.fromKey(sourceKey)?.let { stringResource(it.labelRes()) } ?: sourceKey
+        }
+    }
+    // La edad del dato es parte del diagnóstico: "OK" con un dato de ayer es justamente
+    // el caso del banco que dejó de publicar, y así se lee.
+    val lastUpdatedText = status.lastUpdatedAtMillis?.let { millis ->
+        runCatching { CurrencyFormatters.timestamp(java.time.Instant.ofEpochMilli(millis)) }.getOrNull()
+    }
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Surface(
+                modifier = Modifier.size(8.dp),
+                shape = MaterialTheme.shapes.extraSmall,
+                color = dotColor,
+            ) {}
+            Spacer(modifier = Modifier.width(Spacing.sm))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = status.providerId,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = sourcesText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (status.isOk) {
+                    Text(
+                        text = lastUpdatedText
+                            ?.let { fresh -> stringResource(R.string.provider_last_data, fresh) }
+                            ?: stringResource(R.string.provider_no_timestamp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
 }

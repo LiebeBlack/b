@@ -18,10 +18,12 @@ Lo que sigue se comprobó **ejecutando** cosas, no asumiendo:
 
 | Comprobación | Resultado |
 |---|---|
-| `GET https://ve.dolarapi.com/v1/dolares` | 200 · `oficial` **860,18** Bs · `paralelo` **955,35** Bs (reverificado 2026-10-01) |
+| `GET https://ve.dolarapi.com/v1/dolares` | 200 · `oficial` **860,18** Bs · `paralelo` **955,71** Bs (reverificado 2026-10-01) |
 | `GET https://api.yadio.io/exrates/USD` | 200 · `USD["VES"]` presente (fuente upstream del paralelo) |
+| `GET https://open.er-api.com/v6/latest/USD` | 200 · `rates["VES"]` **860,18** (tercera fuente, independiente; reverificado 2026-10-01) |
 | `pydolarve.org` | **descartada**: el dominio no resuelve (DNS) |
 | `api.dolarvzla.com` | **descartada**: responde 401, requiere clave privada |
+| `criptoya.com/api/USD/VES` | **descartada**: responde 422 en las variantes probadas |
 | `:app:assembleDebug` | **BUILD SUCCESSFUL** · APK de depuración de 22,8 MB |
 | `:app:assembleRelease` | **BUILD SUCCESSFUL** con R8 y `shrinkResources` · APK de 2,37 MB |
 | Tests JVM de los 4 módulos | **49 casos, 0 fallos** |
@@ -62,7 +64,7 @@ Lo que sigue se comprobó **ejecutando** cosas, no asumiendo:
 
 ```
 :core:common      Kotlin/JVM puro. Result<T>, DataError, formateo es-VE, parser de importes.
-:core:network     Retrofit dual (DolarAPI + Yadio), 4 interceptores, RateProvider + registro.
+:core:network     Retrofit triple (DolarAPI + Yadio + ER-API), 4 interceptores, RateProvider + registro con circuit breaker y frescura.
 :core:database    Room: tasa vigente + cierre diario (base de la flecha de tendencia).
 :core:datastore   DataStore: tema, IGTF, fuente por defecto, frecuencia de sync.
 :domain           Kotlin/JVM puro. Modelos, contratos de repositorio y 7 casos de uso.
@@ -103,7 +105,7 @@ cp local.properties.example local.properties   # opcional: personaliza las URLs 
 
 Sin `local.properties` **también compila**: las URLs base caen a los endpoints públicos
 verificados. Ninguna URL está escrita en el código Kotlin: entran por `BuildConfig` desde
-`local.properties` (`dolarapi.baseUrl`, `yadio.baseUrl`).
+`local.properties` (`dolarapi.baseUrl`, `yadio.baseUrl`, `exchangerateapi.baseUrl`).
 
 ### CI
 
