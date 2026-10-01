@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Espejo en recursos de la paleta de Compose (theme/Color.kt) para lo que Android pinta
+     antes de que Compose exista: ventana y pantalla de arranque. -->
+<resources>
+    <color name="window_background">#FFF7F9FC</color>
+    <color name="splash_background">#FFF7F9FC</color>
+    <color name="ic_launcher_background">#FF0A0E13</color>
+</resources>

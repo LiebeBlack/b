@@ -1,0 +1,44 @@
+package com.liebeblack.divtrack.data.fake
+
+import com.liebeblack.divtrack.core.datastore.UserPreferencesDataSource
+import com.liebeblack.divtrack.core.datastore.model.UserPreferences
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+
+/** DataStore simulado: un `MutableStateFlow` con los mismos setters del contrato. */
+class FakeUserPreferencesDataSource(
+    initial: UserPreferences = UserPreferences(),
+) : UserPreferencesDataSource {
+
+    val state = MutableStateFlow(initial)
+
+    override val preferences: Flow<UserPreferences> = state
+
+    override suspend fun setThemeMode(themeMode: String) {
+        state.value = state.value.copy(themeMode = themeMode)
+    }
+
+    override suspend fun setDefaultSource(sourceKey: String) {
+        state.value = state.value.copy(defaultSourceKey = sourceKey)
+    }
+
+    override suspend fun setIgtfEnabled(enabled: Boolean) {
+        state.value = state.value.copy(igtfEnabled = enabled)
+    }
+
+    override suspend fun setAutoSyncEnabled(enabled: Boolean) {
+        state.value = state.value.copy(autoSyncEnabled = enabled)
+    }
+
+    override suspend fun setSyncIntervalMinutes(minutes: Int) {
+        state.value = state.value.copy(syncIntervalMinutes = minutes)
+    }
+
+    override suspend fun setLastSyncAt(millis: Long) {
+        state.value = state.value.copy(lastSyncAtMillis = millis)
+    }
+
+    override suspend fun setLastHistorySyncAt(millis: Long) {
+        state.value = state.value.copy(lastHistorySyncAtMillis = millis)
+    }
+}

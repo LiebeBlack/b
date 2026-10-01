@@ -1,0 +1,51 @@
+package com.liebeblack.divtrack.presentation.dashboard
+
+import androidx.compose.runtime.Immutable
+import com.liebeblack.divtrack.core.common.utils.CurrencyFormatters
+import com.liebeblack.divtrack.domain.model.ExchangeRate
+import com.liebeblack.divtrack.domain.model.RateSource
+import com.liebeblack.divtrack.domain.model.TrendDirection
+import java.time.Instant
+
+/**
+ * Modelo de una tasa ya formateado para pintar.
+ *
+ * Todo son primitivas o enums: `@Immutable` + campos estables hacen que Compose pueda
+ * saltarse la recomposición de la tarjeta cuando solo cambia la otra tasa.
+ */
+@Immutable
+data class RateUiModel(
+    val source: RateSource,
+    val valueText: String,
+    val deltaText: String?,
+    val trend: TrendDirection,
+    val providerText: String,
+    val updatedAtText: String?,
+)
+
+/** Estado completo del dashboard. Es la única fuente que consume la pantalla. */
+@Immutable
+data class DashboardUiState(
+    val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
+    val rates: List<RateUiModel> = emptyList(),
+    val spreadPercentText: String? = null,
+    val spreadAbsoluteText: String? = null,
+    val isOffline: Boolean = false,
+) {
+    val hasData: Boolean get() = rates.isNotEmpty()
+
+    fun rate(source: RateSource): RateUiModel? = rates.firstOrNull { it.source == source }
+}
+
+/** Dominio -> UI. El formateo es-VE se hace una sola vez, aquí, no en cada recomposición. */
+internal fun ExchangeRate.toRateUiModel(): RateUiModel = RateUiModel(
+    source = source,
+    valueText = CurrencyFormatters.bolivars(value),
+    deltaText = changePercent?.takeIf { it.isFinite() }?.let { CurrencyFormatters.percent(it) },
+    trend = trend,
+    providerText = providerId,
+    updatedAtText = updatedAtMillis?.let { millis ->
+        runCatching { CurrencyFormatters.timestamp(Instant.ofEpochMilli(millis)) }.getOrNull()
+    },
+)

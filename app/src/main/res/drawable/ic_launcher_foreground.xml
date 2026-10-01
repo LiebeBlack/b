@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Marca de DivTrack: una línea de tendencia ascendente (menta) con la punta en ámbar,
+  que es exactamente lo que hace la app: seguir dos tasas.
+
+  Viewport 108x108 y contenido dentro del círculo seguro de 72x72 (18..90), como exige el
+  icono adaptativo; así ninguna máscara de fabricante recorta el trazo.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Línea principal: arranca abajo a la izquierda y sube escalonando dos veces. -->
+    <path
+        android:pathData="M28,74 L48,56 L60,67 L80,47"
+        android:strokeColor="#19E39B"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+    <!-- Punta de flecha, en el ámbar del paralelo. -->
+    <path
+        android:pathData="M64,47 L80,47 L80,62"
+        android:strokeColor="#FFB020"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+</vector>

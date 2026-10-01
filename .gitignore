@@ -1,0 +1,19 @@
+*.iml
+.gradle/
+.kotlin/
+build/
+**/build/
+.idea/
+captures/
+.externalNativeBuild
+.cxx
+*.hprof
+*.apk
+*.aab
+
+# Configuración local (URLs, claves, ruta del SDK). Ver local.properties.example
+local.properties
+
+# Sistema
+.DS_Store
+Thumbs.db

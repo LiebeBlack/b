@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English translation. Missing keys fall back to the Spanish default in values/. -->
+<resources>
+
+    <!-- ============================== Navigation ============================== -->
+    <string name="nav_dashboard">Rates</string>
+    <string name="nav_calculator">Calculator</string>
+    <string name="nav_history">History</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- ============================== Dashboard ============================== -->
+    <string name="dashboard_title">DivTrack</string>
+    <string name="rate_card_title">%1$s dollar</string>
+    <string name="rate_provider">Source: %1$s</string>
+    <string name="rate_updated_at">Updated %1$s</string>
+    <string name="spread_title">Parallel / official gap</string>
+    <string name="spread_value">%1$s above the official rate (%2$s)</string>
+    <string name="spread_unavailable">Both rates are needed to compute the gap</string>
+    <string name="dashboard_disclaimer">Reference rates only, not official quotes. Always verify before trading.</string>
+    <string name="empty_rates_title">No rates yet</string>
+    <string name="empty_rates_message">Pull down or tap refresh to fetch the latest values.</string>
+
+    <!-- ============================== Calculator ============================== -->
+    <string name="calculator_title">Calculator</string>
+    <string name="calculator_amount_usd">Amount in dollars</string>
+    <string name="calculator_amount_bs">Amount in bolivars</string>
+    <string name="calculator_rate_line">Applied rate: %1$s Bs per USD</string>
+    <string name="calculator_hint">Type an amount and the result updates as you type.</string>
+    <string name="calculator_no_rate">No rates available. Sync them from the rates tab.</string>
+    <string name="result_mirror_bs">Total in bolivars</string>
+    <string name="result_mirror_usd">Total in dollars</string>
+    <string name="result_net_usd">Net USD</string>
+    <string name="result_net_bs">Net Bs.</string>
+    <string name="result_igtf">IGTF (%1$s)</string>
+    <string name="result_total_usd">Total USD</string>
+    <string name="igtf_label">IGTF (%1$s)</string>
+    <string name="igtf_helper">Applies the 3 % Large Financial Transactions Tax on foreign-currency payments.</string>
+    <string name="action_swap_direction">Swap direction (Bs. / USD)</string>
+    <string name="action_copy_breakdown">Copy breakdown</string>
+    <string name="action_clear">Clear</string>
+    <string name="copy_done">Breakdown copied to clipboard</string>
+    <string name="copy_igtf_yes">Yes</string>
+    <string name="copy_igtf_no">No</string>
+    <string name="copy_summary">DivTrack · Amount: %1$s | %2$s rate: %3$s Bs | IGTF: %4$s | Total: %5$s</string>
+    <string name="copy_detail">Breakdown — %1$s | Net: $%2$s | IGTF: %3$s Bs | Total: $%4$s</string>
+    <string name="copy_signature">Calculated with DivTrack</string>
+
+    <!-- ============================== History ============================== -->
+    <string name="history_title">History</string>
+    <string name="range_one_month">1M</string>
+    <string name="range_three_months">3M</string>
+    <string name="range_year_to_date">YTD</string>
+    <string name="range_one_year">1Y</string>
+    <string name="history_stat_latest">Latest</string>
+    <string name="history_stat_min">Min</string>
+    <string name="history_stat_max">Max</string>
+    <string name="history_drag_hint">Tap or drag on the chart to inspect a specific day.</string>
+    <string name="history_empty_title">No historical data</string>
+    <string name="history_empty_message">Import the daily series with the toolbar button.</string>
+    <string name="action_sync_history">Sync history</string>
+
+    <!-- ============================== Settings ============================== -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_helper">System mode follows the Android setting.</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_default_source">Default rate</string>
+    <string name="settings_default_source_helper">Used when the calculator opens.</string>
+    <string name="settings_igtf_default">IGTF enabled by default</string>
+    <string name="settings_igtf_default_helper">The calculator starts with the tax applied.</string>
+    <string name="settings_auto_sync">Background sync</string>
+    <string name="settings_auto_sync_helper">Keeps rates fresh even when the app is closed.</string>
+    <string name="settings_interval">Frequency</string>
+    <string name="settings_interval_minutes">%1$d min</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_providers">Providers</string>
+    <string name="settings_providers_value">dolarapi.com (official and parallel) · yadio.io (parallel fallback)</string>
+    <string name="settings_disclaimer_title">Disclaimer</string>
+    <string name="settings_disclaimer_value">DivTrack is neither an exchange house nor an official body: it publishes reference rates from public sources and is not liable for decisions made with them.</string>
+    <string name="settings_saved">Preference saved</string>
+
+    <!-- ============================== States and messages ============================== -->
+    <string name="action_refresh">Refresh rates</string>
+    <string name="action_retry">Retry</string>
+    <string name="source_oficial">Official</string>
+    <string name="source_paralelo">Parallel</string>
+    <string name="source_oficial_long">Official (BCV)</string>
+    <string name="source_paralelo_long">Parallel (market)</string>
+    <string name="trend_up">Up since previous close</string>
+    <string name="trend_down">Down since previous close</string>
+    <string name="trend_flat">Unchanged since previous close</string>
+    <string name="msg_rates_updated">Rates updated</string>
+    <string name="msg_partial_update">Partial update: one of the sources did not respond</string>
+    <string name="msg_offline_showing_cache">Offline. Showing last update</string>
+    <string name="msg_offline_no_data">Offline with no cached data</string>
+    <string name="msg_history_offline">Could not refresh history. Showing cached data</string>
+
+</resources>

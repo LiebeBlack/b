@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto-backup (API 30 y anteriores).
+
+  Se excluye la base de datos de tasas: es un caché de datos públicos que la red vuelve a
+  llenar en segundos, y restaurarla en otro dispositivo mostraría tasas caducadas como si
+  fueran propias. Las preferencias sí se respaldan (tema, IGTF, intervalo de sincronización):
+  son del usuario, no del dispositivo.
+-->
+<full-backup-content>
+    <exclude domain="database" path="divtrack.db" />
+    <exclude domain="database" path="divtrack.db-shm" />
+    <exclude domain="database" path="divtrack.db-wal" />
+    <exclude domain="file" path="http_rates" />
+</full-backup-content>

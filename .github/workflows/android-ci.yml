@@ -1,0 +1,85 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  ANDROID_COMPILE_SDK: "37"
+  BUILD_TOOLS_VERSION: "36.0.0"
+  GRADLE_VERSION: "9.6.0"
+
+jobs:
+  build:
+    name: Build · Test · R8
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Android SDK (cmdline-tools)
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar plataforma y build-tools
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager --install "platforms;android-${ANDROID_COMPILE_SDK}" "build-tools;${BUILD_TOOLS_VERSION}" "platform-tools"
+
+      - name: Gradle ${{ env.GRADLE_VERSION }} y caché
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+          cache-read-only: false
+
+      - name: Asegurar wrapper
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ] || [ ! -f gradlew ]; then
+            echo "Wrapper incompleto: generándolo con Gradle ${GRADLE_VERSION}"
+            gradle wrapper --gradle-version "${GRADLE_VERSION}"
+          fi
+          chmod +x ./gradlew
+          ./gradlew --version
+
+      - name: Compilar debug (los 8 módulos + KSP de Room/Hilt)
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Tests unitarios JVM
+        run: ./gradlew testDebugUnitTest :domain:test :core:common:test --stacktrace
+
+      - name: Release con R8 + métricas del compilador de Compose
+        run: ./gradlew :app:assembleRelease -PcomposeMetrics=true --stacktrace
+
+      - name: Lint (informe, no bloqueante en la primera pasada)
+        continue-on-error: true
+        run: ./gradlew :app:lintDebug --stacktrace
+
+      - name: Publicar artefactos (APK, reportes, métricas)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: divtrack-artifacts
+          if-no-files-found: warn
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
+            app/build/reports/lint-results-*.html
+            **/build/reports/tests/**
+            **/build/compose-metrics/**
+            core/database/schemas/**

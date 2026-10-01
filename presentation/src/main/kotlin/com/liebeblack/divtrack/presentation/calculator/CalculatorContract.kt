@@ -1,0 +1,80 @@
+package com.liebeblack.divtrack.presentation.calculator
+
+import androidx.compose.runtime.Immutable
+import com.liebeblack.divtrack.domain.model.ConversionDirection
+import com.liebeblack.divtrack.domain.model.RateSource
+import com.liebeblack.divtrack.presentation.common.UiText
+
+/**
+ * Tasa disponible que el selector ofrece al usuario. Solo se ofrecen las que existen: si el
+ * proveedor no ha publicado una de las dos, no se puede elegir.
+ */
+@Immutable
+data class RateOptionUi(
+    val source: RateSource,
+    val value: Double,
+)
+
+/**
+ * Estado de la calculadora. Todos los textos ya vienen formateados en es-VE desde el
+ * ViewModel: las composables solo pintan.
+ */
+@Immutable
+data class CalculatorUiState(
+    val inputText: String = "",
+    val direction: ConversionDirection = ConversionDirection.USD_TO_BS,
+    val selectedSource: RateSource = RateSource.OFICIAL,
+    val rateOptions: List<RateOptionUi> = emptyList(),
+    val selectedRate: Double? = null,
+    val selectedRateText: String = "—",
+    val igtfEnabled: Boolean = false,
+    val igtfRateText: String = "",
+    val netUsdText: String = "—",
+    val netBsText: String = "—",
+    val igtfBsText: String = "—",
+    val totalBsText: String = "—",
+    val totalUsdText: String = "—",
+    val canCopy: Boolean = false,
+    val hasRate: Boolean = true,
+) {
+    val isUsdToBs: Boolean get() = direction == ConversionDirection.USD_TO_BS
+
+    val isAmountValid: Boolean get() = inputText.isNotBlank()
+}
+
+sealed interface CalculatorIntent {
+
+    data class AmountChanged(val value: String) : CalculatorIntent
+
+    data class SelectSource(val source: RateSource) : CalculatorIntent
+
+    data object SwapDirection : CalculatorIntent
+
+    data class ToggleIgtf(val enabled: Boolean) : CalculatorIntent
+
+    data object ClearAmount : CalculatorIntent
+
+    data object CopyBreakdown : CalculatorIntent
+}
+
+sealed interface CalculatorEffect {
+
+    data class CopyToClipboard(val summary: BreakdownSummary) : CalculatorEffect
+
+    data class ShowMessage(val text: UiText) : CalculatorEffect
+}
+
+/** Datos crudos del desglose: la localización del texto final vive en la capa de UI. */
+@Immutable
+data class BreakdownSummary(
+    val direction: ConversionDirection,
+    val source: RateSource,
+    val amountText: String,
+    val rateText: String,
+    val igtfEnabled: Boolean,
+    val igtfText: String,
+    val netUsdText: String,
+    val netBsText: String,
+    val totalBsText: String,
+    val totalUsdText: String,
+)

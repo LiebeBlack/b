@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Textos de DivTrack. Español de Venezuela como idioma por defecto.
+
+  Regla: ningún texto visible vive en el código Kotlin. Los ViewModel emiten UiText.Res(id)
+  y la capa Compose resuelve el recurso, así que la app es localizable sin tocar lógica.
+-->
+<resources>
+
+    <!-- ============================== Navegación ============================== -->
+    <string name="nav_dashboard">Tasas</string>
+    <string name="nav_calculator">Calculadora</string>
+    <string name="nav_history">Histórico</string>
+    <string name="nav_settings">Ajustes</string>
+
+    <!-- ============================== Dashboard ============================== -->
+    <string name="dashboard_title">DivTrack</string>
+    <string name="rate_card_title">Dólar %1$s</string>
+    <string name="rate_provider">Fuente: %1$s</string>
+    <string name="rate_updated_at">Actualizado %1$s</string>
+    <string name="spread_title">Brecha paralelo / oficial</string>
+    <string name="spread_value">%1$s por encima del oficial (%2$s)</string>
+    <string name="spread_unavailable">Se necesitan ambas tasas para calcular la brecha</string>
+    <string name="dashboard_disclaimer">Tasas informativas, sin valor oficial. Verifica siempre antes de operar.</string>
+    <string name="empty_rates_title">Todavía no hay tasas</string>
+    <string name="empty_rates_message">Desliza hacia abajo o toca actualizar para obtener los valores más recientes.</string>
+
+    <!-- ============================== Calculadora ============================== -->
+    <string name="calculator_title">Calculadora</string>
+    <string name="calculator_amount_usd">Monto en dólares</string>
+    <string name="calculator_amount_bs">Monto en bolívares</string>
+    <string name="calculator_rate_line">Tasa aplicada: %1$s Bs por USD</string>
+    <string name="calculator_hint">Escribe un monto y el resultado se calcula al instante, sin botones.</string>
+    <string name="calculator_no_rate">Sin tasas disponibles. Sincroniza desde el panel de tasas.</string>
+    <string name="result_mirror_bs">Total en bolívares</string>
+    <string name="result_mirror_usd">Total en dólares</string>
+    <string name="result_net_usd">Neto en USD</string>
+    <string name="result_net_bs">Neto en Bs.</string>
+    <string name="result_igtf">IGTF (%1$s)</string>
+    <string name="result_total_usd">Total en USD</string>
+    <string name="igtf_label">IGTF (%1$s)</string>
+    <string name="igtf_helper">Aplica el 3 % del Impuesto a las Grandes Transacciones Financieras sobre pagos en divisas.</string>
+    <string name="action_swap_direction">Invertir dirección (Bs. / USD)</string>
+    <string name="action_copy_breakdown">Copiar desglose</string>
+    <string name="action_clear">Limpiar</string>
+    <string name="copy_done">Desglose copiado al portapapeles</string>
+    <string name="copy_igtf_yes">Sí</string>
+    <string name="copy_igtf_no">No</string>
+    <string name="copy_summary">DivTrack · Monto: %1$s | Tasa %2$s: %3$s Bs | IGTF: %4$s | Total: %5$s</string>
+    <string name="copy_detail">Detalle — %1$s | Neto: $%2$s | IGTF: %3$s Bs | Total: $%4$s</string>
+    <string name="copy_signature">Calculado con DivTrack</string>
+
+    <!-- ============================== Histórico ============================== -->
+    <string name="history_title">Histórico</string>
+    <string name="range_one_month">1M</string>
+    <string name="range_three_months">3M</string>
+    <string name="range_year_to_date">YTD</string>
+    <string name="range_one_year">1A</string>
+    <string name="history_stat_latest">Último</string>
+    <string name="history_stat_min">Mínimo</string>
+    <string name="history_stat_max">Máximo</string>
+    <string name="history_drag_hint">Toca o arrastra sobre el gráfico para ver el valor de un día concreto.</string>
+    <string name="history_empty_title">Sin datos históricos</string>
+    <string name="history_empty_message">Importa la serie diaria con el botón de la barra superior.</string>
+    <string name="action_sync_history">Sincronizar histórico</string>
+
+    <!-- ============================== Ajustes ============================== -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_theme_helper">El modo del sistema sigue el ajuste de Android.</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="settings_default_source">Tasa por defecto</string>
+    <string name="settings_default_source_helper">Se usa al abrir la calculadora.</string>
+    <string name="settings_igtf_default">IGTF activado por defecto</string>
+    <string name="settings_igtf_default_helper">La calculadora arranca con el impuesto aplicado.</string>
+    <string name="settings_auto_sync">Sincronización en segundo plano</string>
+    <string name="settings_auto_sync_helper">Mantiene las tasas al día incluso con la app cerrada.</string>
+    <string name="settings_interval">Frecuencia</string>
+    <string name="settings_interval_minutes">%1$d min</string>
+    <string name="settings_about">Acerca de</string>
+    <string name="settings_version">Versión %1$s</string>
+    <string name="settings_providers">Proveedores</string>
+    <string name="settings_providers_value">dolarapi.com (oficial y paralelo) · yadio.io (respaldo del paralelo)</string>
+    <string name="settings_disclaimer_title">Aviso</string>
+    <string name="settings_disclaimer_value">DivTrack no es una casa de cambio ni un ente oficial: publica tasas de referencia de fuentes públicas y no se hace responsable de decisiones tomadas con ellas.</string>
+    <string name="settings_saved">Preferencia guardada</string>
+
+    <!-- ============================== Estados y mensajes ============================== -->
+    <string name="action_refresh">Actualizar tasas</string>
+    <string name="action_retry">Reintentar</string>
+    <string name="source_oficial">Oficial</string>
+    <string name="source_paralelo">Paralelo</string>
+    <string name="source_oficial_long">Oficial (BCV)</string>
+    <string name="source_paralelo_long">Paralelo (mercado)</string>
+    <string name="trend_up">Sube respecto al cierre anterior</string>
+    <string name="trend_down">Baja respecto al cierre anterior</string>
+    <string name="trend_flat">Sin cambios respecto al cierre anterior</string>
+    <string name="msg_rates_updated">Tasas actualizadas</string>
+    <string name="msg_partial_update">Actualización parcial: una de las fuentes no respondió</string>
+    <string name="msg_offline_showing_cache">Sin conexión. Mostrando última actualización</string>
+    <string name="msg_offline_no_data">Sin conexión y sin datos guardados</string>
+    <string name="msg_history_offline">No se pudo actualizar el histórico. Se muestra lo guardado</string>
+
+</resources>

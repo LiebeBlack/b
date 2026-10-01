@@ -1,0 +1,36 @@
+package com.liebeblack.divtrack.data.repository
+
+import com.liebeblack.divtrack.core.datastore.UserPreferencesDataSource
+import com.liebeblack.divtrack.data.mapper.toDomain
+import com.liebeblack.divtrack.domain.model.RateSource
+import com.liebeblack.divtrack.domain.model.ThemeMode
+import com.liebeblack.divtrack.domain.model.UserSettings
+import com.liebeblack.divtrack.domain.repository.SettingsRepository
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+@Singleton
+class SettingsRepositoryImpl @Inject constructor(
+    private val preferencesDataSource: UserPreferencesDataSource,
+) : SettingsRepository {
+
+    override fun observeSettings(): Flow<UserSettings> =
+        preferencesDataSource.preferences.map { preferences -> preferences.toDomain() }
+
+    override suspend fun setThemeMode(mode: ThemeMode) =
+        preferencesDataSource.setThemeMode(mode.name)
+
+    override suspend fun setDefaultSource(source: RateSource) =
+        preferencesDataSource.setDefaultSource(source.key)
+
+    override suspend fun setIgtfEnabled(enabled: Boolean) =
+        preferencesDataSource.setIgtfEnabled(enabled)
+
+    override suspend fun setAutoSyncEnabled(enabled: Boolean) =
+        preferencesDataSource.setAutoSyncEnabled(enabled)
+
+    override suspend fun setSyncInterval(minutes: Int) =
+        preferencesDataSource.setSyncIntervalMinutes(minutes)
+}

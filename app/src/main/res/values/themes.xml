@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Temas de plataforma. La app dibuja todo con Compose, así que el tema de Android solo
+  tiene dos trabajos: pintar el instante previo al primer fotograma de Compose (sin flash
+  blanco) y configurar la pantalla de arranque del sistema.
+-->
+<resources>
+
+    <!-- Tema real de la Activity una vez Compose toma el control. -->
+    <style name="Theme.DivTrack" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+
+    <!-- Pantalla de arranque (Android 12+ nativa, con backport a API 23 del library). -->
+    <style name="Theme.DivTrack.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.DivTrack</item>
+    </style>
+
+</resources>

@@ -1,0 +1,19 @@
+# ---------------------------------------------------------------------------
+# DivTrack — plantilla de configuración local
+#
+# 1. Copia este archivo como `local.properties` (está en .gitignore).
+# 2. Las claves de abajo alimentan los campos de BuildConfig del módulo :core:network.
+#    NO existen URLs hardcodeadas en el código Kotlin: todo entra por aquí.
+# 3. Si `local.properties` no existe o no define estas claves, Gradle usa los
+#    endpoints públicos por defecto (verificado el 2026-10-01), de modo que CI
+#    y un clon limpio compilan sin secretos.
+# ---------------------------------------------------------------------------
+
+# Ruta del SDK de Android (solo necesaria si compilas en local sin Android Studio)
+# sdk.dir=C\:\\Users\\tu-usuario\\AppData\\Local\\Android\\Sdk
+
+# --- Proveedores de tasas (multi-API) ---
+# DolarAPI Venezuela: oficial (BCV) + paralelo (Yadio) + histórico diario
+dolarapi.baseUrl=https://ve.dolarapi.com/
+# Yadio: fuente upstream del paralelo (fallback automático del paralelo)
+yadio.baseUrl=https://api.yadio.io/

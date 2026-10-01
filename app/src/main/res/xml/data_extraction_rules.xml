@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Reglas de extracción de datos (API 31+): mismo criterio que backup_rules.xml, aplicado
+  tanto a la copia en la nube como a la transferencia directa entre dispositivos.
+-->
+<data-extraction-rules>
+
+    <cloud-backup>
+        <exclude domain="database" path="divtrack.db" />
+        <exclude domain="database" path="divtrack.db-shm" />
+        <exclude domain="database" path="divtrack.db-wal" />
+        <exclude domain="file" path="http_rates" />
+    </cloud-backup>
+
+    <device-transfer>
+        <exclude domain="database" path="divtrack.db" />
+        <exclude domain="database" path="divtrack.db-shm" />
+        <exclude domain="database" path="divtrack.db-wal" />
+        <exclude domain="file" path="http_rates" />
+    </device-transfer>
+
+</data-extraction-rules>
