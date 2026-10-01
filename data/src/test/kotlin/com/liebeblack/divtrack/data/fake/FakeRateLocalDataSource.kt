@@ -15,16 +15,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 class FakeRateLocalDataSource : RateLocalDataSource {
 
     val currentRates = MutableStateFlow<List<CurrentRateEntity>>(emptyList())
-    val history = MutableStateFlow<List<RateHistoryEntity>>(emptyList())
+    val dailyCloses = MutableStateFlow<List<RateHistoryEntity>>(emptyList())
 
     var upsertCurrentRatesCalls: Int = 0
         private set
-    var upsertHistoryCalls: Int = 0
+    var upsertDailyClosesCalls: Int = 0
         private set
 
     override fun observeCurrentRates(): Flow<List<CurrentRateEntity>> = currentRates
-
-    override fun observeHistory(fromEpochDay: Long): Flow<List<RateHistoryEntity>> = history
 
     override suspend fun upsertCurrentRates(rates: List<CurrentRateEntity>) {
         if (rates.isEmpty()) return
@@ -34,25 +32,25 @@ class FakeRateLocalDataSource : RateLocalDataSource {
         currentRates.value = bySource.values.toList()
     }
 
-    override suspend fun upsertHistory(points: List<RateHistoryEntity>) {
-        if (points.isEmpty()) return
-        upsertHistoryCalls++
-        val byKey = history.value.associateBy { it.source to it.epochDay }.toMutableMap()
-        points.forEach { point -> byKey[point.source to point.epochDay] = point }
-        history.value = byKey.values.toList()
+    override suspend fun upsertDailyCloses(closes: List<RateHistoryEntity>) {
+        if (closes.isEmpty()) return
+        upsertDailyClosesCalls++
+        val byKey = dailyCloses.value.associateBy { it.source to it.epochDay }.toMutableMap()
+        closes.forEach { close -> byKey[close.source to close.epochDay] = close }
+        dailyCloses.value = byKey.values.toList()
     }
 
     override suspend fun currentRate(source: String): CurrentRateEntity? =
         currentRates.value.firstOrNull { it.source == source }
 
     override suspend fun previousClose(source: String, epochDay: Long): RateHistoryEntity? =
-        history.value
+        dailyCloses.value
             .filter { it.source == source && it.epochDay < epochDay }
             .maxByOrNull { it.epochDay }
 
-    override suspend fun pruneHistory(beforeEpochDay: Long): Int {
-        val before = history.value.size
-        history.value = history.value.filter { it.epochDay >= beforeEpochDay }
-        return before - history.value.size
+    override suspend fun pruneDailyCloses(beforeEpochDay: Long): Int {
+        val before = dailyCloses.value.size
+        dailyCloses.value = dailyCloses.value.filter { it.epochDay >= beforeEpochDay }
+        return before - dailyCloses.value.size
     }
 }

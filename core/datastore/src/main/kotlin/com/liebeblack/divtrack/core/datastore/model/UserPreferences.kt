@@ -25,9 +25,6 @@ data class UserPreferences(
 
     /** Última sincronización de tasas vigentes. */
     val lastSyncAtMillis: Long? = null,
-
-    /** Última importación del histórico diario. */
-    val lastHistorySyncAtMillis: Long? = null,
 ) {
     companion object {
         const val THEME_SYSTEM: String = "SYSTEM"

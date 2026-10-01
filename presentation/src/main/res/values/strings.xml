@@ -10,7 +10,6 @@
     <!-- ============================== Navegación ============================== -->
     <string name="nav_dashboard">Tasas</string>
     <string name="nav_calculator">Calculadora</string>
-    <string name="nav_history">Histórico</string>
     <string name="nav_settings">Ajustes</string>
 
     <!-- ============================== Dashboard ============================== -->
@@ -50,20 +49,6 @@
     <string name="copy_detail">Detalle — %1$s | Neto: $%2$s | IGTF: %3$s Bs | Total: $%4$s</string>
     <string name="copy_signature">Calculado con DivTrack</string>
 
-    <!-- ============================== Histórico ============================== -->
-    <string name="history_title">Histórico</string>
-    <string name="range_one_month">1M</string>
-    <string name="range_three_months">3M</string>
-    <string name="range_year_to_date">YTD</string>
-    <string name="range_one_year">1A</string>
-    <string name="history_stat_latest">Último</string>
-    <string name="history_stat_min">Mínimo</string>
-    <string name="history_stat_max">Máximo</string>
-    <string name="history_drag_hint">Toca o arrastra sobre el gráfico para ver el valor de un día concreto.</string>
-    <string name="history_empty_title">Sin datos históricos</string>
-    <string name="history_empty_message">Importa la serie diaria con el botón de la barra superior.</string>
-    <string name="action_sync_history">Sincronizar histórico</string>
-
     <!-- ============================== Ajustes ============================== -->
     <string name="settings_title">Ajustes</string>
     <string name="settings_theme">Tema</string>
@@ -92,6 +77,7 @@
     <string name="action_retry">Reintentar</string>
     <string name="source_oficial">Oficial</string>
     <string name="source_paralelo">Paralelo</string>
+    <!-- Nombres largos: solo para el texto que se copia al portapapeles. -->
     <string name="source_oficial_long">Oficial (BCV)</string>
     <string name="source_paralelo_long">Paralelo (mercado)</string>
     <string name="trend_up">Sube respecto al cierre anterior</string>
@@ -101,6 +87,21 @@
     <string name="msg_partial_update">Actualización parcial: una de las fuentes no respondió</string>
     <string name="msg_offline_showing_cache">Sin conexión. Mostrando última actualización</string>
     <string name="msg_offline_no_data">Sin conexión y sin datos guardados</string>
-    <string name="msg_history_offline">No se pudo actualizar el histórico. Se muestra lo guardado</string>
+
+    <!-- ============================== Errores de red ============================== -->
+    <!--
+      Un solo texto por causa real. Antes cualquier fallo se contaba como "sin conexión",
+      así que un 404 del proveedor o un timeout se diagnosticaban como si el teléfono
+      estuviera desconectado. Ahora el usuario ve qué pasó de verdad.
+    -->
+    <string name="error_timeout">El proveedor tardó demasiado en responder. Intenta de nuevo</string>
+    <string name="error_no_connection">Sin conexión a internet. Revisa tus datos o tu wifi</string>
+    <string name="error_provider_down">La fuente de tasas está fallando (%1$d). Intenta más tarde</string>
+    <string name="error_provider_changed">La fuente de tasas cambió su dirección (HTTP 404)</string>
+    <string name="error_rate_limited">La fuente limitó las consultas. Espera un momento</string>
+    <string name="error_http">Respuesta inesperada de la fuente (HTTP %1$d)</string>
+    <string name="error_parse">La fuente devolvió datos que no se pudieron leer</string>
+    <string name="error_unknown">No se pudieron obtener las tasas</string>
+    <string name="action_open_network_settings">Abrir ajustes de red</string>
 
 </resources>

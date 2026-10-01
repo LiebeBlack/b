@@ -13,8 +13,8 @@ import androidx.compose.ui.text.style.TextOverflow
 /**
  * Selector segmentado nativo de Material 3, genérico y sin estado.
  *
- * Un solo componente cubre los cuatro usos de la app (fuente en la calculadora, rango del
- * histórico, tema e intervalo de sincronización), así que todos se ven y se comportan igual.
+ * Un solo componente cubre los tres usos de la app (fuente en la calculadora, tema e
+ * intervalo de sincronización), así que todos se ven y se comportan igual.
  *
  * `label` es `@Composable` porque cada llamada resuelve un recurso de texto
  * (`stringResource`), y eso solo se puede hacer desde contexto de composición.

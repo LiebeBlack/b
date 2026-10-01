@@ -3,7 +3,6 @@ package com.liebeblack.divtrack.presentation.navigation
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -25,17 +24,17 @@ data object DashboardKey : NavKey
 data object CalculatorKey : NavKey
 
 @Serializable
-data object HistoryKey : NavKey
-
-@Serializable
 data object SettingsKey : NavKey
 
 /**
  * Pestañas de la barra inferior.
  *
- * La app tiene exactamente cuatro pantallas planas (sin jerarquía): modelo el back stack
+ * La app tiene exactamente tres pantallas planas (sin jerarquía): modelo el back stack
  * como `[raíz, pestaña actual]`, de modo que "atrás" vuelve al panel de tasas y, desde ahí,
  * sale de la app. Es el comportamiento que Android espera de una barra de navegación.
+ *
+ * `ordered` devuelve una lista ya construida (una sola vez, en la carga de la clase): antes
+ * se recalculaba en cada recomposición de la barra inferior.
  */
 enum class TopLevelDestination(
     val key: NavKey,
@@ -44,15 +43,14 @@ enum class TopLevelDestination(
 ) {
     DASHBOARD(DashboardKey, R.string.nav_dashboard, Icons.Filled.TrendingUp),
     CALCULATOR(CalculatorKey, R.string.nav_calculator, Icons.Filled.Calculate),
-    HISTORY(HistoryKey, R.string.nav_history, Icons.Filled.Insights),
     SETTINGS(SettingsKey, R.string.nav_settings, Icons.Filled.Settings);
 
     companion object {
         val start: TopLevelDestination = DASHBOARD
 
-        fun ordered(): List<TopLevelDestination> = entries.toList()
+        private val orderedDestinations: List<TopLevelDestination> = entries.toList()
 
-        fun of(key: NavKey): TopLevelDestination? = entries.firstOrNull { it.key == key }
+        fun ordered(): List<TopLevelDestination> = orderedDestinations
     }
 }
 

@@ -16,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,12 +69,21 @@ fun EmptyState(
     }
 }
 
+/**
+ * Estado de error con una acción de reintento y, opcionalmente, una segunda acción.
+ *
+ * La segunda acción existe para no dejar el aviso en un callejón sin salida: si el problema
+ * es de conectividad, "Abrir ajustes de red" lleva al usuario exactamente al sitio donde
+ * puede arreglarlo. Se muestran los dos textos juntos o ninguno (el llamador decide).
+ */
 @Composable
 fun ErrorState(
     message: String,
     retryLabel: String,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
+    secondaryLabel: String? = null,
+    onSecondaryAction: (() -> Unit)? = null,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -99,8 +109,17 @@ fun ErrorState(
 
             Spacer(modifier = Modifier.height(Spacing.md))
 
-            Button(onClick = onRetry) {
-                Text(text = retryLabel)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Button(onClick = onRetry) {
+                    Text(text = retryLabel)
+                }
+
+                if (secondaryLabel != null && onSecondaryAction != null) {
+                    Spacer(modifier = Modifier.width(Spacing.sm))
+                    TextButton(onClick = onSecondaryAction) {
+                        Text(text = secondaryLabel)
+                    }
+                }
             }
         }
     }

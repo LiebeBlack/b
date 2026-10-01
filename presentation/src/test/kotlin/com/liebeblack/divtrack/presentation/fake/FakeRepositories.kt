@@ -2,8 +2,6 @@ package com.liebeblack.divtrack.presentation.fake
 
 import com.liebeblack.divtrack.core.common.result.Result
 import com.liebeblack.divtrack.domain.model.ExchangeRate
-import com.liebeblack.divtrack.domain.model.HistoryRange
-import com.liebeblack.divtrack.domain.model.RateHistoryPoint
 import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.domain.model.SyncSummary
 import com.liebeblack.divtrack.domain.model.ThemeMode
@@ -21,7 +19,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 class FakeRateRepository : RateRepository {
 
     val rates = MutableStateFlow<List<ExchangeRate>>(emptyList())
-    val history = MutableStateFlow<List<RateHistoryPoint>>(emptyList())
 
     var refreshResult: Result<SyncSummary> = Result.Success(
         SyncSummary(
@@ -31,25 +28,14 @@ class FakeRateRepository : RateRepository {
             fetchedAtMillis = 0L,
         ),
     )
-    var historyResult: Result<Int> = Result.Success(0)
-
     var refreshCalls: Int = 0
-        private set
-    var historySyncCalls: Int = 0
         private set
 
     override fun observeRates(): Flow<List<ExchangeRate>> = rates
 
-    override fun observeHistory(range: HistoryRange): Flow<List<RateHistoryPoint>> = history
-
     override suspend fun refreshRates(): Result<SyncSummary> {
         refreshCalls++
         return refreshResult
-    }
-
-    override suspend fun syncHistory(force: Boolean): Result<Int> {
-        historySyncCalls++
-        return historyResult
     }
 }
 

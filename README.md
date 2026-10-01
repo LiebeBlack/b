@@ -18,20 +18,24 @@ Lo que sigue se comprobó **ejecutando** cosas, no asumiendo:
 
 | Comprobación | Resultado |
 |---|---|
-| `GET https://ve.dolarapi.com/v1/dolares` | 200 · `oficial` **859,06** Bs · `paralelo` **954,55** Bs (2026-09-30) |
-| `GET https://ve.dolarapi.com/v1/historicos/dolares/{fuente}` | 200 · serie diaria desde 2023 (base del gráfico YTD) |
-| `GET https://api.yadio.io/exrates/USD` | 200 · `USD.VES` = 954,55 (fuente upstream del paralelo) |
+| `GET https://ve.dolarapi.com/v1/dolares` | 200 · `oficial` **860,18** Bs · `paralelo` **955,35** Bs (reverificado 2026-10-01) |
+| `GET https://api.yadio.io/exrates/USD` | 200 · `USD["VES"]` presente (fuente upstream del paralelo) |
 | `pydolarve.org` | **descartada**: el dominio no resuelve (DNS) |
 | `api.dolarvzla.com` | **descartada**: responde 401, requiere clave privada |
-| Recursos de texto | 84 cadenas referenciadas = 84 definidas · es-VE e inglés con los mismos argumentos |
-| Símbolos internos importados | 110/110 existen (los 2 restantes son `R` y `BuildConfig`, generados) |
-| Estructura del código | 122/122 archivos con `package` = ruta, llaves balanceadas, 0 imports sin uso |
-| Grafo de inyección | Cada dependencia de cada constructor tiene `@Provides`, `@Binds` o `@IntoSet` |
-| Entorno local | **sin JDK, sin Android SDK, sin Gradle**: la compilación se valida en CI |
+| `:app:assembleDebug` | **BUILD SUCCESSFUL** · APK de depuración de 22,8 MB |
+| `:app:assembleRelease` | **BUILD SUCCESSFUL** con R8 y `shrinkResources` · APK de 2,37 MB |
+| Tests JVM de los 4 módulos | **49 casos, 0 fallos** |
+| `:app:lintDebug` | 1 error pendiente: ruta de Windows sin escapar en `local.properties` (archivo local, fuera de git) |
 
-> Consecuencia práctica: **el proyecto no se ha compilado en esta máquina**. Todo el
-> toolchain está fijado a versiones verificadas contra Google Maven / Maven Central y el
-> workflow de GitHub Actions compila debug, ejecuta los tests y valida R8 en release.
+> Toolchain real montado y usado para compilar: JDK 21 (Temurin), `cmdline-tools` de 2026 con
+> el CLI nuevo, **plataforma `android-37.0`** (ojo: `platforms;android-37` no existe) y
+> `build-tools 37.0.0`.
+>
+> **Alcance de esta cifra.** La compilación y los 49 tests se ejecutaron **antes** de la última
+> pasada de cambios (la que elimina el Histórico y arregla conexión, permisos, rendimiento y el
+> leak). Esa pasada se hizo a petición explícita **sin volver a compilar ni ejecutar tests**, así
+> que hasta el próximo `./gradlew :app:assembleDebug` los números de arriba describen el estado
+> previo.
 
 ---
 
@@ -59,9 +63,9 @@ Lo que sigue se comprobó **ejecutando** cosas, no asumiendo:
 ```
 :core:common      Kotlin/JVM puro. Result<T>, DataError, formateo es-VE, parser de importes.
 :core:network     Retrofit dual (DolarAPI + Yadio), 4 interceptores, RateProvider + registro.
-:core:database    Room: tasas vigentes e histórico diario.
+:core:database    Room: tasa vigente + cierre diario (base de la flecha de tendencia).
 :core:datastore   DataStore: tema, IGTF, fuente por defecto, frecuencia de sync.
-:domain           Kotlin/JVM puro. Modelos, contratos de repositorio y 9 casos de uso.
+:domain           Kotlin/JVM puro. Modelos, contratos de repositorio y 7 casos de uso.
 :data             Implementaciones, orquestación multi-proveedor, WorkManager.
 :presentation     Compose + MVI por pantalla + tema M3 + Nav3.
 :app              Application (Hilt + WorkManager), MainActivity, recursos, R8.
@@ -103,9 +107,13 @@ verificados. Ninguna URL está escrita en el código Kotlin: entran por `BuildCo
 
 ### CI
 
-`.github/workflows/android-ci.yml` se ejecuta en cada push y en cada PR: JDK 21, SDK 37,
-compila debug, corre los tests, compila release con R8 y publica APK, reportes y métricas
-del compilador de Compose como artefactos.
+`.github/workflows/android-ci.yml` se ejecuta en cada push y en cada PR: JDK 21, plataforma
+`android-37.0` + `build-tools 37.0.0`, compila debug, corre los tests, compila release con R8
+y publica APK, reportes y métricas del compilador de Compose como artefactos.
+
+Ojo con el nombre de la plataforma en CI: la de API 37 se publica como **`platforms;android-37.0`**
+(o `platforms/android-37.0` con el CLI nuevo). `platforms;android-37` **no existe**, y era el
+motivo de que el paso de SDK no dejara nada instalado.
 
 ---
 
@@ -132,11 +140,6 @@ Aritmética del IGTF (la parte fácil de equivocar, por eso está documentada y 
 - **USD → Bs**: `netBs = usd × tasa`, `totalBs = netBs + netBs × 3 %`.
 - **Bs → USD**: el monto tecleado **es** el total; `netUsd = totalUsd / 1,03`.
 
-### Histórico
-Rangos 1M / 3M / YTD / 1A sobre la serie diaria real del proveedor, dibujada en un `Canvas`
-propio (sin librerías de gráficos). Tocar o arrastrar muestra el valor de un día concreto
-(crosshair) y debajo van las estadísticas del rango: último, mínimo, máximo y variación.
-
 ### Ajustes
 Tema (Sistema / Claro / Oscuro, aplicado al instante), tasa por defecto de la calculadora,
 IGTF por defecto, sincronización en segundo plano con su frecuencia (15/30/60/120 min),
@@ -149,24 +152,30 @@ versión instalada y atribución de proveedores.
 1. Al abrir, la UI pinta al instante lo que hay en Room.
 2. En paralelo se lanza la sincronización.
 3. Si la red responde, Room se actualiza y **las tres pantallas se repintan solas**.
-4. Si falla, los datos locales **no se tocan** y aparece el aviso
-   *"Sin conexión. Mostrando última actualización"*.
+4. Si falla, los datos locales **no se tocan** y aparece un aviso **con la causa real**:
+   *"Sin conexión a internet…"* si es conectividad, *"La fuente está fallando (HTTP 503)"* si
+   el que falla es el proveedor, *"El proveedor tardó demasiado en responder"* si es un
+   timeout. Antes todo eso se contaba como "sin conexión" y el usuario revisaba su wifi sin
+   motivo.
 5. Si un proveedor responde y otro no, la sincronización es **parcial**: se avisa y se
    conservan las tasas que sí llegaron.
 6. Si el dispositivo no tiene red, la app lo sabe **antes** de intentarlo: el aviso sale al
-   instante, sin esperar al timeout de 10 s.
+   instante, sin esperar al timeout. Y si no sabe seguro si hay red, **lo intenta igual**: un
+   falso "no hay internet" es peor que 200 ms de espera.
+7. Cuando el fallo es de conectividad, el propio aviso ofrece **"Abrir ajustes de red"**: un
+   error sin salida deja al usuario atascado.
 
 ---
 
 ## Tests
 
-55 casos JVM (sin emulador), centrados en lo que puede romperse en silencio:
+49 casos JVM (sin emulador), centrados en lo que puede romperse en silencio:
 
 | Módulo | Qué se prueba |
 |---|---|
 | `:core:common` | Parser de importes es-VE (`1.234,56` / `1,234.56` / `1.234`), formateo de moneda, `Result` y cancelación de corrutinas |
-| `:domain` | IGTF bidireccional (ejemplo del pliego: $10 a 36,5 → **375,95 Bs**), brecha, rangos del histórico |
-| `:data` | Online-First: la red escribe y no destruye caché, resolución **por tasa** entre proveedores, fallo inmediato sin conectividad, TTL de 24 h del histórico |
+| `:domain` | IGTF bidireccional (ejemplo del pliego: $10 a 36,5 → **375,95 Bs**) y brecha |
+| `:data` | Online-First: la red escribe y no destruye caché, resolución **por tasa** entre proveedores, fallo inmediato sin conectividad, cierre diario para la tendencia |
 | `:presentation` | Cálculo automático al teclear, saneado al pegar, cambio de tasa/dirección, brecha del panel, eventos one-shot, reprogramación de WorkManager |
 
 ---
@@ -191,8 +200,8 @@ manipular la interfaz:
 
 | Hallazgo | Corrección |
 |---|---|
-| **Bug funcional**: en Histórico, el índice del crosshair vivía dentro de un `derivedStateOf` que capturaba `pointCount` por valor. Quedaba congelado en la primera composición: arrastrar sobre el gráfico no seleccionaba el punto correcto al cambiar de rango. | Se eliminó esa captura y el índice se resuelve contra el rango real de puntos (`valueAt` / `getOrNull`), así que se recalcula cuando la serie cambia. |
-| **Bug visual**: el margen interno del gráfico se restaba en píxeles crudos (`14f`), de modo que en pantallas de densidad alta el trazado se pegaba al borde. | El margen es una constante en `dp` (`ChartPadding = 14.dp`) convertida con `toPx()` en cada ámbito de dibujo y de gesto. |
+| **Bug funcional** *(Histórico, pantalla ya eliminada)*: el índice del crosshair vivía dentro de un `derivedStateOf` que capturaba `pointCount` por valor y quedaba congelado en la primera composición. | Se corrigió resolviendo el índice contra la serie real; la pantalla completa se eliminó después (ver «Esta pasada»). |
+| **Bug visual** *(Histórico, pantalla ya eliminada)*: el margen interno del gráfico se restaba en píxeles crudos (`14f`), así que en densidad alta el trazado se pegaba al borde. | Se corrigió con una constante en `dp` convertida con `toPx()`; la pantalla completa se eliminó después. |
 
 Una tercera pasada, esta vez **auditando la interfaz** (¿cada control hace algo? ¿cada estado
 se pinta? ¿compila?), encontró **dos errores de compilación** que ninguna de las dos
@@ -200,9 +209,9 @@ revisiones anteriores vio porque no buscaban esto:
 
 | Hallazgo | Corrección |
 |---|---|
-| **Error de compilación**: `HistoryScreen` agrupaba las tarjetas de estadísticas con `key(...)` sin importar `androidx.compose.runtime.key`. El proyecto no compilaba. | Import añadido. |
+| **Error de compilación** *(Histórico, pantalla ya eliminada)*: `HistoryScreen` agrupaba las tarjetas de estadísticas con `key(...)` sin importar `androidx.compose.runtime.key`. El proyecto no compilaba. | Import añadido entonces; el archivo ya no existe. |
 | **Error de compilación**: `SpreadChip` pasaba dos `String?` a `stringResource(id, vararg formatArgs: Any)`, que no acepta nulos, y el `if (hasData)` no hace *smart cast*. | Dos copias locales no nulas y comprobación directa, que sí lo hace. |
-| Las series del gráfico se recordaban solo por `state.series`: al cambiar de tema claro/oscuro el gráfico conservaba los colores del tema anterior. | `colors` entra en las claves del `remember`. |
+| *(Histórico, pantalla ya eliminada)* Las series del gráfico se recordaban solo por `state.series`: al cambiar de tema, el gráfico conservaba los colores del tema anterior. | `colors` entraba en las claves del `remember`. |
 | Código muerto: `CalculatorUiState.selectedRate`, `SettingsUiState.isLoading`, `DashboardUiState.rate()`, `DivTrackColors.positive`, `ExchangeRate.changeAbsolute`, `SyncSummary.resolvedFromCacheOnly`, `CurrencyFormatters.dollars()`, `CurrencyFormatters.monthLabel()`, el endpoint `getDollar()` y un fallback redundante al resolver la tasa de la calculadora. | Eliminado. Nada de eso se leía ni se llamaba en ningún sitio, tests incluidos. |
 
 Lo que esta pasada dejó **verificado**, no corregido:
@@ -211,16 +220,33 @@ Lo que esta pasada dejó **verificado**, no corregido:
 |---|---|
 | Textos | 84 claves en es-VE y en inglés con los mismos argumentos, y las 8 llamadas con formato pasan el número exacto de argumentos |
 | Interactividad | Cada botón, selector, interruptor y gesto llega a una intención; 0 `onClick` vacíos, 0 `TODO`. El único `onRetry = {}` está en un `@Preview` |
-| Estados de pantalla | Panel y Histórico pintan carga, vacío, error y datos; Ajustes solo datos, porque su fuente es un DataStore ya en memoria |
+| Estados de pantalla | Panel pinta carga, vacío, error y datos; Ajustes solo datos, porque su fuente es un DataStore ya en memoria |
 | Grafo de inyección | 25 constructores `@Inject` y un campo: toda dependencia tiene `@Provides`, `@Binds` o `@IntoSet` |
-| Estructura | 122/122 archivos con `package` = ruta, llaves y paréntesis balanceados, 0 imports sin uso, 0 declaraciones huérfanas |
+| Estructura | 112/112 archivos con `package` = ruta, llaves y paréntesis balanceados, 0 imports sin uso, 0 declaraciones huérfanas |
+
+---
+
+## Esta pasada: Histórico fuera, conexión, permisos, rendimiento y el leak
+
+Cinco cosas, en el orden en que molestaban:
+
+| Qué | Antes | Ahora |
+|---|---|---|
+| **Sección de Histórico** | pestaña propia con gráfico `Canvas`, rangos 1M/3M/YTD/1A, estadísticas y descarga de la serie diaria | **eliminada por completo**: pantalla, gráfico, rangos, casos de uso, modelos, DTO y endpoint. La tabla de cierre diario se queda porque alimenta la flecha de tendencia del panel (ADR 11) |
+| **"Las API no funcionan / error de conexión"** | cualquier fallo se mostraba como "sin conexión"; el `ConnectivityManager` podía decir "no hay red" con wifi perfecta y entonces **ni se intentaba**; sin techo de tiempo global; se reintentaba hasta un DNS roto | conectividad que solo bloquea cuando de verdad no hay red, errores por causa real (con código HTTP), `callTimeout` de 20 s, sin reintentos de fallos deterministas (ADR 22). Las dos APIs responden 200 hoy, comprobado en vivo |
+| **Lag** | LeakCanary vigilando todos los objetos en el APK de uso diario (73 s de análisis medidos), `entryProvider` reconstruido en cada recomposición, un `DecimalFormat` nuevo por cada cifra formateada | LeakCanary apagado por defecto (`-Pdivtrack.leakcanary=true` para encenderlo) y análisis en otro proceso, grafo recordado, formateadores reutilizados, lista de pestañas construida una vez (ADR 23) |
+| **Permisos** | el APK de debug declaraba `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE` y `POST_NOTIFICATIONS` (venían de LeakCanary, no de la app) | exactamente `INTERNET` y `ACCESS_NETWORK_STATE`, documentados; tráfico en claro cerrado; y el aviso de conectividad ofrece "Abrir ajustes de red" (ADR 24) |
+| **Leak de `SystemJobService`** | se reportaba como fuga propia | diagnosticado como retención del framework (`ResourcesImpl.mAppContext`) y documentado en la ADR 21, con la traza y el porqué |
+
+Nada de esto se volvió a compilar ni se pasó por tests en esta pasada (fue a petición explícita).
+El siguiente `./gradlew :app:assembleDebug` es lo que convierte esta tabla en verificada.
 
 ---
 
 ## Web del proyecto
 
 `web/index.html` es una página **autocontenida** sobre el software: sin JavaScript, sin CDN,
-una sola petición de red (ninguna). Explica el producto con maquetas CSS de las cuatro
+una sola petición de red (ninguna). Explica el producto con maquetas CSS de las tres
 pantallas, el flujo Online-First, el diagrama de módulos, el stack con versiones, los comandos
 de compilación y una tabla honesta de **qué está comprobado y qué no**. Usa la misma paleta y
 los mismos radios que `presentation/theme`, y respeta `prefers-color-scheme`.

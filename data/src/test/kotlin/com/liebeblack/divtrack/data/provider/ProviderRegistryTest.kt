@@ -3,7 +3,6 @@ package com.liebeblack.divtrack.data.provider
 import com.liebeblack.divtrack.core.common.logging.NoOpLogger
 import com.liebeblack.divtrack.core.common.utils.SourceKeys
 import com.liebeblack.divtrack.core.network.error.NetworkErrorMapper
-import com.liebeblack.divtrack.core.network.model.RemoteHistoryPoint
 import com.liebeblack.divtrack.core.network.model.RemoteRate
 import com.liebeblack.divtrack.data.fake.FakeRateProvider
 import kotlinx.coroutines.test.runTest
@@ -81,23 +80,6 @@ class ProviderRegistryTest {
         assertEquals(1, outcome.rates.size)
         assertEquals(1, outcome.failures.size)
         assertEquals("DolarAPI", outcome.failures.single().providerId)
-    }
-
-    @Test
-    fun `el historico usa el primer proveedor que lo soporte`() = runTest {
-        val noHistory = FakeRateProvider(id = "Yadio", priority = 0)
-        val withHistory = FakeRateProvider(
-            id = "DolarAPI",
-            priority = 10,
-            history = listOf(
-                RemoteHistoryPoint(SourceKeys.OFICIAL, epochDay = 20_000L, value = 700.0),
-            ),
-        )
-
-        val outcome = registry(noHistory, withHistory).fetchHistory(SourceKeys.OFICIAL)
-
-        assertEquals("DolarAPI", outcome.providerId)
-        assertEquals(1, outcome.points.size)
     }
 
     private fun rate(sourceKey: String, value: Double) = RemoteRate(

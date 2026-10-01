@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DivTrack — tasas oficial y paralelo de Venezuela, en tiempo real</title>
-<meta name="description" content="DivTrack es una app Android nativa para seguir el dólar oficial (BCV) y el paralelo, calcular conversiones bidireccionales con IGTF y ver el histórico. Kotlin, Compose, Clean Architecture.">
+<meta name="description" content="DivTrack es una app Android nativa para seguir el dólar oficial (BCV) y el paralelo y calcular conversiones bidireccionales con IGTF. Kotlin, Compose, Clean Architecture.">
 <!--
   Página autocontenida: sin JavaScript, sin CDN, sin fuentes externas, sin peticiones de red.
   Se puede abrir desde el disco, imprimir o publicar como está. Los colores y los radios son
@@ -204,8 +204,6 @@
   .btn { background: var(--mint); color: #04120C; text-align: center; font-weight: 700; font-size: 0.8rem; border-radius: var(--radius-s); padding: 10px; }
   .legal { font-size: 0.62rem; color: var(--muted); }
   .screen caption, .cap { font-size: 0.72rem; color: var(--muted); text-align: center; margin-top: 10px; display: block; }
-  .chartbox { display: flex; align-items: center; justify-content: center; }
-  svg.chart { width: 100%; height: auto; }
   .legend { display: flex; gap: 14px; font-size: 0.66rem; color: var(--muted); }
   .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; }
 
@@ -286,9 +284,8 @@
     <p class="lede">
       DivTrack sigue en tiempo real el <strong>dólar oficial (BCV)</strong> y el
       <strong>dólar paralelo</strong>, calcula conversiones en ambos sentidos con el
-      IGTF (3 %) opcional y muestra el histórico diario. Room es la única fuente de verdad
-      para la pantalla: la app abre con datos, funciona sin conexión y nunca pierde lo que
-      ya tenía por un fallo de red.
+      IGTF (3 %) opcional. Room es la única fuente de verdad para la pantalla: la app abre
+      con datos, funciona sin conexión y nunca pierde lo que ya tenía por un fallo de red.
     </p>
 
     <div class="badges">
@@ -333,9 +330,9 @@
 
 <section id="pantallas">
   <div class="wrap">
-    <h2>Cuatro pantallas, sin jerarquía</h2>
+    <h2>Tres pantallas, sin jerarquía</h2>
     <p class="hint">
-      Barra inferior con cuatro pestañas planas. El back stack se mantiene acotado a
+      Barra inferior con tres pestañas planas. El back stack se mantiene acotado a
       <code>[raíz, pestaña]</code>, así que “atrás” vuelve al panel de tasas y desde ahí sale
       de la app, que es lo que Android espera de una barra de navegación.
     </p>
@@ -385,33 +382,25 @@
       <div class="phone">
         <div class="screen">
           <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
-          <div class="appbar"><span>Histórico</span><span class="ico">⟳</span></div>
-          <div class="seg"><span>1M</span><span class="on">3M</span><span>YTD</span><span>1A</span></div>
+          <div class="appbar"><span>DivTrack</span><span class="ico">⟳</span></div>
           <div class="mini">
-            <div class="legend"><span><i style="background:var(--sky)"></i>Oficial</span><span><i style="background:var(--amber)"></i>Paralelo</span></div>
-            <div class="chartbox">
-              <svg class="chart" viewBox="0 0 300 120" role="img" aria-label="Serie diaria del dólar oficial y del paralelo en los últimos tres meses">
-                <line x1="10" y1="20" x2="290" y2="20" stroke="var(--border)" stroke-dasharray="4 4"/>
-                <line x1="10" y1="60" x2="290" y2="60" stroke="var(--border)" stroke-dasharray="4 4"/>
-                <line x1="10" y1="100" x2="290" y2="100" stroke="var(--border)" stroke-dasharray="4 4"/>
-                <polyline fill="none" stroke="var(--sky)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                  points="10,96 45,92 80,88 115,80 150,76 185,70 220,66 255,58 290,52"/>
-                <polyline fill="none" stroke="var(--amber)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                  points="10,86 45,80 80,74 115,64 150,58 185,50 220,44 255,34 290,26"/>
-                <line x1="220" y1="20" x2="220" y2="100" stroke="var(--muted)" stroke-width="1" opacity="0.6"/>
-                <circle cx="220" cy="44" r="3.5" fill="var(--amber)"/>
-                <circle cx="220" cy="66" r="3.5" fill="var(--sky)"/>
-              </svg>
-            </div>
-            <div class="row"><span class="lab num">1 jul</span><span class="lab num">30 sep</span></div>
+            <div class="t">Sin conexión a internet</div>
+            <div class="legal" style="padding:0">Revisa tus datos o tu wifi. Los valores de abajo son la última actualización guardada.</div>
           </div>
           <div class="mini">
-            <div class="row"><span class="lab">Oficial</span><span class="delta up num">+11,4 %</span></div>
-            <div class="row" style="margin-top:6px"><span class="lab">Último / Mín / Máx</span><span class="val num">859,06 / 771,2 / 859,06</span></div>
+            <div class="t">Dólar Oficial (BCV)</div>
+            <div class="val num" style="font-size:1.5rem">860,18</div>
+            <div class="row"><span class="lab">Fuente: DolarAPI</span><span class="delta up num">+0,13 %</span></div>
           </div>
-          <div class="legal">Toca o arrastra: se muestra el valor de ese día.</div>
+          <div class="mini">
+            <div class="t">Dólar Paralelo (mercado)</div>
+            <div class="val num" style="font-size:1.5rem">955,35</div>
+            <div class="row"><span class="lab">Fuente: DolarAPI</span><span class="delta up num">+0,08 %</span></div>
+          </div>
+          <div class="btn">Reintentar</div>
+          <div class="legal">Y, cuando el fallo es de red, un atajo a los ajustes del sistema.</div>
         </div>
-        <span class="cap">Histórico con crosshair</span>
+        <span class="cap">Sin conexión: la causa real, con datos a la vista</span>
       </div>
 
       <div class="phone">
@@ -455,7 +444,7 @@
       </li>
       <li>
         <strong>Se consultan los proveedores</strong>
-        <span>DolarAPI Venezuela (oficial, paralelo e histórico) y Yadio como respaldo del paralelo. Los proveedores se descubren por inyección y se ordenan por prioridad.</span>
+        <span>DolarAPI Venezuela (oficial y paralelo) y Yadio como respaldo del paralelo. Los proveedores se descubren por inyección y se ordenan por prioridad.</span>
       </li>
       <li>
         <strong>La resolución es por tasa, no por proveedor</strong>
@@ -467,11 +456,11 @@
       </li>
       <li>
         <strong>Si falla, no se toca nada</strong>
-        <span>Se devuelve un error tipado (<code>Result.Error</code> + <code>DataError</code>), los datos locales quedan intactos y aparece “Sin conexión. Mostrando última actualización”.</span>
+        <span>Se devuelve un error tipado (<code>Result.Error</code> + <code>DataError</code>), los datos locales quedan intactos y aparece un aviso <strong>con la causa real</strong>: sin conexión, timeout o el código HTTP del proveedor. “Sin conexión” solo se dice cuando de verdad es la conexión.</span>
       </li>
       <li>
         <strong>Sin red, ni se intenta</strong>
-        <span>El observador de conectividad se consulta antes de la petición: el aviso sale al instante en lugar de esperar al timeout de 10 s, y el móvil no gasta radio en algo que ya sabía.</span>
+        <span>El observador de conectividad se consulta antes de la petición: el aviso sale al instante en lugar de esperar al timeout, y el móvil no gasta radio en algo que ya sabía. Y solo bloquea cuando <em>de verdad</em> no hay ninguna red activa: si hay cualquier duda, se intenta igual, porque un falso “no hay internet” es peor que 200 ms de espera.</span>
       </li>
     </ol>
 
@@ -480,8 +469,9 @@
         <h3>Sincronización silenciosa</h3>
         <p>
           WorkManager con restricción de red y backoff exponencial. El intervalo lo decide el
-          usuario (15 / 30 / 60 / 120 min) y la frecuencia del histórico tiene un TTL de 24 h:
-          los días pasados no cambian, así que no se vuelven a descargar.
+          usuario (15 / 30 / 60 / 120 min) y hay un techo global de 20 s por petición
+          (<code>callTimeout</code>), para que ningún reintento pueda dejar la pantalla
+          girando más de la cuenta.
         </p>
       </div>
       <div class="card">
@@ -510,7 +500,7 @@
       <div class="dialine">▼</div>
       <div class="mod"><b>:presentation</b><em>Compose · MVI por pantalla · tema M3 · Navigation 3</em></div>
       <div class="dialine">▼</div>
-      <div class="mod pure"><b>:domain</b><em>Kotlin/JVM puro · modelos, contratos y 9 casos de uso — no ve Android, ni Compose, ni Retrofit, ni Room</em></div>
+      <div class="mod pure"><b>:domain</b><em>Kotlin/JVM puro · modelos, contratos y 7 casos de uso — no ve Android, ni Compose, ni Retrofit, ni Room</em></div>
       <div class="dialine">▲</div>
       <div class="split">
         <div class="mod"><b>:data</b><em>Repositorios, orquestación multi-proveedor, WorkManager</em></div>
@@ -518,14 +508,14 @@
       </div>
       <div class="split">
         <div class="mod"><b>:core:network</b><em>Retrofit dual, 4 interceptores, proveedores</em></div>
-        <div class="mod"><b>:core:database</b><em>Room: tasa vigente + histórico diario</em></div>
+        <div class="mod"><b>:core:database</b><em>Room: tasa vigente + cierre diario</em></div>
         <div class="mod"><b>:core:datastore</b><em>Preferencias (tema, IGTF, sync)</em></div>
       </div>
     </div>
 
     <div class="grid cols-2">
       <div class="card">
-        <h3>MVI estricto, igual en las cuatro pantallas</h3>
+        <h3>MVI estricto, igual en todas las pantallas</h3>
         <p>
           <code>Contract</code> (intents + efectos), <code>UiState</code> inmutable,
           <code>ViewModel</code> que reduce y <code>Screen</code> sin estado. El estado viaja en
@@ -552,9 +542,9 @@
         <h3>Pensado para gama baja</h3>
         <p>
           Superficies planas con borde de 1 dp en lugar de elevación, esqueleto de carga sin
-          shimmer, gráfico en un único <code>Canvas</code>, flechas dibujadas con <code>Path</code>,
-          <code>derivedStateOf</code> solo donde aporta y ViewModels que se limpian al salir de
-          una pestaña.
+          shimmer, flechas dibujadas con <code>Path</code>, formateadores reutilizados en lugar
+          de crear un <code>DecimalFormat</code> por cifra, el grafo de navegación dentro de un
+          <code>remember</code> y ViewModels que se limpian al salir de una pestaña.
         </p>
       </div>
     </div>
@@ -647,15 +637,16 @@
       <table>
         <thead><tr><th>Comprobación</th><th>Resultado</th></tr></thead>
         <tbody>
-          <tr><td>APIs de tasas, probadas en vivo</td><td><span class="pill ok">OK</span> DolarAPI VE (oficial, paralelo e histórico) y Yadio responden</td></tr>
+          <tr><td>APIs de tasas, probadas en vivo</td><td><span class="pill ok">OK</span> DolarAPI VE (oficial 860,18 · paralelo 955,35) y Yadio responden 200</td></tr>
           <tr><td>Fuentes descartadas por evidencia</td><td><span class="pill ok">OK</span> <code>pydolarve.org</code> no resuelve por DNS · <code>api.dolarvzla.com</code> responde 401</td></tr>
-          <tr><td>Recursos de texto</td><td><span class="pill ok">OK</span> 84 referenciadas = 84 definidas · es-VE e inglés con los mismos argumentos</td></tr>
-          <tr><td>Estructura del código</td><td><span class="pill ok">OK</span> 122/122 archivos con <code>package</code> = ruta, llaves balanceadas, 0 imports sin uso</td></tr>
+          <tr><td>Recursos de texto</td><td><span class="pill ok">OK</span> 79 referenciadas = 79 definidas · es-VE e inglés con los mismos argumentos</td></tr>
+          <tr><td>Estructura del código</td><td><span class="pill ok">OK</span> 112/112 archivos con <code>package</code> = ruta, llaves balanceadas, 0 imports sin uso</td></tr>
           <tr><td>Grafo de inyección</td><td><span class="pill ok">OK</span> 25 clases con <code>@Inject constructor</code> más un campo <code>@Inject</code>: toda dependencia tiene proveedor</td></tr>
           <tr><td>Interfaz completa</td><td><span class="pill ok">OK</span> cada botón, selector, interruptor y gesto está cableado a una intención · 0 <code>onClick</code> vacíos, 0 <code>TODO</code></td></tr>
           <tr><td>Referencias colgantes</td><td><span class="pill ok">OK</span> 0 tras eliminar el código muerto</td></tr>
-          <tr><td>Tests</td><td><span class="pill ok">OK</span> 55 casos JVM, incluida la aritmética del IGTF y la resolución por tasa</td></tr>
-          <tr><td>Compilación real</td><td><span class="pill warn">PENDIENTE</span> el entorno local no tiene JDK ni SDK: la valida CI</td></tr>
+          <tr><td>Tests</td><td><span class="pill ok">OK</span> 49 casos JVM, incluida la aritmética del IGTF y la resolución por tasa</td></tr>
+          <tr><td>Compilación real</td><td><span class="pill ok">OK</span> <code>:app:assembleDebug</code> (22,8 MB) y <code>:app:assembleRelease</code> con R8 (2,37 MB), sobre un toolchain local real (JDK 21 + plataforma android-37.0)</td></tr>
+          <tr><td>Última pasada de cambios</td><td><span class="pill warn">SIN RE-COMPILAR</span> eliminar el Histórico y arreglar conexión, permisos, rendimiento y el leak se hizo después de esa verificación, a petición explícita de no compilar</td></tr>
         </tbody>
       </table>
     </div>
@@ -666,19 +657,21 @@
         <p>
           El parser de importes es-VE (<code>1.234,56</code> y <code>1,234.56</code>),
           la aritmética del IGTF en ambos sentidos, que la red no destruya la caché, que la
-          resolución sea por tasa, el TTL del histórico, el cálculo automático al teclear y la
-          reprogramación del trabajo periódico cuando cambian los ajustes.
+          resolución sea por tasa, que el cierre diario alimente la tendencia, el cálculo
+          automático al teclear y la reprogramación del trabajo periódico cuando cambian los
+          ajustes.
         </p>
       </div>
       <div class="card">
-        <h3>Bugs y defectos corregidos en tres pasadas</h3>
+        <h3>Bugs y defectos corregidos en varias pasadas</h3>
         <p>
-          La primera revisó el código y encontró que la calculadora ofrecía una tasa que no
-          existía todavía. La segunda siguió el recorrido del usuario y encontró el crosshair
-          del histórico congelado y el margen del gráfico en píxeles crudos. La tercera
-          auditó la interfaz y aparcó <strong>dos errores de compilación</strong>: un
-          <code>import</code> ausente y un argumento anulable pasado a <code>stringResource</code>,
-          que solo acepta valores no nulos.
+          Una revisión del código encontró que la calculadora ofrecía una tasa que no existía
+          todavía. Otra siguió el recorrido del usuario y aparcó <strong>dos errores de
+          compilación</strong> que el proyecto arrastraba. La última quitó la sección de
+          Histórico (con su gráfico, sus rangos y su descarga diaria), hizo que un fallo de red
+          se cuente por su causa real en lugar de siempre “sin conexión”, cerró los permisos
+          del APK a los dos que la app usa y apagó el vigilante de memoria que estaba pesando
+          sobre el build de uso diario.
         </p>
       </div>
     </div>
@@ -696,7 +689,7 @@
       de la del dispositivo y el esquema de Room exportado sin migración destructiva.
     </p>
     <div class="grid cols-4">
-      <div class="card"><h3>20 ADR</h3><p>En <code>docs/DECISIONS.md</code>, cada uno con su coste.</p></div>
+      <div class="card"><h3>24 ADR</h3><p>En <code>docs/DECISIONS.md</code>, cada uno con su coste.</p></div>
       <div class="card"><h3>8 módulos</h3><p>Con la dirección de dependencias impuesta por Gradle.</p></div>
       <div class="card"><h3>2 idiomas</h3><p>Español de Venezuela por defecto e inglés completo.</p></div>
       <div class="card"><h3>0 APIs hardcodeadas</h3><p>Las URLs entran por <code>BuildConfig</code>.</p></div>

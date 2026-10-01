@@ -6,6 +6,28 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+/**
+ * LeakCanary está **apagado por defecto** y se enciende a petición:
+ *
+ * ```
+ * ./gradlew :app:assembleDebug -Pdivtrack.leakcanary=true
+ * ```
+ *
+ * Por qué no se deja encendido siempre en debug:
+ *
+ * 1. **Coste real en el APK de uso diario.** LeakCanary vigila todos los objetos con
+ *    `ObjectWatcher`, y cuando algo se retiene hace un volcado de heap y lo analiza. En un
+ *    gama baja ese análisis tarda más de un minuto (medido: 73 s) y congela la app. Es una
+ *    herramienta de diagnóstico, no algo que deba estar vigilando mientras se usa la app.
+ * 2. **Permisos que no son nuestros.** Su manifiesto aporta READ_EXTERNAL_STORAGE,
+ *    WRITE_EXTERNAL_STORAGE y POST_NOTIFICATIONS, así que el APK acababa mostrando permisos
+ *    que DivTrack no usa. Apagándolo, el build declara exactamente lo que necesita.
+ * 3. **Falsos positivos del framework.** Ver la ADR 21: el caso clásico aquí es
+ *    `SystemJobService` retenido por `ResourcesImpl.mAppContext`, que es de Android, no
+ *    nuestro.
+ */
+val leakCanaryEnabled: Boolean = (findProperty("divtrack.leakcanary") as String?) == "true"
+
 android {
     namespace = "com.liebeblack.divtrack"
     compileSdk = 37
@@ -89,6 +111,12 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
-    // Solo en debug: detección de fugas de memoria en tiempo de ejecución.
-    debugImplementation(libs.leakcanary)
+    // Solo en debug, y solo cuando se pide explícitamente (ver `leakCanaryEnabled`).
+    if (leakCanaryEnabled) {
+        debugImplementation(libs.leakcanary)
+        // El análisis del heap en un proceso aparte: cuando se depura una fuga de verdad, la
+        // app se queda con el volcado y el análisis deja de robarle fotogramas al hilo
+        // principal. Es la forma documentada de que LeakCanary no afecte al rendimiento.
+        debugImplementation(libs.leakcanary.process)
+    }
 }

@@ -67,6 +67,11 @@ object NetworkModule {
     fun provideOkHttpClient(cache: Cache): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .cache(cache)
+            // `callTimeout` es el techo de la petición COMPLETA (conexión + reintentos +
+            // lectura). Es la garantía que evita el clásico "la app se quedó pensando":
+            // sin él, tres intentos con timeouts de 8/12 s podían tener la pantalla girando
+            // más de medio minuto antes de decir que no había conexión.
+            .callTimeout(AppConstants.HTTP_CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .connectTimeout(AppConstants.HTTP_CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(AppConstants.HTTP_READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(AppConstants.HTTP_WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)

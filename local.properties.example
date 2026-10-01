@@ -13,7 +13,7 @@
 # sdk.dir=C\:\\Users\\tu-usuario\\AppData\\Local\\Android\\Sdk
 
 # --- Proveedores de tasas (multi-API) ---
-# DolarAPI Venezuela: oficial (BCV) + paralelo (Yadio) + histórico diario
+# DolarAPI Venezuela: oficial (BCV) + paralelo (Yadio)
 dolarapi.baseUrl=https://ve.dolarapi.com/
 # Yadio: fuente upstream del paralelo (fallback automático del paralelo)
 yadio.baseUrl=https://api.yadio.io/

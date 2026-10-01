@@ -7,7 +7,6 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import androidx.work.workDataOf
 import com.liebeblack.divtrack.core.common.utils.AppConstants
 import com.liebeblack.divtrack.data.worker.RateSyncWorker
 import com.liebeblack.divtrack.domain.scheduler.SyncScheduler
@@ -38,7 +37,6 @@ class WorkManagerSyncScheduler @Inject constructor(
         val request = PeriodicWorkRequestBuilder<RateSyncWorker>(interval, TimeUnit.MINUTES)
             .setConstraints(defaultConstraints())
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_SECONDS, TimeUnit.SECONDS)
-            .setInputData(workDataOf(RateSyncWorker.KEY_SYNC_HISTORY to true))
             .build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(

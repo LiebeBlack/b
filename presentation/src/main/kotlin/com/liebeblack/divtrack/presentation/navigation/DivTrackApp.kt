@@ -12,6 +12,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -24,7 +25,6 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import com.liebeblack.divtrack.presentation.calculator.CalculatorRoute
 import com.liebeblack.divtrack.presentation.dashboard.DashboardRoute
-import com.liebeblack.divtrack.presentation.history.HistoryRoute
 import com.liebeblack.divtrack.presentation.settings.SettingsRoute
 import com.liebeblack.divtrack.presentation.theme.DivTrackTheme
 
@@ -58,6 +58,18 @@ private fun DivTrackNavigation(appVersion: String) {
     val backStack = rememberNavBackStack(TopLevelDestination.start.key)
     val currentKey = backStack.lastOrNull() ?: TopLevelDestination.start.key
 
+    // El proveedor de entradas se construye UNA vez. Si se creara en cada recomposición,
+    // `NavDisplay` recibiría un grafo distinto en cada pasada y volvería a resolver la
+    // entrada activa: la pestaña se reconstruiría (y perdería el scroll) cada vez que algo
+    // de arriba cambiara. Es una de las causas clásicas de "la app va lenta".
+    val entryProvider = remember(appVersion) {
+        entryProvider<NavKey> {
+            entry<DashboardKey> { DashboardRoute() }
+            entry<CalculatorKey> { CalculatorRoute() }
+            entry<SettingsKey> { SettingsRoute(appVersion = appVersion) }
+        }
+    }
+
     Scaffold(
         // Cada pantalla trae su propio Scaffold con TopAppBar, que ya aplica el inset de la
         // barra de estado. Aquí se anula para no reservar ese espacio dos veces.
@@ -89,12 +101,7 @@ private fun DivTrackNavigation(appVersion: String) {
                 // sus ViewModels se limpian (nada de vistas vivas durante toda la sesión).
                 rememberViewModelStoreNavEntryDecorator(),
             ),
-            entryProvider = entryProvider<NavKey> {
-                entry<DashboardKey> { DashboardRoute() }
-                entry<CalculatorKey> { CalculatorRoute() }
-                entry<HistoryKey> { HistoryRoute() }
-                entry<SettingsKey> { SettingsRoute(appVersion = appVersion) }
-            },
+            entryProvider = entryProvider,
         )
     }
 }

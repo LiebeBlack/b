@@ -5,7 +5,6 @@
     <!-- ============================== Navigation ============================== -->
     <string name="nav_dashboard">Rates</string>
     <string name="nav_calculator">Calculator</string>
-    <string name="nav_history">History</string>
     <string name="nav_settings">Settings</string>
 
     <!-- ============================== Dashboard ============================== -->
@@ -45,20 +44,6 @@
     <string name="copy_detail">Breakdown — %1$s | Net: $%2$s | IGTF: %3$s Bs | Total: $%4$s</string>
     <string name="copy_signature">Calculated with DivTrack</string>
 
-    <!-- ============================== History ============================== -->
-    <string name="history_title">History</string>
-    <string name="range_one_month">1M</string>
-    <string name="range_three_months">3M</string>
-    <string name="range_year_to_date">YTD</string>
-    <string name="range_one_year">1Y</string>
-    <string name="history_stat_latest">Latest</string>
-    <string name="history_stat_min">Min</string>
-    <string name="history_stat_max">Max</string>
-    <string name="history_drag_hint">Tap or drag on the chart to inspect a specific day.</string>
-    <string name="history_empty_title">No historical data</string>
-    <string name="history_empty_message">Import the daily series with the toolbar button.</string>
-    <string name="action_sync_history">Sync history</string>
-
     <!-- ============================== Settings ============================== -->
     <string name="settings_title">Settings</string>
     <string name="settings_theme">Theme</string>
@@ -87,6 +72,7 @@
     <string name="action_retry">Retry</string>
     <string name="source_oficial">Official</string>
     <string name="source_paralelo">Parallel</string>
+    <!-- Long names: only used by the clipboard text. -->
     <string name="source_oficial_long">Official (BCV)</string>
     <string name="source_paralelo_long">Parallel (market)</string>
     <string name="trend_up">Up since previous close</string>
@@ -96,6 +82,16 @@
     <string name="msg_partial_update">Partial update: one of the sources did not respond</string>
     <string name="msg_offline_showing_cache">Offline. Showing last update</string>
     <string name="msg_offline_no_data">Offline with no cached data</string>
-    <string name="msg_history_offline">Could not refresh history. Showing cached data</string>
+
+    <!-- ============================== Network errors ============================== -->
+    <string name="error_timeout">The provider took too long to respond. Try again</string>
+    <string name="error_no_connection">No internet connection. Check your data or wifi</string>
+    <string name="error_provider_down">The rate source is failing (%1$d). Try again later</string>
+    <string name="error_provider_changed">The rate source changed its address (HTTP 404)</string>
+    <string name="error_rate_limited">The source rate-limited the requests. Wait a moment</string>
+    <string name="error_http">Unexpected response from the source (HTTP %1$d)</string>
+    <string name="error_parse">The source returned data that could not be read</string>
+    <string name="error_unknown">Could not fetch the rates</string>
+    <string name="action_open_network_settings">Open network settings</string>
 
 </resources>

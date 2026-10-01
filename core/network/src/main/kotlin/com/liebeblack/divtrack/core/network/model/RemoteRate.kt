@@ -18,10 +18,3 @@ data class RemoteRateSet(
     val rates: List<RemoteRate>,
     val fetchedAtMillis: Long,
 )
-
-/** Punto de histórico ya normalizado a día (epochDay) para Room. */
-data class RemoteHistoryPoint(
-    val sourceKey: String,
-    val epochDay: Long,
-    val value: Double,
-)

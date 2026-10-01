@@ -37,8 +37,4 @@ class FakeUserPreferencesDataSource(
     override suspend fun setLastSyncAt(millis: Long) {
         state.value = state.value.copy(lastSyncAtMillis = millis)
     }
-
-    override suspend fun setLastHistorySyncAt(millis: Long) {
-        state.value = state.value.copy(lastHistorySyncAtMillis = millis)
-    }
 }

@@ -18,17 +18,15 @@ interface RateLocalDataSource {
 
     fun observeCurrentRates(): Flow<List<CurrentRateEntity>>
 
-    fun observeHistory(fromEpochDay: Long): Flow<List<RateHistoryEntity>>
-
     suspend fun upsertCurrentRates(rates: List<CurrentRateEntity>)
 
-    suspend fun upsertHistory(points: List<RateHistoryEntity>)
+    suspend fun upsertDailyCloses(closes: List<RateHistoryEntity>)
 
     suspend fun currentRate(source: String): CurrentRateEntity?
 
     suspend fun previousClose(source: String, epochDay: Long): RateHistoryEntity?
 
-    suspend fun pruneHistory(beforeEpochDay: Long): Int
+    suspend fun pruneDailyCloses(beforeEpochDay: Long): Int
 }
 
 /** Implementación real sobre Room. */
@@ -41,17 +39,14 @@ class RoomRateLocalDataSource @Inject constructor(
 
     override fun observeCurrentRates(): Flow<List<CurrentRateEntity>> = dao.observeCurrentRates()
 
-    override fun observeHistory(fromEpochDay: Long): Flow<List<RateHistoryEntity>> =
-        dao.observeHistory(fromEpochDay)
-
     override suspend fun upsertCurrentRates(rates: List<CurrentRateEntity>) {
         if (rates.isEmpty()) return
         dao.upsertCurrentRates(rates)
     }
 
-    override suspend fun upsertHistory(points: List<RateHistoryEntity>) {
-        if (points.isEmpty()) return
-        dao.upsertHistory(points)
+    override suspend fun upsertDailyCloses(closes: List<RateHistoryEntity>) {
+        if (closes.isEmpty()) return
+        dao.upsertDailyCloses(closes)
     }
 
     override suspend fun currentRate(source: String): CurrentRateEntity? = dao.currentRate(source)
@@ -59,5 +54,6 @@ class RoomRateLocalDataSource @Inject constructor(
     override suspend fun previousClose(source: String, epochDay: Long): RateHistoryEntity? =
         dao.previousClose(source, epochDay)
 
-    override suspend fun pruneHistory(beforeEpochDay: Long): Int = dao.pruneHistory(beforeEpochDay)
+    override suspend fun pruneDailyCloses(beforeEpochDay: Long): Int =
+        dao.pruneDailyCloses(beforeEpochDay)
 }

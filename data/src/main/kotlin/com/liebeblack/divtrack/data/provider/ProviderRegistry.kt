@@ -3,7 +3,6 @@ package com.liebeblack.divtrack.data.provider
 import com.liebeblack.divtrack.core.common.logging.Logger
 import com.liebeblack.divtrack.core.common.utils.SourceKeys
 import com.liebeblack.divtrack.core.network.error.NetworkErrorMapper
-import com.liebeblack.divtrack.core.network.model.RemoteHistoryPoint
 import com.liebeblack.divtrack.core.network.model.RemoteRate
 import com.liebeblack.divtrack.core.network.provider.RateProvider
 import com.liebeblack.divtrack.domain.model.ProviderFailure
@@ -28,13 +27,6 @@ data class ProviderFetchOutcome(
     val providerIds: List<String>,
     val failures: List<ProviderFailure>,
     val fetchedAtMillis: Long,
-)
-
-/** Resultado agregado de una importación de histórico. */
-data class ProviderHistoryOutcome(
-    val points: List<RemoteHistoryPoint>,
-    val providerId: String?,
-    val failures: List<ProviderFailure>,
 )
 
 /**
@@ -91,32 +83,6 @@ class ProviderRegistry @Inject constructor(
             failures = failures.toList(),
             fetchedAtMillis = fetchedAtMillis.maxOrNull() ?: 0L,
         )
-    }
-
-    suspend fun fetchHistory(sourceKey: String): ProviderHistoryOutcome {
-        val failures = mutableListOf<ProviderFailure>()
-
-        for (provider in orderedProviders) {
-            if (!provider.supportsHistory) continue
-
-            try {
-                val points = provider.fetchHistory(sourceKey)
-                if (points.isNotEmpty()) {
-                    return ProviderHistoryOutcome(
-                        points = points,
-                        providerId = provider.id,
-                        failures = failures.toList(),
-                    )
-                }
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (throwable: Throwable) {
-                failures += ProviderFailure(providerId = provider.id, error = errorMapper.map(throwable))
-                logger.warn(TAG, "Histórico falló en ${provider.id}: ${throwable.message}", throwable)
-            }
-        }
-
-        return ProviderHistoryOutcome(points = emptyList(), providerId = null, failures = failures.toList())
     }
 
     /**

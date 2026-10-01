@@ -13,11 +13,13 @@ object AppConstants {
     const val SYNC_MIN_INTERVAL_MINUTES: Int = 15
     const val SYNC_DEFAULT_INTERVAL_MINUTES: Int = 30
 
-    /** El histórico oficial/paralelo se refresca como máximo una vez al día. */
-    const val HISTORY_TTL_HOURS: Long = 24
-
-    /** Retención del histórico en Room (años). */
-    const val HISTORY_KEEP_YEARS: Long = 2
+    /**
+     * Retención del cierre diario en Room (años).
+     *
+     * Solo se guardan dos filas por día (una por fuente) y se necesitan para calcular la
+     * tendencia respecto al cierre anterior; dos años sobran y acotan la tabla.
+     */
+    const val DAILY_CLOSE_KEEP_YEARS: Long = 2
 
     const val DATABASE_NAME: String = "divtrack.db"
 
@@ -33,9 +35,18 @@ object AppConstants {
     /** Reintentos máximos del interceptor de red. */
     const val HTTP_MAX_RETRIES: Int = 2
 
-    const val HTTP_CONNECT_TIMEOUT_SECONDS: Long = 10
-    const val HTTP_READ_TIMEOUT_SECONDS: Long = 15
-    const val HTTP_WRITE_TIMEOUT_SECONDS: Long = 10
+    /**
+     * Tiempo máximo **total** de una petición (conexión + reintentos incluidos).
+     *
+     * Sin este techo, un proveedor que acepta la conexión y luego no responde encadenaba
+     * tres intentos de 10 s de conexión + 15 s de lectura y dejaba la pantalla girando casi
+     * un minuto. Con él, el peor caso está acotado y el error llega a tiempo para ser útil.
+     */
+    const val HTTP_CALL_TIMEOUT_SECONDS: Long = 20
+
+    const val HTTP_CONNECT_TIMEOUT_SECONDS: Long = 8
+    const val HTTP_READ_TIMEOUT_SECONDS: Long = 12
+    const val HTTP_WRITE_TIMEOUT_SECONDS: Long = 8
 }
 
 /**

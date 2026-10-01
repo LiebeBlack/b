@@ -40,10 +40,16 @@ aristas. Por eso:
 entrada tenga su propio `ViewModelStoreOwner`; sin ese decorador, los ViewModel quedarían
 atados a la Activity y no se limpiarían al salir de una pestaña.
 
-**Nota de diseño.** Cuatro pestañas planas: el back stack se mantiene acotado a
-`[raíz, pestaña actual]`, de modo que "atrás" vuelve al panel de tasas y desde ahí sale de
-la app. No se registra un `BackHandler` propio: `NavDisplay` ya gestiona el gesto y añadir
-otro provocaría una doble pulsación (pila vacía y contenido en blanco, un bug visible).
+**Nota de diseño.** Tres pestañas planas (Tasas, Calculadora, Ajustes): el back stack se
+mantiene acotado a `[raíz, pestaña actual]`, de modo que "atrás" vuelve al panel de tasas y
+desde ahí sale de la app. No se registra un `BackHandler` propio: `NavDisplay` ya gestiona el
+gesto y añadir otro provocaría una doble pulsación (pila vacía y contenido en blanco, un bug
+visible).
+
+**Rendimiento.** El `entryProvider` se construye dentro de un `remember`: si se creara en
+cada recomposición, `NavDisplay` recibiría un grafo nuevo cada vez y volvería a resolver la
+entrada activa (scroll perdido, pestaña reconstruida). Es un detalle pequeño con un efecto
+visible en gama baja.
 
 ---
 
@@ -72,9 +78,8 @@ prioridad) que la publique, y no exige que un mismo proveedor responda todo.
 
 | Fuente | Resultado | Decisión |
 |---|---|---|
-| `ve.dolarapi.com/v1/dolares` | 200 · oficial 859,06 · paralelo 954,55 | proveedor primario |
-| `ve.dolarapi.com/v1/historicos/dolares` | 200 · serie diaria | único con histórico: alimenta el gráfico |
-| `api.yadio.io/exrates/USD` | 200 · `USD.VES` = 954,55 | respaldo del paralelo (es la fuente upstream) |
+| `ve.dolarapi.com/v1/dolares` | 200 · oficial 860,17 · paralelo 955,35 (reverificado 2026-10-01) | proveedor primario |
+| `api.yadio.io/exrates/USD` | 200 · `USD.VES` presente en el mapa de divisas | respaldo del paralelo (es la fuente upstream) |
 | `pydolarve.org` | no resuelve por DNS | descartada |
 | `api.dolarvzla.com` | 401, requiere clave | descartada |
 
@@ -138,12 +143,11 @@ corrigió moviéndolo a `licenses/`).
 ## 9. Iconos: `material-icons-core` + `extended` solo para pestañas
 
 **Decisión.** La UI usa los iconos del paquete *core* (Refresh, Clear, Share, Warning, Info)
-y se añade *extended* únicamente para las cuatro pestañas (Calculate, Insights, TrendingUp,
-Settings).
+y se añade *extended* únicamente para las tres pestañas (Calculate, TrendingUp, Settings).
 
 **Motivo.** Los iconos de pestaña son la primera impresión de la app y merecen el icono
 correcto; el resto del proyecto no necesita 10 000 vectores. R8 elimina en release todo lo
-que no se usa, así que el coste real en el APK final son cuatro rutas.
+que no se usa, así que el coste real en el APK final son tres rutas.
 
 ---
 
@@ -158,13 +162,30 @@ sustituirlo en tests.
 
 ---
 
-## 11. Histórico con TTL de 24 h y retención de 2 años
+## 11. Fuera la sección de Histórico; el cierre diario se queda
 
-**Decisión.** La importación del histórico se salta si la última fue hace menos de 24 h
-(salvo acción manual); la tabla se poda a 2 años.
+**Decisión.** Se elimina el Histórico como funcionalidad **completa**: pantalla, gráfico
+(`RateLineChart`), selector de rangos (1M/3M/YTD/1A), tarjetas de estadísticas, pestaña en la
+barra inferior, casos de uso (`ObserveHistoryUseCase`, `SyncHistoryUseCase`), modelos de
+dominio (`HistoryRange`, `RateHistoryPoint`), el endpoint `v1/historicos/dolares/{fuente}`,
+su DTO y toda la cadena de importación con TTL.
 
-**Motivo.** El histórico de días pasados no cambia: solo el día en curso necesita refresco.
-Sin TTL, abrir la pantalla de histórico castigaría la red y la batería por nada.
+**Lo que NO se elimina, y por qué.** La tabla `rate_history` (dos filas por día, una por
+fuente) sigue existiendo y el repositorio sigue escribiendo en ella el cierre del día: es la
+única fuente del "cierre anterior" que alimenta la flecha de tendencia y la variación
+porcentual del panel. Borrarla dejaría la tendencia plana **para siempre**, que es peor que
+no tener gráfico. Lo que se eliminó es la pantalla y su importación; el dato diario se quedó
+porque sostiene otra funcionalidad que el usuario sí usa.
+
+**Nombre conservado a propósito.** La clase sigue siendo `RateHistoryEntity` y la tabla
+`rate_history` aunque el concepto ya no sea "histórico": renombrarlos obligaría a una
+migración de Room y la ADR 16 ya decidió que este proyecto no cambia el esquema sin migración
+escrita. Los métodos que quedan sí hablan claro: `upsertDailyCloses` / `pruneDailyCloses`, y
+la retención (2 años) viaja con la sincronización en lugar de vivir en un trabajo aparte, así
+que no existe ninguna ruta que escriba cierres sin aplicarles el límite.
+
+**Efecto colateral bueno.** Desaparecen del contrato público `observeHistory` y `syncHistory`,
+y con ellos un `Flow` de Room que nadie consumía, un TTL de 24 h y una poda separada.
 
 ---
 
@@ -273,3 +294,140 @@ en una disponible.
 lo ignoraba y volvía a inventarse la lista. Es el motivo por el que el estado de UI expone
 los datos "ya resueltos": si la pantalla puede recalcular una decisión, acaba
 desincronizándose.
+
+---
+
+## 21. El leak de `SystemJobService` es de Android, no nuestro
+
+**El informe.** LeakCanary 2.14, SDK 33, proceso `com.liebeblack.divtrack.debug`:
+
+```
+GC Root: System class
+├─ android.content.res.ResourcesImpl class
+│    Leaking: NO (a class is never leaking)
+│    Library leak match: static field android.content.res.ResourcesImpl#mAppContext
+│    ↓ static ResourcesImpl.mAppContext
+├─ android.app.ContextImpl instance
+│    mOuterContext instance of androidx.work.impl.background.systemjob.SystemJobService
+│    ↓ ContextImpl.mOuterContext
+╰→ androidx.work.impl.background.systemjob.SystemJobService instance
+     Leaking: YES (ObjectWatcher was watching this because ... received Service#onDestroy()
+     callback and Service not held by ActivityThread)
+```
+
+**Lectura de la traza.** En toda la cadena **no aparece ni una clase de DivTrack**: la raíz es
+una clase del framework, el nodo intermedio es un `ContextImpl` del framework y el objeto
+vigilado es un `Service` de WorkManager que el sistema creó para ejecutar el trabajo
+periódico. Además, LeakCanary **lo marca él mismo** como `Library leak match` en el borde
+`ResourcesImpl.mAppContext`.
+
+**Mecanismo real.** `ResourcesManager` (estático, en el proceso) cachea un `ResourcesImpl` por
+`ResourcesKey`, y `ResourcesImpl.mAppContext` guarda una **referencia fuerte** al `ContextImpl`
+que lo creó. Si el último `ResourcesImpl` de esa clave lo creó el contexto del servicio de
+JobScheduler, el framework retiene ese `ContextImpl` —y con él el `Service`— hasta que se cree
+otro `Resources` de la misma clave. Por eso el aviso aparece a veces y luego desaparece solo:
+se autorepara. Es un comportamiento del framework (AOSP), no un patrón de la app.
+
+**Qué se hizo y qué no.**
+
+- Lo que **no** se hizo: silenciarlo llamando a `LeakCanary.config` desde el `Application`.
+  La receta oficial (`referenceMatchers = AndroidReferenceMatchers.appDefaults + …`) exige
+  una clase `Application` propia en `src/debug` registrada en el manifiesto, y esta app tiene
+  su `Application` anotada con `@HiltAndroidApp`: Hilt genera el padre real de esa clase y
+  meter otra en medio para *apagar un aviso* es cambiar la inicialización del grafo entero
+  por ruido. No compensa el riesgo.
+- Lo que **sí** se hizo: quitar de en medio el coste real del diagnóstico. LeakCanary está
+  apagado por defecto y se enciende cuando se depura una fuga de verdad
+  (`-Pdivtrack.leakcanary=true`); entonces analiza en un proceso aparte, de modo que el
+  volcado y el análisis (medido: **73 s** en un gama baja) dejan de congelar la app. Ver
+  ADR 23.
+
+**Consecuencia.** Si al reactivar LeakCanary vuelve a aparecer **esta misma traza**, ya está
+diagnosticada: es el framework reteniendo el último `Context` que creó `Resources`, y no hay
+nada que arreglar en DivTrack. Cualquier traza nueva que **sí** mencione una clase propia
+(ViewModel, repositorio, `Context` de la Activity) es otra historia y no se tapa con esta
+conclusión.
+
+---
+
+## 22. Un error de red no es siempre "sin conexión"
+
+**El síntoma.** Cualquier fallo acababa en el mismo texto: *"Sin conexión. Mostrando última
+actualización"*. Un 404 del proveedor, un 503, un timeout o un cuerpo ilegible se contaban
+como si el teléfono estuviera desconectado, así que el usuario revisaba su wifi mientras el
+problema estaba en la API.
+
+**Decisión.** El error viaja tipado ([DataError]) y se traduce a un texto por causa
+(`DataError.toUiText()`), con el código HTTP incluido cuando lo hay. La app solo dice "sin
+conexión" cuando el fallo es de conectividad de verdad.
+
+**Y el fallo rápido se volvió prudente.** `ConnectivityObserver` se usa para no esperar un
+timeout cuando no hay red, pero **no puede** dejar la app muda: ahora solo responde `false`
+cuando el sistema no reporta **ninguna** red activa, y acepta como "con red" cualquier red con
+transporte wifi/celular/ethernet/VPN aunque la ROM no marque `NET_CAPABILITY_INTERNET` (pasa
+con VPN y portales cautivos). Un permiso revocado o una excepción al consultar el
+`ConnectivityManager` tampoco bloquean la petición: se intenta y se muestra el error real.
+
+**Tiempos acotados.** Se añadió `callTimeout` al `OkHttpClient`: la petición completa
+(conexión + reintentos + lectura) tiene un techo de 20 s. Antes, tres intentos con timeouts de
+10/15 s podían tener la pantalla girando casi un minuto. Además, `RetryInterceptor` ya no
+reintenta fallos deterministas: un DNS que no resuelve o un problema de TLS devuelven el mismo
+error 350 ms después, y el único resultado era esperar más y gastar más radio.
+
+**Por qué importa el orden.** `CacheFallbackInterceptor` sirve de la caché HTTP cuando la red
+falla, pero si no hay nada cacheado ahora lanza el **error original** en lugar de un 504
+sintético: el 504 haría que la app dijera "la fuente está fallando" cuando el problema era la
+red del teléfono.
+
+---
+
+## 23. Rendimiento: fuera lo que sobra, y a propósito
+
+**Contexto.** La app se percibía "pesada, con lag, como sin aceleración por hardware". La
+aceleración estaba activa (y ahora queda escrita en el manifiesto), así que el problema no era
+la GPU: era trabajo evitable en el hilo principal y en el de composición.
+
+**Medidas tomadas.**
+
+| Qué | Antes | Ahora |
+|---|---|---|
+| LeakCanary en debug | siempre activo: vigilaba cada objeto y analizaba el heap en la app (73 s de análisis medidos) | apagado por defecto; se enciende con `-Pdivtrack.leakcanary=true` y analiza en otro proceso |
+| Grafo de navegación | `entryProvider` reconstruido en cada recomposición | construido dentro de un `remember` |
+| Formateo de cifras | un `DecimalFormat` nuevo **por llamada** (y uno por tecla de la calculadora) | uno por hilo y por formato; los `DateTimeFormatter` (inmutables) se crean una vez |
+| Pestañas | `TopLevelDestination.entries.toList()` en cada pasada de la barra | lista construida una vez |
+| Histórico | gráfico `Canvas` con la serie YTD y una pantalla entera que descargaba datos | funcionalidad eliminada (ADR 11) |
+| Latencia de red | sin techo global: reintentos encadenados | `callTimeout` de 20 s y sin reintentos de fallos deterministas |
+| Lambdas de intención | `viewModel::onIntent` nuevo por recomposición | referencia recordada en la ruta |
+
+**Nota honesta sobre medir.** Un build `debug` de Compose es más lento por definición (sin R8,
+sin optimizaciones de release) y LeakCanary añadía su parte. Para juzgar el rendimiento de
+verdad hay que mirar el APK de release; el debug ya no lleva encima la vigilancia de objetos.
+
+---
+
+## 24. Permisos: dos, normales, y ni uno más
+
+**Decisión.** La app declara exactamente `INTERNET` y `ACCESS_NETWORK_STATE`. Los dos son
+permisos **normales**: no hay diálogo de runtime, no hay `ActivityResultContracts` y no hay
+estado de permiso que gestionar porque nunca se pide nada al usuario.
+
+**Por qué no hace falta pedir nada.** Consultar dos APIs HTTPS solo necesita `INTERNET`;
+saber si hay red para no esperar un timeout necesita `ACCESS_NETWORK_STATE`. Ni ubicación, ni
+contactos, ni almacenamiento, ni cámara, ni notificaciones (el worker de WorkManager no
+publica ninguna notificación, así que `POST_NOTIFICATIONS` no aplica).
+
+**El problema real que había.** El APK de debug declaraba `READ_EXTERNAL_STORAGE`,
+`WRITE_EXTERNAL_STORAGE` y `POST_NOTIFICATIONS`: los tres venían del manifiesto fusionado de
+LeakCanary, no de DivTrack. Un usuario que mira "Permisos" en los ajustes veía una app de
+tasas pidiendo almacenamiento y notificaciones. Al apagar LeakCanary por defecto (ADR 23)
+desaparecen solos, y lo que queda está documentado en el manifiesto: lo nuestro y lo que
+aporta WorkManager (`WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED`, `FOREGROUND_SERVICE`), que se dejan
+porque son de la librería y el trabajo periódico los necesita.
+
+**Se cierra el tráfico en claro.** `usesCleartextTraffic="false"` + `network_security_config`
+con `cleartextTrafficPermitted="false"`: si algún día un `baseUrl` pasa a `http://`, el fallo
+aparece en el primer intento en lugar de mandar tasas sin cifrar.
+
+**Y se le da salida al usuario.** Cuando el fallo es de conectividad, el estado de error ofrece
+"Abrir ajustes de red" (una `Intent` del sistema, sin permisos). Un aviso de "sin conexión" sin
+nada que pulsar deja al usuario atascado.

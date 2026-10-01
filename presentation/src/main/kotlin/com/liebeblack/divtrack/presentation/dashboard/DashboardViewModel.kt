@@ -2,6 +2,7 @@ package com.liebeblack.divtrack.presentation.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.liebeblack.divtrack.core.common.error.DataError
 import com.liebeblack.divtrack.core.common.result.Result
 import com.liebeblack.divtrack.core.common.utils.CurrencyFormatters
 import com.liebeblack.divtrack.domain.model.ExchangeRate
@@ -11,6 +12,7 @@ import com.liebeblack.divtrack.domain.usecase.ObserveRatesUseCase
 import com.liebeblack.divtrack.domain.usecase.SyncRatesUseCase
 import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.common.UiText
+import com.liebeblack.divtrack.presentation.common.toUiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.channels.BufferOverflow
@@ -31,8 +33,8 @@ import kotlinx.coroutines.launch
  * 1. Al abrir, se suscribe a Room -> la UI muestra lo último guardado al instante.
  * 2. Dispara una sincronización en segundo plano -> si la red responde, Room emite y la
  *    pantalla se repinta sola.
- * 3. Si la red falla, el estado local NO se toca y se emite un efecto para el snackbar
- *    "Sin conexión. Mostrando última actualización".
+ * 3. Si la red falla, el estado local NO se toca y se emite un efecto para el snackbar con
+ *    la causa real del fallo (sin conexión, timeout o el código HTTP del proveedor).
  */
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
@@ -79,7 +81,14 @@ class DashboardViewModel @Inject constructor(
             when (val result = syncRates()) {
                 is Result.Success -> {
                     val summary = result.data
-                    _state.update { it.copy(isRefreshing = false, isOffline = false) }
+                    _state.update {
+                        it.copy(
+                            isRefreshing = false,
+                            isOffline = false,
+                            isConnectivityProblem = false,
+                            errorText = null,
+                        )
+                    }
 
                     when {
                         summary.isPartial -> _effects.emit(
@@ -95,16 +104,32 @@ class DashboardViewModel @Inject constructor(
                 }
 
                 is Result.Error -> {
+                    val error = result.error
                     val hasCachedData = _state.value.hasData
-                    _state.update { it.copy(isRefreshing = false, isOffline = true) }
+                    val isConnectivity = error is DataError.Network
 
-                    // Mensaje exacto del spec cuando hay caché; uno accionable cuando no hay nada.
+                    _state.update {
+                        it.copy(
+                            isRefreshing = false,
+                            isOffline = true,
+                            isConnectivityProblem = isConnectivity,
+                            errorText = error.toUiText(),
+                        )
+                    }
+
+                    // No todos los fallos son "sin conexión": si el proveedor responde 503 o
+                    // la petición caduca, el usuario tiene que leer eso y no un diagnóstico
+                    // equivocado de su propia red. Cuando sí es conectividad, el mensaje
+                    // recuerda que los datos en pantalla siguen siendo válidos.
                     _effects.emit(
                         DashboardEffect.ShowMessage(
-                            if (hasCachedData) {
-                                UiText.Res(R.string.msg_offline_showing_cache)
-                            } else {
-                                UiText.Res(R.string.msg_offline_no_data)
+                            when {
+                                isConnectivity && hasCachedData ->
+                                    UiText.Res(R.string.msg_offline_showing_cache)
+
+                                isConnectivity -> UiText.Res(R.string.msg_offline_no_data)
+
+                                else -> error.toUiText()
                             },
                         ),
                     )

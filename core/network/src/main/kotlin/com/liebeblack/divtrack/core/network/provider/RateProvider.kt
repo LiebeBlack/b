@@ -1,6 +1,5 @@
 package com.liebeblack.divtrack.core.network.provider
 
-import com.liebeblack.divtrack.core.network.model.RemoteHistoryPoint
 import com.liebeblack.divtrack.core.network.model.RemoteRateSet
 
 /**
@@ -9,6 +8,10 @@ import com.liebeblack.divtrack.core.network.model.RemoteRateSet
  * Se descubren por multibinding de Hilt y se ordenan por [priority] (menor = preferido).
  * Añadir una API nueva es implementar esta interfaz y registrarla en `NetworkModule`:
  * ni el dominio ni la UI cambian.
+ *
+ * El contrato es intencionadamente mínimo: una sola llamada que devuelve las tasas
+ * vigentes. Cualquier método extra (series históricas, por ejemplo) obliga a implementarlo
+ * en todos los proveedores aunque solo uno lo use, y acaba siendo código muerto.
  */
 interface RateProvider {
 
@@ -17,11 +20,6 @@ interface RateProvider {
 
     val priority: Int
 
-    val supportsHistory: Boolean
-
     /** Lanza excepción si el proveedor falla; el registro aísla el fallo por proveedor. */
     suspend fun fetchLatest(): RemoteRateSet
-
-    /** Histórico diario, o lista vacía si el proveedor no lo ofrece. */
-    suspend fun fetchHistory(sourceKey: String): List<RemoteHistoryPoint>
 }

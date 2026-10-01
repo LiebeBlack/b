@@ -7,7 +7,6 @@ import com.liebeblack.divtrack.core.common.utils.SourceKeys
 import com.liebeblack.divtrack.core.database.entity.RateHistoryEntity
 import com.liebeblack.divtrack.core.network.error.NetworkErrorMapper
 import com.liebeblack.divtrack.core.network.model.RemoteRate
-import com.liebeblack.divtrack.core.network.model.RemoteHistoryPoint
 import com.liebeblack.divtrack.data.fake.FakeConnectivityObserver
 import com.liebeblack.divtrack.data.fake.FakeRateLocalDataSource
 import com.liebeblack.divtrack.data.fake.FakeRateProvider
@@ -31,7 +30,7 @@ import org.junit.Test
  *  1. La red nunca es la fuente de verdad: escribe en Room y Room re-emite a la UI.
  *  2. Un fallo de red no destruye los datos que el usuario ya tenía.
  *  3. La resolución es por tasa, no por proveedor: que una API caiga no deja la app vacía.
- *  4. Sin conectividad se falla al instante: ni timeout de 10 s ni peticiones inútiles.
+ *  4. Sin conectividad se falla al instante: ni timeout ni peticiones inútiles.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class RateRepositoryImplTest {
@@ -148,7 +147,7 @@ class RateRepositoryImplTest {
     }
 
     @Test
-    fun `cada sincronizacion deja el cierre provisional de hoy en el historico`() = runTest {
+    fun `cada sincronizacion deja el cierre de hoy guardado`() = runTest {
         val repository = repository(
             FakeRateProvider(
                 id = "DolarAPI",
@@ -160,16 +159,16 @@ class RateRepositoryImplTest {
         repository.refreshRates()
 
         val epochDay = clock.today().toEpochDay()
-        val point = localDataSource.history.value.single()
-        assertEquals(SourceKeys.OFICIAL, point.source)
-        assertEquals(epochDay, point.epochDay)
-        assertEquals(859.06, point.value, DELTA)
+        val close = localDataSource.dailyCloses.value.single()
+        assertEquals(SourceKeys.OFICIAL, close.source)
+        assertEquals(epochDay, close.epochDay)
+        assertEquals(859.06, close.value, DELTA)
     }
 
     @Test
     fun `la flecha de tendencia usa el cierre anterior guardado`() = runTest {
-        localDataSource.upsertHistory(
-            listOf(historyEntity(SourceKeys.OFICIAL, epochDay = clock.today().toEpochDay() - 1, value = 850.0)),
+        localDataSource.upsertDailyCloses(
+            listOf(dailyClose(SourceKeys.OFICIAL, epochDay = clock.today().toEpochDay() - 1, value = 850.0)),
         )
         val repository = repository(
             FakeRateProvider(
@@ -186,39 +185,14 @@ class RateRepositoryImplTest {
         assertEquals(9.06, 859.06 - current.previousClose!!, DELTA)
     }
 
-    @Test
-    fun `el historico respeta el ttl de 24 horas y solo importa cuando se fuerza`() = runTest {
-        preferences.setLastHistorySyncAt(clock.nowMillis)
-        val repository = repository(
-            FakeRateProvider(
-                id = "DolarAPI",
-                priority = 0,
-                rates = emptyList(),
-                history = listOf(historyPoint(SourceKeys.OFICIAL, epochDay = 20_000L, value = 700.0)),
-            ),
-        )
-
-        val skipped = repository.syncHistory(force = false)
-        assertEquals(0, (skipped as Result.Success).data)
-        assertEquals(0, localDataSource.upsertHistoryCalls)
-
-        val imported = repository.syncHistory(force = true)
-        assertEquals(1, (imported as Result.Success).data)
-        assertEquals(1, localDataSource.history.value.size)
-    }
-
     private fun rate(sourceKey: String, value: Double) = RemoteRate(
         sourceKey = sourceKey,
         value = value,
         updatedAtMillis = null,
     )
 
-    /** Punto tal como lo entrega un proveedor remoto (lo que consume [FakeRateProvider]). */
-    private fun historyPoint(sourceKey: String, epochDay: Long, value: Double) =
-        RemoteHistoryPoint(sourceKey = sourceKey, epochDay = epochDay, value = value)
-
-    /** Fila ya guardada en Room, que es lo que recibe el almacén local. */
-    private fun historyEntity(sourceKey: String, epochDay: Long, value: Double) = RateHistoryEntity(
+    /** Cierre diario ya guardado en Room, que es lo que recibe el almacén local. */
+    private fun dailyClose(sourceKey: String, epochDay: Long, value: Double) = RateHistoryEntity(
         source = sourceKey,
         epochDay = epochDay,
         value = value,

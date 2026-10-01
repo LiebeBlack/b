@@ -2,7 +2,6 @@ package com.liebeblack.divtrack.core.network.provider
 
 import com.liebeblack.divtrack.core.common.time.TimeProvider
 import com.liebeblack.divtrack.core.common.utils.SourceKeys
-import com.liebeblack.divtrack.core.network.model.RemoteHistoryPoint
 import com.liebeblack.divtrack.core.network.model.RemoteRate
 import com.liebeblack.divtrack.core.network.model.RemoteRateSet
 import com.liebeblack.divtrack.core.network.service.YadioService
@@ -11,8 +10,6 @@ import javax.inject.Inject
 /**
  * Proveedor de respaldo: publica únicamente el paralelo (es la fuente upstream de esa tasa),
  * así que si DolarAPI cae, el paralelo sigue llegando y solo se degrada el oficial.
- *
- * No ofrece histórico diario en esta app ([supportsHistory] = false).
  */
 class YadioProvider @Inject constructor(
     private val service: YadioService,
@@ -21,7 +18,6 @@ class YadioProvider @Inject constructor(
 
     override val id: String = PROVIDER_ID
     override val priority: Int = PRIORITY
-    override val supportsHistory: Boolean = false
 
     override suspend fun fetchLatest(): RemoteRateSet {
         val vesValue = service.getRates().ves
@@ -45,8 +41,6 @@ class YadioProvider @Inject constructor(
             fetchedAtMillis = timeProvider.nowMillis(),
         )
     }
-
-    override suspend fun fetchHistory(sourceKey: String): List<RemoteHistoryPoint> = emptyList()
 
     companion object {
         const val PROVIDER_ID: String = "Yadio"

@@ -8,7 +8,7 @@ import okhttp3.logging.HttpLoggingInterceptor
  * se añade a la cadena (ni coste ni posibilidad de filtrar datos de usuario).
  *
  * Nivel HEADERS: suficiente para diagnosticar (URL, códigos, tamaños) sin volcar los
- * cuerpos completos del histórico, que pueden ser grandes.
+ * cuerpos completos, y sin filtrar a Logcat ninguna tasa con su marca de tiempo.
  */
 object LoggingInterceptorFactory {
 

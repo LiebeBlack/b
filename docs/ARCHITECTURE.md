@@ -9,9 +9,9 @@ error de compilación.
 ```
 :core:common      (Kotlin/JVM puro)  Result<T>, DataError, formateo, parser de importes, reloj
 :core:network     (Android library)  Retrofit dual, interceptores, RateProvider + registro
-:core:database    (Android library)  Room: tasa vigente + histórico diario
+:core:database    (Android library)  Room: tasa vigente + cierre diario
 :core:datastore   (Android library)  DataStore: preferencias del usuario
-:domain           (Kotlin/JVM puro)  modelos, contratos, 9 casos de uso
+:domain           (Kotlin/JVM puro)  modelos, contratos, 7 casos de uso
 :data             (Android library)  repositorios, orquestación multi-proveedor, WorkManager
 :presentation     (Android library)  Compose + MVI + tema + Navigation 3
 :app              (Android app)      Application, MainActivity, recursos, R8
@@ -54,7 +54,8 @@ Consecuencias reales:
 
 1. **Nunca hay estado "cargando" que borre la pantalla.** La UI ya tiene datos locales.
 2. **Un fallo de red no modifica nada.** El repositorio devuelve `Result.Error` y no toca
-   Room; la pantalla conserva sus tarjetas y aparece el aviso de sin conexión.
+   Room; la pantalla conserva sus tarjetas y aparece el aviso **con la causa real** (sin
+   conexión, timeout o el código HTTP del proveedor), no siempre "sin conexión".
 3. **La sincronización de fondo actualiza las tres pantallas sin código extra:** escribe en
    Room, Room re-emite, Compose repinta.
 
@@ -102,8 +103,11 @@ XxxScreen.kt      XxxRoute (única función que toca el ViewModel) + XxxScreen (
   nadie calcula; por eso el `derivedStateOf` de la pantalla es la pieza crítica que pide el
   pliego (y está implementado con `rememberUpdatedState`, porque sin él capturaría el
   estado de la primera composición).
-- Histórico: se re-observa la serie con `collectLatest` al cambiar de rango (nunca dos
-  consultas vivas) y el detalle del día seleccionado se deriva con `derivedStateOf`.
+- Ajustes: reflejo directo de DataStore (`map` + `stateIn`); no hay estado local duplicado,
+  así que la preferencia y la pantalla no pueden desincronizarse.
+- Errores: el fallo viaja tipado (`DataError`) y se traduce a un texto por causa
+  (`DataError.toUiText()`). El estado de UI guarda el texto ya resuelto y si el problema fue
+  de conectividad, que es lo que decide si se ofrece "Abrir ajustes de red".
 
 ---
 
@@ -125,8 +129,19 @@ Orden de interceptores, de fuera hacia dentro:
 `SerializationException`, etc. De ahí hacia arriba todo habla `Result<T>` + `DataError`.
 
 Además, `RateRepositoryImpl` consulta `ConnectivityObserver` **antes** de lanzar la petición:
-si no hay red, devuelve el error de inmediato en lugar de esperar al timeout de 10 s. El
-usuario ve el aviso instantáneo y el dispositivo no gasta radio ni batería intentándolo.
+si no hay red, devuelve el error de inmediato en lugar de esperar al timeout. El usuario ve el
+aviso instantáneo y el dispositivo no gasta radio ni batería intentándolo.
+
+Piezas que hacen que ese atajo no se vuelva en contra:
+
+- `ConnectivityObserver` solo dice "no hay red" cuando **no hay ninguna red activa**. En
+  cualquier duda responde "sí" y deja decidir a OkHttp: un falso negativo aquí dejaría la app
+  sin datos con wifi perfecta, que es exactamente el fallo que había.
+- `callTimeout` de 20 s en el `OkHttpClient`: la petición completa tiene techo, así que ni los
+  reintentos ni la caché pueden alargar el spinner más de la cuenta.
+- `CacheFallbackInterceptor` propaga el **error original** cuando no hay nada que cachear, en
+  lugar de un 504 sintético (que haría decir "el proveedor está fallando" cuando el problema
+  era la red del teléfono).
 
 ---
 
@@ -136,8 +151,11 @@ usuario ve el aviso instantáneo y el dispositivo no gasta radio ni batería int
 |---|---|
 | Sin sombras: superficies planas con borde de 1 dp | La elevación se dibuja en cada fotograma |
 | Esqueleto de carga estático, sin shimmer | Una animación infinita consume presupuesto de fotogramas para nada |
-| Gráfico en un único `Canvas` | Sin librería de charts y sin asignaciones por fotograma (`remember(series)`) |
 | Flechas de tendencia dibujadas con `Path` | Más barato que medir y componer un `ImageVector` |
+| `entryProvider` dentro de un `remember` | Un grafo nuevo por recomposición obliga a `NavDisplay` a re-resolver la entrada activa |
+| `DecimalFormat` reutilizado por hilo y formato | Se construía uno por cada cifra formateada (decenas por segundo al teclear) |
+| LeakCanary apagado por defecto y análisis en otro proceso | Vigilaba cada objeto en el APK de uso diario; su análisis tardaba 73 s en un gama baja |
+| `callTimeout` de 20 s | Sin techo global, tres intentos podían dejar la pantalla girando casi un minuto |
 | `@Immutable` en los modelos de estado | Saltos de recomposición reales |
 | `key` por fuente en las listas | Actualizar una tasa no recompone la otra tarjeta |
 | `keyboardType = Decimal` y saneado en el ViewModel | El campo no pelea con el cursor y el cálculo no bloquea el hilo de UI |
@@ -151,7 +169,7 @@ publican como artefacto: son la prueba objetiva de estabilidad (clases inestable
 
 ## 6. Navegación (Navigation 3)
 
-Cuatro pestañas planas sin jerarquía. `NavDisplay` con un back stack persistente
+Tres pestañas planas sin jerarquía. `NavDisplay` con un back stack persistente
 (`rememberNavBackStack`), decoradores de estado guardado y de `ViewModelStoreOwner` por
 entrada, y `entryProvider` tipado con claves `@Serializable` (`data object : NavKey`).
 

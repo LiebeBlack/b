@@ -2,7 +2,7 @@ package com.liebeblack.divtrack.core.network.di
 
 import javax.inject.Qualifier
 
-/** Retrofit apuntando a DolarAPI Venezuela (oficial + paralelo + histórico). */
+/** Retrofit apuntando a DolarAPI Venezuela (oficial + paralelo). */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class DolarApiRetrofit

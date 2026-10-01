@@ -37,8 +37,6 @@ interface UserPreferencesDataSource {
     suspend fun setSyncIntervalMinutes(minutes: Int)
 
     suspend fun setLastSyncAt(millis: Long)
-
-    suspend fun setLastHistorySyncAt(millis: Long)
 }
 
 @Singleton
@@ -81,10 +79,6 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         dataStore.edit { it[Keys.LAST_SYNC_AT] = millis }
     }
 
-    override suspend fun setLastHistorySyncAt(millis: Long) {
-        dataStore.edit { it[Keys.LAST_HISTORY_SYNC_AT] = millis }
-    }
-
     private fun normaliseThemeMode(value: String): String = when (value.uppercase()) {
         UserPreferences.THEME_LIGHT -> UserPreferences.THEME_LIGHT
         UserPreferences.THEME_DARK -> UserPreferences.THEME_DARK
@@ -99,7 +93,6 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         syncIntervalMinutes = this[Keys.SYNC_INTERVAL]
             ?: AppConstants.SYNC_DEFAULT_INTERVAL_MINUTES,
         lastSyncAtMillis = this[Keys.LAST_SYNC_AT],
-        lastHistorySyncAtMillis = this[Keys.LAST_HISTORY_SYNC_AT],
     )
 
     private object Keys {
@@ -109,6 +102,5 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         val AUTO_SYNC = booleanPreferencesKey("auto_sync_enabled")
         val SYNC_INTERVAL = intPreferencesKey("sync_interval_minutes")
         val LAST_SYNC_AT = longPreferencesKey("last_sync_at")
-        val LAST_HISTORY_SYNC_AT = longPreferencesKey("last_history_sync_at")
     }
 }

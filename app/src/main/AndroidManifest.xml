@@ -3,10 +3,30 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!--
-      Solo dos permisos, ambos normales (no peligrosos): no hay nada que pedir al usuario.
-        · INTERNET           -> consultar las APIs de tasas.
+      ============================ Permisos ============================
+
+      La app solo declara DOS permisos propios, y los dos son normales (no peligrosos):
+      no hay ningún diálogo de permiso que mostrar en tiempo de ejecución.
+
+        · INTERNET             -> consultar las APIs de tasas.
         · ACCESS_NETWORK_STATE -> ConnectivityObserver, para no intentar red cuando no hay.
-      La app no pide ubicación, contactos, almacenamiento ni cámara.
+
+      La app NO pide ubicación, contactos, almacenamiento, cámara ni notificaciones. Si algún
+      día el APK muestra en "Permisos" algo que no sea de esta lista, viene de una librería y
+      hay que decidir si se acepta o se elimina con tools:node="remove".
+
+      ── Permisos que llegan del manifiesto fusionado ────────────────────────────────────
+      WorkManager (sincronización en segundo plano) aporta:
+        · WAKE_LOCK            -> mantiene la CPU despierta durante el trabajo.
+        · RECEIVE_BOOT_COMPLETED -> reprograma el trabajo periódico tras reiniciar.
+        · FOREGROUND_SERVICE    -> lo necesita su SystemForegroundService, declarado por
+                                   la propia librería; si se quita solo el permiso, la app
+                                   puede morir con SecurityException si algún día se usa
+                                   trabajo expeditivo. Se dejan, son de la librería.
+      LeakCanary, cuando está activo (solo en debug y solo si se pide con
+      -Pdivtrack.leakcanary=true), aporta READ/WRITE_EXTERNAL_STORAGE y POST_NOTIFICATIONS
+      desde su propio manifiesto. Por eso está apagado por defecto: en un build de uso diario
+      no debe aparecer ni un permiso que la app no use. Ver app/build.gradle.kts.
     -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -17,11 +37,27 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="@xml/backup_rules"
+        android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.DivTrack.Starting">
+        android:theme="@style/Theme.DivTrack.Starting"
+        android:usesCleartextTraffic="false">
+
+        <!--
+          Aceleración por hardware explícita. Es el valor por defecto en cualquier app con
+          targetSdk moderno, así que esto no cambia nada en el dispositivo: existe para que
+          quede escrito y para que nadie (ni una librería al fusionar manifiestos) lo apague
+          por accidente. Si la app "va lenta", el problema no está aquí: Compose siempre
+          dibuja en la GPU, y lo que se ve como falta de aceleración es jank de
+          recomposición o trabajo en el hilo principal.
+
+          `usesCleartextTraffic="false"` + `networkSecurityConfig`: todo el tráfico es HTTPS
+          (las dos APIs de tasas lo son) y no queremos que un futuro cambio de endpoint lo
+          degrade a HTTP en silencio.
+        -->
 
         <!--
           WorkManager con inicialización bajo demanda: DivTrackApplication implementa

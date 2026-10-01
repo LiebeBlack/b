@@ -41,6 +41,7 @@ import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.common.CollectEffects
 import com.liebeblack.divtrack.presentation.common.asString
 import com.liebeblack.divtrack.presentation.common.labelRes
+import com.liebeblack.divtrack.presentation.common.openNetworkSettings
 import com.liebeblack.divtrack.presentation.components.EmptyState
 import com.liebeblack.divtrack.presentation.components.ErrorState
 import com.liebeblack.divtrack.presentation.components.LoadingState
@@ -59,6 +60,11 @@ fun DashboardRoute(viewModel: DashboardViewModel = hiltViewModel()) {
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
+    // Referencia recordada a propósito: `viewModel::onIntent` crea un objeto nuevo en cada
+    // recomposición, y eso basta para que Compose considere "distinto" el parámetro y no
+    // pueda saltarse el trabajo de las pantallas que lo reciben.
+    val onIntent = remember(viewModel) { viewModel::onIntent }
+
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
             is DashboardEffect.ShowMessage ->
@@ -69,7 +75,7 @@ fun DashboardRoute(viewModel: DashboardViewModel = hiltViewModel()) {
     DashboardScreen(
         state = state,
         snackbarHostState = snackbarHostState,
-        onIntent = viewModel::onIntent,
+        onIntent = onIntent,
     )
 }
 
@@ -82,6 +88,12 @@ fun DashboardScreen(
     modifier: Modifier = Modifier,
 ) {
     val colors = DivTrackThemeTokens.colors
+    val context = LocalContext.current
+
+    // El texto del error se resuelve una vez por estado, no en cada tarjeta.
+    val errorMessage = state.errorText?.asString(context)
+    val onRetry = remember(onIntent) { { onIntent(DashboardIntent.Retry) } }
+    val onOpenNetworkSettings = remember(context) { { context.openNetworkSettings() } }
 
     Scaffold(
         modifier = modifier,
@@ -119,7 +131,10 @@ fun DashboardScreen(
                 // es lo que el usuario necesita saber mientras mira tasas que no se actualizan.
                 if (state.isOffline && state.hasData) {
                     item(key = "offline") {
-                        OfflineBanner(message = stringResource(R.string.msg_offline_showing_cache))
+                        OfflineBanner(
+                            message = errorMessage
+                                ?: stringResource(R.string.msg_offline_showing_cache),
+                        )
                     }
                 }
 
@@ -130,9 +145,22 @@ fun DashboardScreen(
                 if (!state.hasData && !state.isLoading) {
                     item(key = "error") {
                         ErrorState(
-                            message = stringResource(R.string.msg_offline_no_data),
+                            message = errorMessage
+                                ?: stringResource(R.string.msg_offline_no_data),
                             retryLabel = stringResource(R.string.action_retry),
-                            onRetry = { onIntent(DashboardIntent.Retry) },
+                            onRetry = onRetry,
+                            // Solo se ofrece el atajo si el fallo es de red: cuando el que
+                            // falla es el proveedor, los ajustes del teléfono no arreglan nada.
+                            secondaryLabel = if (state.isConnectivityProblem) {
+                                stringResource(R.string.action_open_network_settings)
+                            } else {
+                                null
+                            },
+                            onSecondaryAction = if (state.isConnectivityProblem) {
+                                onOpenNetworkSettings
+                            } else {
+                                null
+                            },
                         )
                     }
                     item(key = "empty") {

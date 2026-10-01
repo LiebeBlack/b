@@ -29,10 +29,4 @@ internal object IsoParsers {
             }
             .getOrNull()
     }
-
-    fun localDateOrNull(raw: String?): LocalDate? {
-        val value = raw?.trim().orEmpty()
-        if (value.isEmpty()) return null
-        return runCatching { LocalDate.parse(value) }.getOrNull()
-    }
 }

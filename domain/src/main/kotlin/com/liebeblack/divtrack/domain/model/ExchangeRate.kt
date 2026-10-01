@@ -7,8 +7,8 @@ enum class TrendDirection { UP, DOWN, FLAT }
  * Tasa de cambio con su contexto de mercado.
  *
  * @param value valor vigente en Bs por USD.
- * @param previousClose último cierre anterior a hoy (hora de Venezuela); `null` cuando
- * todavía no hay histórico suficiente.
+ * @param previousClose último cierre anterior a hoy (hora de Venezuela); `null` mientras la
+ * app no tenga guardado ningún cierre de un día anterior.
  * @param providerId API que resolvió la tasa: la UI muestra la procedencia.
  * @param updatedAtMillis marca de tiempo publicada por el proveedor (puede no existir).
  * @param fetchedAtMillis cuándo la app obtuvo el dato.

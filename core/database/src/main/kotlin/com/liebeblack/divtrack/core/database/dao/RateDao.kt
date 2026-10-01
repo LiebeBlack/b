@@ -24,12 +24,6 @@ interface RateDao {
     @Upsert
     suspend fun upsertCurrentRates(rates: List<CurrentRateEntity>)
 
-    @Query(
-        "SELECT * FROM ${RateHistoryEntity.TABLE_NAME} " +
-            "WHERE epoch_day >= :fromEpochDay ORDER BY epoch_day ASC",
-    )
-    fun observeHistory(fromEpochDay: Long): Flow<List<RateHistoryEntity>>
-
     /** Último cierre anterior a hoy para una fuente: alimenta la flecha de tendencia. */
     @Query(
         "SELECT * FROM ${RateHistoryEntity.TABLE_NAME} " +
@@ -38,9 +32,15 @@ interface RateDao {
     )
     suspend fun previousClose(source: String, epochDay: Long): RateHistoryEntity?
 
+    /**
+     * Escribe (o corrige) el cierre del día en curso. Idempotente por `(source, epoch_day)`.
+     *
+     * No hay consulta de lectura de la serie: la pantalla que la usaba ya no existe, así que
+     * este DAO no expone ningún `Flow` de cierres.
+     */
     @Upsert
-    suspend fun upsertHistory(points: List<RateHistoryEntity>)
+    suspend fun upsertDailyCloses(closes: List<RateHistoryEntity>)
 
     @Query("DELETE FROM ${RateHistoryEntity.TABLE_NAME} WHERE epoch_day < :beforeEpochDay")
-    suspend fun pruneHistory(beforeEpochDay: Long): Int
+    suspend fun pruneDailyCloses(beforeEpochDay: Long): Int
 }
