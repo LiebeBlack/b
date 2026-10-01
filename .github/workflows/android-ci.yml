@@ -34,23 +34,16 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Android SDK: licencias y plataforma
+      - name: Android SDK y licencias
         run: |
-          set -e
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          SDKMANAGER="$(find "$SDK/cmdline-tools" -maxdepth 3 -name sdkmanager -type f 2>/dev/null | sort | tail -n1 || true)"
-          ANDROID_CLI="$(find "$SDK/cmdline-tools" -maxdepth 3 -name android -type f 2>/dev/null | sort | tail -n1 || true)"
+          SDK="/usr/local/lib/android/sdk"
           echo "SDK: $SDK"
-          
-          if [ -n "$ANDROID_CLI" ]; then
-            "$ANDROID_CLI" --sdk="$SDK" sdk install "platforms/android-${ANDROID_API}" "build-tools/${ANDROID_BUILD_TOOLS}" "platform-tools" || true
-            "$ANDROID_CLI" --sdk="$SDK" sdk install --licenses || true
-          elif [ -n "$SDKMANAGER" ]; then
-            "$SDKMANAGER" --version || true
-            yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
-            "$SDKMANAGER" --install "platforms;android-${ANDROID_API}" "build-tools;${ANDROID_BUILD_TOOLS}" "platform-tools" || true
-          else
-            echo "Sin cmdline-tools: usando SDK preinstalado."
+          if [ -d "$SDK/cmdline-tools" ]; then
+            SDKMANAGER=$(find "$SDK/cmdline-tools" -maxdepth 3 -name sdkmanager -type f | tail -n 1)
+            if [ -n "$SDKMANAGER" ]; then
+              yes | "$SDKMANAGER" --licenses || true
+              "$SDKMANAGER" --install "platforms;android-37.0" "build-tools;37.0.0" "platform-tools" || true
+            fi
           fi
 
       - name: Gradle y caché
