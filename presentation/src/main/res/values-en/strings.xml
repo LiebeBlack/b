@@ -86,6 +86,9 @@
     <!-- ============================== States and messages ============================== -->
     <string name="action_refresh">Refresh rates</string>
     <string name="action_retry">Retry</string>
+
+    <!-- Calculator: sync -->
+    <string name="calculator_sync_failed">Couldn't refresh the rate: using the last saved one</string>
     <string name="source_oficial">Official</string>
     <string name="source_paralelo">Parallel</string>
     <!-- Long names: only used by the clipboard text. -->

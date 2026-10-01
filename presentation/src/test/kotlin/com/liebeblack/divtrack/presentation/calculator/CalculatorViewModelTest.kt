@@ -5,6 +5,7 @@ import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.domain.usecase.CalculateConversionUseCase
 import com.liebeblack.divtrack.domain.usecase.ObserveRatesUseCase
 import com.liebeblack.divtrack.domain.usecase.ObserveSettingsUseCase
+import com.liebeblack.divtrack.domain.usecase.SyncRatesUseCase
 import com.liebeblack.divtrack.domain.usecase.UpdateSettingsUseCase
 import com.liebeblack.divtrack.presentation.fake.FakeRateRepository
 import com.liebeblack.divtrack.presentation.fake.FakeSettingsRepository
@@ -42,6 +43,51 @@ class CalculatorViewModelTest {
             rate(RateSource.OFICIAL, 36.5, previousClose = 36.4),
             rate(RateSource.PARALELO, 954.55, previousClose = 950.0),
         )
+    }
+
+    @Test
+    fun `al abrir la calculadora se sincroniza contra los proveedores`() = runTest {
+        val viewModel = createViewModel()
+        collectState(viewModel)
+        advanceUntilIdle()
+
+        // El bug corregido: la calculadora solo observaba Room, así que entrar directo aquí
+        // calculaba con la tasa guardada aunque llevara horas vieja.
+        assertEquals(1, rateRepository.refreshCalls)
+    }
+
+    @Test
+    fun `el intent de refresco fuerza una nueva pasada`() = runTest {
+        val viewModel = createViewModel()
+        collectState(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onIntent(CalculatorIntent.Refresh)
+        advanceUntilIdle()
+
+        assertEquals(2, rateRepository.refreshCalls)
+    }
+
+    @Test
+    fun `la fila de tasa muestra la edad del dato publicado`() = runTest {
+        rateRepository.rates.value = listOf(
+            rate(RateSource.OFICIAL, 36.5, previousClose = null, updatedAtMillis = 1_800_000_000_000L),
+        )
+        val viewModel = createViewModel()
+        collectState(viewModel)
+
+        val state = viewModel.state.value
+
+        // 1,8e12 ms = 15 ene 2027 08:00 UTC = 04:00 en Caracas (el formato de la app).
+        assertEquals("15 ene · 04:00", state.selectedRateAgeText)
+    }
+
+    @Test
+    fun `sin marca de tiempo del proveedor no se inventa edad`() = runTest {
+        val viewModel = createViewModel()
+        collectState(viewModel)
+
+        assertEquals(null, viewModel.state.value.selectedRateAgeText)
     }
 
     @Test
@@ -154,6 +200,7 @@ class CalculatorViewModelTest {
         observeSettings = ObserveSettingsUseCase(settingsRepository),
         updateSettings = UpdateSettingsUseCase(settingsRepository),
         calculateConversion = CalculateConversionUseCase(),
+        syncRates = SyncRatesUseCase(rateRepository),
     )
 
     /**
@@ -171,12 +218,17 @@ class CalculatorViewModelTest {
         advanceUntilIdle()
     }
 
-    private fun rate(source: RateSource, value: Double, previousClose: Double?) = ExchangeRate(
+    private fun rate(
+        source: RateSource,
+        value: Double,
+        previousClose: Double?,
+        updatedAtMillis: Long? = null,
+    ) = ExchangeRate(
         source = source,
         value = value,
         previousClose = previousClose,
         providerId = "DolarAPI",
-        updatedAtMillis = null,
+        updatedAtMillis = updatedAtMillis,
         fetchedAtMillis = 0L,
     )
 }

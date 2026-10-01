@@ -2,6 +2,7 @@ package com.liebeblack.divtrack.presentation.calculator
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.liebeblack.divtrack.core.common.result.Result
 import com.liebeblack.divtrack.core.common.utils.AppConstants
 import com.liebeblack.divtrack.core.common.utils.CurrencyFormatters
 import com.liebeblack.divtrack.core.common.utils.NumberParsing
@@ -12,8 +13,12 @@ import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.domain.usecase.CalculateConversionUseCase
 import com.liebeblack.divtrack.domain.usecase.ObserveRatesUseCase
 import com.liebeblack.divtrack.domain.usecase.ObserveSettingsUseCase
+import com.liebeblack.divtrack.domain.usecase.SyncRatesUseCase
 import com.liebeblack.divtrack.domain.usecase.UpdateSettingsUseCase
+import com.liebeblack.divtrack.presentation.R
+import com.liebeblack.divtrack.presentation.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -35,6 +40,13 @@ import kotlinx.coroutines.launch
  *
  * El saneado del texto (`NumberParsing.sanitizeAmountInput`) hace que pegar "1.234,56" o
  * escribir "1234,5" funcione sin que el usuario pelee con el formato.
+ *
+ * **La calculadora también sincroniza.** La tasa que usa sale de Room, y Room solo cambia
+ * si alguien escribe: si esta pantalla no disparara la sincronización, entrar directo aquí
+ * (o volver horas después) calcularía con la tasa guardada aunque llevara horas vieja, sin
+ * aviso ni forma de refrescar. Por eso, al abrir y al pulsar "Reintentar/Actualizar" se
+ * fuerza la pasada contra los proveedores: si falla, se usa la guardada y se avisa sin
+ * tocar el cálculo que ya está en pantalla.
  */
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
@@ -42,6 +54,7 @@ class CalculatorViewModel @Inject constructor(
     private val observeSettings: ObserveSettingsUseCase,
     private val updateSettings: UpdateSettingsUseCase,
     private val calculateConversion: CalculateConversionUseCase,
+    private val syncRates: SyncRatesUseCase,
 ) : ViewModel() {
 
     private val inputText = MutableStateFlow("")
@@ -49,6 +62,7 @@ class CalculatorViewModel @Inject constructor(
     private val selectedSource = MutableStateFlow<RateSource?>(null)
     private val igtfEnabled = MutableStateFlow<Boolean?>(null)
     private val availableRates = MutableStateFlow<List<ExchangeRate>>(emptyList())
+    private val isSyncing = MutableStateFlow(false)
 
     private val _effects = MutableSharedFlow<CalculatorEffect>(
         extraBufferCapacity = 1,
@@ -56,19 +70,35 @@ class CalculatorViewModel @Inject constructor(
     )
     val effects: SharedFlow<CalculatorEffect> = _effects.asSharedFlow()
 
-    val state: StateFlow<CalculatorUiState> = combine(
+    // `combine` tipado solo admite 5 flujos: los datos del cálculo viajan agrupados en un
+    // snapshot y el estado de sincronización va fuera.
+    private val calculationInputs = combine(
         inputText,
         direction,
         selectedSource,
         igtfEnabled,
         availableRates,
     ) { input, currentDirection, source, igtf, rates ->
-        buildState(
+        CalculatorInputs(
             input = input,
             direction = currentDirection,
-            requestedSource = source,
+            source = source,
             igtf = igtf,
             rates = rates,
+        )
+    }
+
+    val state: StateFlow<CalculatorUiState> = combine(
+        calculationInputs,
+        isSyncing,
+    ) { inputs, syncing ->
+        buildState(
+            input = inputs.input,
+            direction = inputs.direction,
+            requestedSource = inputs.source,
+            igtf = inputs.igtf,
+            rates = inputs.rates,
+            isSyncing = syncing,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -89,6 +119,10 @@ class CalculatorViewModel @Inject constructor(
                 if (igtfEnabled.value == null) igtfEnabled.value = settings.igtfEnabled
             }
         }
+
+        // Asegura que el cálculo parta de la tasa del día: sin esto, entrar directo a la
+        // calculadora usaría la última fila de Room aunque llevara horas vieja.
+        refresh()
     }
 
     fun onIntent(intent: CalculatorIntent) {
@@ -98,6 +132,8 @@ class CalculatorViewModel @Inject constructor(
             }
 
             is CalculatorIntent.SelectSource -> selectedSource.value = intent.source
+
+            CalculatorIntent.Refresh -> refresh(isUserInitiated = true)
 
             CalculatorIntent.SwapDirection -> {
                 direction.value = when (direction.value) {
@@ -114,6 +150,26 @@ class CalculatorViewModel @Inject constructor(
             CalculatorIntent.ClearAmount -> inputText.value = ""
 
             CalculatorIntent.CopyBreakdown -> copyBreakdown()
+        }
+    }
+
+    /**
+     * Sincroniza contra los proveedores. El mutex del repositorio la hace idempotente con la
+     * del dashboard y con WorkManager: si alguien ya está sincronizando, esta espera y no
+     * duplica trabajo.
+     */
+    private fun refresh(isUserInitiated: Boolean = false) {
+        viewModelScope.launch {
+            isSyncing.value = true
+            val result = syncRates()
+            isSyncing.value = false
+
+            if (result is Result.Error && isUserInitiated) {
+                _effects.emit(
+                    CalculatorEffect.ShowMessage(UiText.Res(R.string.calculator_sync_failed)),
+                )
+            }
+            // El éxito no necesita efecto: Room emite y el `combine` recalcula solo.
         }
     }
 
@@ -147,6 +203,7 @@ class CalculatorViewModel @Inject constructor(
         requestedSource: RateSource?,
         igtf: Boolean?,
         rates: List<ExchangeRate>,
+        isSyncing: Boolean,
     ): CalculatorUiState {
         val options = rates.map { rate ->
             RateOptionUi(
@@ -174,12 +231,19 @@ class CalculatorViewModel @Inject constructor(
             igtfEnabled = igtfEnabledValue,
         )
 
+        // La fila "Tasa: X" también cuenta la edad del dato: una tasa de ayer es el motivo
+        // nº1 de que las cuentas "no salgan", y no hay que dejar que se lea como actual.
+        val selectedRateAgeText = rates.firstOrNull { rate -> rate.source == source }
+            ?.let { rate -> rate.updatedAtMillis?.let { millis -> formatUpdatedAt(millis) } }
+
         return CalculatorUiState(
             inputText = input,
             direction = direction,
             selectedSource = source,
             rateOptions = options,
             selectedRateText = selectedRate?.let { CurrencyFormatters.amount(it) } ?: "—",
+            selectedRateAgeText = selectedRateAgeText,
+            isSyncing = isSyncing,
             igtfEnabled = igtfEnabledValue,
             igtfRateText = AppConstants.IGTF_LABEL,
             netUsdText = conversion?.let { CurrencyFormatters.amount(it.netUsd) } ?: "—",
@@ -191,6 +255,19 @@ class CalculatorViewModel @Inject constructor(
             hasRate = selectedRate != null,
         )
     }
+
+    /** Marca de tiempo del proveedor, en el formato es-VE de la app; vacío si falla. */
+    private fun formatUpdatedAt(millis: Long): String =
+        runCatching { CurrencyFormatters.timestamp(Instant.ofEpochMilli(millis)) }.getOrDefault("")
+
+    /** Los cinco datos que alimentan el cálculo, agrupados para `combine`. */
+    private data class CalculatorInputs(
+        val input: String,
+        val direction: ConversionDirection,
+        val source: RateSource?,
+        val igtf: Boolean?,
+        val rates: List<ExchangeRate>,
+    )
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L

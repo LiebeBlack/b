@@ -8,13 +8,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -123,6 +126,24 @@ fun CalculatorScreen(
             TopAppBar(
                 title = { Text(text = stringResource(R.string.calculator_title)) },
                 actions = {
+                    // Misma mecánica que el dashboard: refresco manual visible y bloqueado
+                    // mientras vuela la pasada, para que no se encolen peticiones a ciegas.
+                    IconButton(
+                        onClick = { onIntent(CalculatorIntent.Refresh) },
+                        enabled = !state.isSyncing,
+                    ) {
+                        if (state.isSyncing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Filled.Sync,
+                                contentDescription = stringResource(R.string.action_refresh),
+                            )
+                        }
+                    }
                     IconButton(onClick = { onIntent(CalculatorIntent.ClearAmount) }) {
                         Icon(
                             imageVector = Icons.Filled.Clear,
@@ -157,8 +178,16 @@ fun CalculatorScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
+            // La fila "Tasa" incluye la edad del dato: una tasa de ayer bien explicada
+            // evita el clásico "las cuentas no salen" por convertir con un precio vencido.
             Text(
-                text = stringResource(R.string.calculator_rate_line, state.selectedRateText),
+                text = buildString {
+                    append(stringResource(R.string.calculator_rate_line, state.selectedRateText))
+                    state.selectedRateAgeText?.takeIf { it.isNotEmpty() }?.let { age ->
+                        append(" · ")
+                        append(stringResource(R.string.rate_updated_at, age))
+                    }
+                },
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

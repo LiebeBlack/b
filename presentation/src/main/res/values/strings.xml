@@ -91,6 +91,9 @@
     <!-- ============================== Estados y mensajes ============================== -->
     <string name="action_refresh">Actualizar tasas</string>
     <string name="action_retry">Reintentar</string>
+
+    <!-- Calculadora: sincronización -->
+    <string name="calculator_sync_failed">No se pudo actualizar la tasa: se usa la última guardada</string>
     <string name="source_oficial">Oficial</string>
     <string name="source_paralelo">Paralelo</string>
     <!-- Nombres largos: solo para el texto que se copia al portapapeles. -->

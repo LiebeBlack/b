@@ -26,6 +26,15 @@ data class CalculatorUiState(
     val selectedSource: RateSource = RateSource.OFICIAL,
     val rateOptions: List<RateOptionUi> = emptyList(),
     val selectedRateText: String = "—",
+
+    /**
+     * Edad de la tasa seleccionada tal y como la publicó el proveedor ("1 oct · 09:14").
+     * `null` si la fuente no publica marca de tiempo (Yadio): no se inventa nada.
+     */
+    val selectedRateAgeText: String? = null,
+
+    /** `true` mientras la pasada contra los proveedores está en vuelo. */
+    val isSyncing: Boolean = false,
     val igtfEnabled: Boolean = false,
     val igtfRateText: String = "",
     val netUsdText: String = "—",
@@ -46,6 +55,9 @@ sealed interface CalculatorIntent {
     data class AmountChanged(val value: String) : CalculatorIntent
 
     data class SelectSource(val source: RateSource) : CalculatorIntent
+
+    /** Fuerza la pasada contra los proveedores y recalcula con lo que llegue. */
+    data object Refresh : CalculatorIntent
 
     data object SwapDirection : CalculatorIntent
 
