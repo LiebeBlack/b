@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Política de seguridad de red.
+
+  DivTrack habla con dos endpoints públicos y los dos son HTTPS:
+
+      · https://ve.dolarapi.com/   (oficial BCV + paralelo)
+      · https://api.yadio.io/      (respaldo del paralelo)
+
+  `cleartextTrafficPermitted="false"` cierra la puerta a HTTP en claro para todas las
+  direcciones, no solo para esas dos: si algún día se cambia un baseUrl a un host con
+  `http://`, el fallo aparece en el primer intento (IOException de cleartext bloqueado) en
+  lugar de mandar las tasas por la red sin cifrar. Es la causa número uno de "la API no
+  responde" después de una migración de dominio, y aquí queda descartada por diseño.
+
+  No se fijan anclas de confianza propias a propósito: los certificados del sistema son
+  suficientes y añadir un pin propio rompería la app el día que el proveedor renueve su
+  certificado.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
