@@ -138,13 +138,13 @@ fun DashboardScreen(
                     }
                 }
 
-                // El banco dejó de publicar: la fuente responde con el cierre de ayer.
-                // Aviso permanente y diferenciado del de conexión, porque la respuesta
-                // correcta del usuario tampoco es revisar su wifi.
+                // Una fuente dejó de publicar (el caso típico: el banco) y responde con
+                // su último dato. Aviso permanente y diferenciado del de conexión, porque
+                // la respuesta correcta del usuario tampoco es revisar su wifi.
                 if (state.hasStaleData) {
                     item(key = "stale") {
                         OfflineBanner(
-                            message = stringResource(R.string.msg_stale_official_data),
+                            message = stringResource(R.string.msg_stale_data),
                         )
                     }
                 }

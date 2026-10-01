@@ -17,7 +17,7 @@
     <string name="rate_card_title">Dólar %1$s</string>
     <string name="rate_provider">Fuente: %1$s</string>
     <string name="rate_updated_at">Actualizado %1$s</string>
-    <string name="rate_stale_warning">El banco lleva más de un día sin publicar</string>
+    <string name="rate_stale_warning">La fuente no publica datos nuevos</string>
     <string name="spread_title">Brecha paralelo / oficial</string>
     <string name="spread_value">%1$s por encima del oficial (%2$s)</string>
     <string name="spread_unavailable">Se necesitan ambas tasas para calcular la brecha</string>
@@ -103,7 +103,7 @@
     <string name="msg_partial_update">Actualización parcial: una de las fuentes no respondió</string>
     <string name="msg_offline_showing_cache">Sin conexión. Mostrando última actualización</string>
     <string name="msg_offline_no_data">Sin conexión y sin datos guardados</string>
-    <string name="msg_stale_official_data">El banco dejó de publicar: el dato mostrado corresponde a su última publicación</string>
+    <string name="msg_stale_data">Una o más fuentes no publican datos nuevos: se muestra su última publicación</string>
     <string name="msg_providers_checked">Fuentes OK: %1$d de %2$d</string>
 
     <!-- ============================== Errores de red ============================== -->

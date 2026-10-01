@@ -36,8 +36,9 @@ android {
         applicationId = "com.liebeblack.divtrack"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0.0"
+        // VT = Versión Temprana: canal de desarrollo visible al usuario.
+        versionCode = 237
+        versionName = "2.3.7-VT (Versión Temprana)"
 
         vectorDrawables {
             useSupportLibrary = true

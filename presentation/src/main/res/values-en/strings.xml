@@ -12,7 +12,7 @@
     <string name="rate_card_title">%1$s dollar</string>
     <string name="rate_provider">Source: %1$s</string>
     <string name="rate_updated_at">Updated %1$s</string>
-    <string name="rate_stale_warning">The bank has not published for over a day</string>
+    <string name="rate_stale_warning">The source is not publishing new data</string>
     <string name="spread_title">Parallel / official gap</string>
     <string name="spread_value">%1$s above the official rate (%2$s)</string>
     <string name="spread_unavailable">Both rates are needed to compute the gap</string>
@@ -98,7 +98,7 @@
     <string name="msg_partial_update">Partial update: one of the sources did not respond</string>
     <string name="msg_offline_showing_cache">Offline. Showing last update</string>
     <string name="msg_offline_no_data">Offline with no cached data</string>
-    <string name="msg_stale_official_data">The central bank stopped publishing: the value shown is from its latest release</string>
+    <string name="msg_stale_data">One or more sources are not publishing new data: the latest release is shown</string>
     <string name="msg_providers_checked">Sources OK: %1$d of %2$d</string>
 
     <!-- ============================== Network errors ============================== -->

@@ -55,13 +55,21 @@ class ProviderRegistryResilienceTest {
     @Test
     fun `cumplido el cooldown el proveedor se reintenta solo`() = runTest {
         val caido = FakeRateProvider(id = "DolarAPI", priority = 0, failing = true)
-        val registry = registry(caido)
+        val relevo = FakeRateProvider(
+            id = "Yadio",
+            priority = 10,
+            rates = listOf(rate(SourceKeys.PARALELO, 954.55)),
+        )
+        val registry = registry(caido, relevo)
 
-        registry.fetchLatest()
         registry.fetchLatest()
         assertEquals(1, caido.fetchLatestCalls)
 
-        // El reloj avanza más allá del periodo de castigo: se vuelve a intentar.
+        // Dentro del cooldown, el caído se salta (hay relevo disponible)...
+        registry.fetchLatest()
+        assertEquals(1, caido.fetchLatestCalls)
+
+        // ...y cumplido el periodo vuelve a intentarse sin intervención.
         clock.nowMillis += COOLDOWN_MILLIS + 1
         registry.fetchLatest()
         assertEquals(2, caido.fetchLatestCalls)
