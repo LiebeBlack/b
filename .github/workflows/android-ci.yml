@@ -82,3 +82,102 @@ jobs:
             **/build/reports/tests/**
             **/build/compose-metrics/**
             core/database/schemas/**
+
+  release:
+    name: Auto Release
+    needs: build
+    # Solo cuando todo compiló y pasó: cada push a main (o disparo manual) publica
+    # un release rolling "latest" con el APK. Las PRs nunca publican.
+    if: >-
+      needs.build.result == 'success' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Descargar artefactos del build
+        uses: actions/download-artifact@v5
+        with:
+          name: divtrack-artifacts
+          path: artifacts
+
+      - name: Firmar el APK release (o preparar el instalable de fallback)
+        id: apk
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          BUILD_TOOLS="/usr/local/lib/android/sdk/build-tools/${ANDROID_BUILD_TOOLS}"
+
+          RELEASE_UNSIGNED=$(find artifacts -name 'app-release-unsigned.apk' | head -n1)
+          DEBUG_APK=$(find artifacts -name 'app-debug.apk' | head -n1)
+
+          if [ -n "${KEYSTORE_B64:-}" ] && [ -n "${KEY_ALIAS:-}" ]; then
+            echo "${KEYSTORE_B64}" | base64 -d > divtrack.jks
+            "${BUILD_TOOLS}/zipalign" -f -p 4 "${RELEASE_UNSIGNED}" app-aligned.apk
+            "${BUILD_TOOLS}/apksigner" sign \
+              --ks divtrack.jks \
+              --ks-key-alias "${KEY_ALIAS}" \
+              --ks-pass "pass:${KEYSTORE_PASS}" \
+              --key-pass "pass:${KEY_PASS}" \
+              --out DivTrack-release.apk app-aligned.apk
+            "${BUILD_TOOLS}/apksigner" verify DivTrack-release.apk
+            rm -f divtrack.jks app-aligned.apk
+            echo "apk=DivTrack-release.apk" >> "$GITHUB_OUTPUT"
+            echo "channel=release" >> "$GITHUB_OUTPUT"
+          else
+            # Sin secretos de firma no hay APK release instalable: el debug lo está,
+            # porque se firma solo. Es el fallback para que el release nunca salga vacío.
+            # Nota: el keystore de debug es efímero por runner, así que este fallback
+            # exige desinstalar la versión anterior antes de instalar una nueva.
+            cp "${DEBUG_APK}" DivTrack-debug.apk
+            echo "apk=DivTrack-debug.apk" >> "$GITHUB_OUTPUT"
+            echo "channel=debug (sin secretos de firma)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Leer versión del APK
+        id: version
+        run: |
+          set -euo pipefail
+          BUILD_TOOLS="/usr/local/lib/android/sdk/build-tools/${ANDROID_BUILD_TOOLS}"
+          BADGING=$("${BUILD_TOOLS}/aapt2" dump badging "${{ steps.apk.outputs.apk }}" | grep -m1 "versionName")
+          VERSION=$(echo "${BADGING}" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p")
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Crear o actualizar el release rolling
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APK_PATH: ${{ steps.apk.outputs.apk }}
+          CHANNEL: ${{ steps.apk.outputs.channel }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          STAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
+
+          # Release rolling: la etiqueta "latest" se mueve en cada push. Borrar el release
+          # con --cleanup-tag deja el repo con UNA sola publicación siempre vigente.
+          gh release delete latest --yes --cleanup-tag || true
+
+          gh release create latest \
+            --title "DivTrack ${VERSION} (latest)" \
+            --notes "$(cat <<EOF
+          ## DivTrack ${VERSION}
+
+          Compilado automáticamente desde [\`${SHORT_SHA}\`](https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}).
+
+          - **Canal:** ${CHANNEL}
+          - **Fecha:** ${STAMP}
+          - **Instalación:** descarga el APK y ábrelo (activa "orígenes desconocidos" si lo pide).
+
+          > El release se reemplaza en cada push a \`main\` una vez que compila y pasan los tests.
+          EOF
+          )" \
+            "${APK_PATH}"
