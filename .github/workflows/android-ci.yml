@@ -13,9 +13,6 @@ concurrency:
 permissions:
   contents: read
 
-# La plataforma de API 37 se publica como "android-37.0": NO existe "platforms;android-37".
-# Es el fallo que hacía que este paso se quedara sin plataforma instalada (el job seguía
-# adelante porque nada de aquí aborta, pero se perdía la comprobación explícita).
 env:
   ANDROID_API: "37.0"
   ANDROID_BUILD_TOOLS: "37.0.0"
@@ -24,8 +21,6 @@ env:
 jobs:
   build:
     name: Build · Test · R8
-    # Etiqueta fija en lugar de ubuntu-latest: la imagen del runner no debería cambiar el
-    # resultado del build sin que nadie lo decida.
     runs-on: ubuntu-24.04
     timeout-minutes: 45
 
@@ -40,79 +35,49 @@ jobs:
           java-version: '21'
 
       - name: Android SDK: licencias y plataforma
-        # A propósito NO se usa android-actions/setup-android: su paso por defecto intenta
-        # instalar el paquete "tools", que ya no existe en los cmdline-tools actuales, y el
-        # job moría ahí con "Failed to find package 'tools'" antes de compilar una sola línea.
-        #
-        # La imagen del runner ya trae el SDK. Aquí solo se aceptan las licencias (necesarias
-        # para que AGP descargue por su cuenta lo que le falte: ver android.builder.sdkDownload
-        # en gradle.properties) y se instala la plataforma, sin que un fallo aquí aborte el
-        # trabajo: si algo no está, el propio AGP lo resuelve.
         run: |
+          set -e
           SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          SDKMANAGER="$(find "$SDK/cmdline-tools" -maxdepth 3 -name sdkmanager -type f 2>/dev/null | sort | tail -n1)"
-          # CLI nuevo de cmdline-tools (el que sustituye a sdkmanager, deprecado en 2026).
-          # Ojo con la sintaxis: el CLI nuevo separa los paquetes con "/", no con ";".
-          ANDROID_CLI="$(find "$SDK/cmdline-tools" -maxdepth 3 -name android -type f 2>/dev/null | sort | tail -n1)"
+          SDKMANAGER="$(find "$SDK/cmdline-tools" -maxdepth 3 -name sdkmanager -type f 2>/dev/null | sort | tail -n1 || true)"
+          ANDROID_CLI="$(find "$SDK/cmdline-tools" -maxdepth 3 -name android -type f 2>/dev/null | sort | tail -n1 || true)"
           echo "SDK: $SDK"
-          echo "sdkmanager: ${SDKMANAGER:-<no encontrado>}"
-          echo "android CLI: ${ANDROID_CLI:-<no encontrado>}"
-          # Nada de aquí aborta el job: lo peor que puede pasar es que AGP descargue lo que
-          # le falte por su cuenta (android.builder.sdkDownload=true).
+          
           if [ -n "$ANDROID_CLI" ]; then
-            "$ANDROID_CLI" --sdk="$SDK" sdk install "platforms/android-${ANDROID_API}" \
-              "build-tools/${ANDROID_BUILD_TOOLS}" "platform-tools" || true
+            "$ANDROID_CLI" --sdk="$SDK" sdk install "platforms/android-${ANDROID_API}" "build-tools/${ANDROID_BUILD_TOOLS}" "platform-tools" || true
             "$ANDROID_CLI" --sdk="$SDK" sdk install --licenses || true
           elif [ -n "$SDKMANAGER" ]; then
             "$SDKMANAGER" --version || true
             yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
-            "$SDKMANAGER" --install "platforms;android-${ANDROID_API}" \
-              "build-tools;${ANDROID_BUILD_TOOLS}" "platform-tools" || true
+            "$SDKMANAGER" --install "platforms;android-${ANDROID_API}" "build-tools;${ANDROID_BUILD_TOOLS}" "platform-tools" || true
           else
-            echo "Sin cmdline-tools: se usa el SDK preinstalado de la imagen y la descarga de AGP."
+            echo "Sin cmdline-tools: usando SDK preinstalado."
           fi
-          echo "--- plataformas instaladas ---"
-          ls "$SDK/platforms" || true
-          echo "--- build-tools instalados ---"
-          ls "$SDK/build-tools" || true
-          echo "--- licencias aceptadas ---"
-          ls "$SDK/licenses" || true
 
-      - name: Gradle ${{ env.GRADLE_VERSION }} y caché
-        # Pin a v5 a propósito, no a v6: v6 introduce un proveedor de caché propietario
-        # ("enhanced") por defecto y cambia la licencia del componente de caché. v5 hace lo
-        # mismo sobre actions/cache y es el último major libre de esa atadura.
+      - name: Gradle y caché
         uses: gradle/actions/setup-gradle@v5
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
           cache-read-only: false
 
-      - name: Verificar el wrapper (y regenerarlo si está roto)
-        # El wrapper está commiteado, pero si su JAR llegara corrupto o ausente el job se
-        # repara solo con el Gradle que acaba de instalar el paso anterior.
+      - name: Verificar el wrapper
         run: |
           chmod +x ./gradlew
-          if ! ./gradlew --version > /dev/null 2>&1; then
-            echo "El wrapper no funciona: regenerándolo con Gradle ${GRADLE_VERSION}"
-            gradle wrapper --gradle-version "${GRADLE_VERSION}"
-            chmod +x ./gradlew
-          fi
           ./gradlew --version
 
-      - name: Compilar debug (los 8 módulos + KSP de Room/Hilt)
+      - name: Compilar debug
         run: ./gradlew :app:assembleDebug --stacktrace
 
       - name: Tests unitarios JVM
         run: ./gradlew testDebugUnitTest :domain:test :core:common:test --stacktrace
 
-      - name: Release con R8 + métricas del compilador de Compose
+      - name: Release con R8
         run: ./gradlew :app:assembleRelease -PcomposeMetrics=true --stacktrace
 
-      - name: Lint (informe, no bloqueante en la primera pasada)
+      - name: Lint
         continue-on-error: true
         run: ./gradlew :app:lintDebug --stacktrace
 
-      - name: Publicar artefactos (APK, reportes, métricas)
+      - name: Publicar artefactos
         if: always()
         uses: actions/upload-artifact@v5
         with:
