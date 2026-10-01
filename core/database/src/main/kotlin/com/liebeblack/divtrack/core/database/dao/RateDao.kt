@@ -2,6 +2,7 @@ package com.liebeblack.divtrack.core.database.dao
 
 import androidx.room.Dao
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import com.liebeblack.divtrack.core.database.entity.CurrentRateEntity
 import com.liebeblack.divtrack.core.database.entity.RateHistoryEntity
@@ -43,4 +44,21 @@ interface RateDao {
 
     @Query("DELETE FROM ${RateHistoryEntity.TABLE_NAME} WHERE epoch_day < :beforeEpochDay")
     suspend fun pruneDailyCloses(beforeEpochDay: Long): Int
+
+    /**
+     * Commit atómico de una sincronización: tasa vigente + cierre diario en UNA transacción.
+     *
+     * Por qué existe: escribir en dos operaciones separadas deja una ventana donde un kill
+     * del proceso produce tasas actuales nuevas con cierres diarios viejos — y la flecha de
+     * tendencia (que compara contra el cierre) sale corrupta hasta el día siguiente.
+     * Dentro de `@Transaction` o se aplica todo o no se aplica nada.
+     */
+    @Transaction
+    suspend fun commitRateSync(
+        rates: List<CurrentRateEntity>,
+        closes: List<RateHistoryEntity>,
+    ) {
+        upsertCurrentRates(rates)
+        upsertDailyCloses(closes)
+    }
 }

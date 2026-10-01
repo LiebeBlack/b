@@ -21,6 +21,8 @@ class FakeRateLocalDataSource : RateLocalDataSource {
         private set
     var upsertDailyClosesCalls: Int = 0
         private set
+    var commitRateSyncCalls: Int = 0
+        private set
 
     override fun observeCurrentRates(): Flow<List<CurrentRateEntity>> = currentRates
 
@@ -52,5 +54,13 @@ class FakeRateLocalDataSource : RateLocalDataSource {
         val before = dailyCloses.value.size
         dailyCloses.value = dailyCloses.value.filter { it.epochDay >= beforeEpochDay }
         return before - dailyCloses.value.size
+    }
+
+    /** Espeja la semántica transaccional de `RateDao.commitRateSync`. */
+    override suspend fun commitRateSync(rates: List<CurrentRateEntity>, closes: List<RateHistoryEntity>) {
+        if (rates.isEmpty()) return
+        commitRateSyncCalls++
+        upsertCurrentRates(rates)
+        upsertDailyCloses(closes)
     }
 }

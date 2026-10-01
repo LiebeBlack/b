@@ -10,6 +10,7 @@ import com.liebeblack.divtrack.core.network.provider.RateProvider
 import com.liebeblack.divtrack.domain.model.ProviderDiagnostics
 import com.liebeblack.divtrack.domain.model.ProviderFailure
 import com.liebeblack.divtrack.domain.model.ProviderStatus
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
@@ -62,8 +63,15 @@ class ProviderRegistry @Inject constructor(
     /** Todos los proveedores registrados, ordenados por su prioridad base. */
     private val orderedProviders: List<RateProvider> = providers.sortedBy { it.priority }
 
-    /** Circuito abierto por proveedor: instante (ms) hasta el cual NO se le consulta. */
-    private val openUntilMillis = HashMap<String, Long>()
+    /**
+     * Circuito abierto por proveedor: instante (ms) hasta el cual NO se le consulta.
+     *
+     * `ConcurrentHashMap` y no `HashMap`: esta tabla la escribe la pasada de sincronización
+     * (dentro del mutex del repositorio) **y** el diagnóstico de Ajustes (`testAll`, fuera
+     * de él, desde otro dispatcher) — el diagnóstico puede cerrar un circuito mientras una
+     * pasada lo abre. Con HashMap eso es una condición de carrera real.
+     */
+    private val openUntilMillis = ConcurrentHashMap<String, Long>()
 
     suspend fun fetchLatest(preferredProviderId: String? = null): ProviderFetchOutcome =
         fetchWithOrder(availableOrder(preferredProviderId))

@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -183,7 +184,9 @@ fun DashboardScreen(
                 }
 
                 // `key` estable por fuente: al actualizarse una tasa, la otra tarjeta no
-                // vuelve a componerse.
+                // vuelve a componerse. El oficial es la referencia nacional (contratos,
+                // sueldos, la calculadora por defecto): se muestra como héroe; el paralelo,
+                // un 20 % menor para que la jerarquía se lea de un vistazo.
                 items(items = state.rates, key = { rate -> rate.source.key }) { rate ->
                     val isOfficial = rate.source == RateSource.OFICIAL
                     RateCard(
@@ -200,6 +203,7 @@ fun DashboardScreen(
                         },
                         isStale = rate.isStale,
                         accentColor = if (isOfficial) colors.officialAccent else colors.parallelAccent,
+                        isHero = isOfficial,
                     )
                 }
 
@@ -216,6 +220,8 @@ fun DashboardScreen(
                             text = stringResource(R.string.dashboard_disclaimer),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
@@ -247,6 +253,8 @@ private fun OfflineBanner(message: String, modifier: Modifier = Modifier) {
                 text = message,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }

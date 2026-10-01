@@ -23,7 +23,7 @@ import com.liebeblack.divtrack.presentation.theme.Spacing
  * app (y de detectar un color que no contrasta antes de que llegue a un dispositivo).
  * Se cubren los estados que importan: claro, oscuro, tendencia y brecha.
  */
-@Preview(name = "Tasa oficial · claro", widthDp = 380, showBackground = true)
+@Preview(name = "Tasa oficial héroe · claro", widthDp = 380, showBackground = true)
 @Composable
 private fun RateCardOfficialLightPreview() {
     DivTrackTheme(themeMode = ThemeMode.LIGHT) {
@@ -37,6 +37,7 @@ private fun RateCardOfficialLightPreview() {
                 updatedAtText = "Actualizado 30 sep · 21:01",
                 accentColor = DivTrackThemeTokens.colors.officialAccent,
                 modifier = Modifier.padding(Spacing.lg),
+                isHero = true,
             )
         }
     }

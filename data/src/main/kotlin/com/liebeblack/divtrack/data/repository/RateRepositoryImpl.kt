@@ -123,10 +123,13 @@ class RateRepositoryImpl @Inject constructor(
             return Result.Error(DataError.Parse(message = "Los proveedores no devolvieron tasas utilizables"))
         }
 
-        // Escritura única: Room re-emite a las tres pantallas automáticamente.
-        localDataSource.upsertCurrentRates(entities)
-        localDataSource.upsertDailyCloses(entities.map { entity -> entity.toDailyCloseEntity(epochDay) })
-        preferencesDataSource.setLastSyncAt(outcome.fetchedAtMillis)
+        // Commit atómico: tasas vigentes + cierres diarios en UNA transacción Room.
+        // Antes eran dos upserts separados: un kill del proceso en el medio dejaba tasas
+        // nuevas con cierres viejos y la tendencia corrupta hasta el día siguiente.
+        localDataSource.commitRateSync(
+            rates = entities,
+            closes = entities.map { entity -> entity.toDailyCloseEntity(epochDay) },
+        )
 
         // Retención del cierre diario: la tabla crece dos filas al día. La poda viaja con la
         // sincronización (y no en un trabajo aparte) para que no exista ninguna ruta que

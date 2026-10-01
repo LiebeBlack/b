@@ -1,6 +1,7 @@
 package com.liebeblack.divtrack.presentation.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.theme.Spacing
@@ -44,9 +46,14 @@ fun SpreadChip(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
+        // Contenido centrado como bloque: la brecha es el dato estrella del panel y su
+        // tarjeta comparte la geometría centrada de las tarjetas de tasa.
         Row(
-            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
         ) {
             Icon(
                 imageVector = Icons.Filled.Info,
@@ -56,11 +63,12 @@ fun SpreadChip(
             )
             Spacer(modifier = Modifier.width(Spacing.sm))
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = stringResource(R.string.spread_title),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                 )
                 Text(
                     text = if (percent != null && absolute != null) {
@@ -70,6 +78,7 @@ fun SpreadChip(
                     },
                     style = MaterialTheme.typography.titleMedium.tabular(),
                     color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
                 )
             }
         }

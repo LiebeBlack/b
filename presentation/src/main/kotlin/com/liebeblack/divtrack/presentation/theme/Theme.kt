@@ -65,9 +65,13 @@ private val LightColorScheme = lightColorScheme(
     onSecondary = CloudWhite,
     secondaryContainer = Sky,
     onSecondaryContainer = Obsidian,
-    tertiary = Amber,
-    onTertiary = Obsidian,
-    background = CloudWhite,
+    // Ámbar oscuro en terciario: es el color que pinta avisos de dato rancio como TEXTO
+    // en modo claro, y el ámbar brillante sobre blanco no llegaba al contraste mínimo.
+    tertiary = AmberDeep,
+    onTertiary = CloudWhite,
+    // Lienzo más profundo que las tarjetas: el modo claro gana la misma separación
+    // de capas que siempre tuvo el oscuro (tarjeta blanca que de verdad destaca).
+    background = CloudCanvas,
     onBackground = Obsidian,
     surface = CloudSurface,
     onSurface = Obsidian,
@@ -93,12 +97,18 @@ private val DarkExtraColors = DivTrackColors(
 )
 
 private val LightExtraColors = DivTrackColors(
-    trendUp = TrendUp,
-    trendDown = TrendDown,
-    trendFlat = TrendFlat,
+    // Variante *Deep* de cada token semántico: son color de TEXTO (variación %) en claro,
+    // y los brillantes no alcanzan el contraste AA sobre blanco (el verde da 2,2:1).
+    trendUp = TrendUpDeep,
+    trendDown = TrendDownDeep,
+    trendFlat = TrendFlatDeep,
     officialAccent = SkyDeep,
     parallelAccent = Amber,
 )
+
+// Nota: LightExtraColors mantiene el ámbar brillante en `parallelAccent` porque solo
+// usa como FRANJA de color de la tarjeta (fondo sólido), nunca como texto: el texto de
+// avisos sale del `tertiary` del esquema, que en modo claro es [AmberDeep].
 
 val LocalDivTrackColors = staticCompositionLocalOf { DarkExtraColors }
 

@@ -27,6 +27,12 @@ interface RateLocalDataSource {
     suspend fun previousClose(source: String, epochDay: Long): RateHistoryEntity?
 
     suspend fun pruneDailyCloses(beforeEpochDay: Long): Int
+
+    /**
+     * Escritura atómica de la sincronización: tasas vigentes + cierres diarios en una sola
+     * transacción. Ver `RateDao.commitRateSync` para el porqué.
+     */
+    suspend fun commitRateSync(rates: List<CurrentRateEntity>, closes: List<RateHistoryEntity>)
 }
 
 /** Implementación real sobre Room. */
@@ -56,4 +62,9 @@ class RoomRateLocalDataSource @Inject constructor(
 
     override suspend fun pruneDailyCloses(beforeEpochDay: Long): Int =
         dao.pruneDailyCloses(beforeEpochDay)
+
+    override suspend fun commitRateSync(rates: List<CurrentRateEntity>, closes: List<RateHistoryEntity>) {
+        if (rates.isEmpty()) return
+        dao.commitRateSync(rates, closes)
+    }
 }
