@@ -160,9 +160,14 @@ class CalculatorViewModelTest {
      * Mantiene viva la suscripción: el estado es `stateIn(WhileSubscribed)`, así que sin un
      * colector activo la calculadora ni siquiera se molesta en calcular (que es justo lo que
      * queremos en producción, y lo que hay que respetar en los tests).
+     *
+     * Va en `backgroundScope`: un `collect` infinito lanzado en el scope del test nunca
+     * completa, y `runTest` esperaría por él hasta agotar su tiempo límite.
      */
     private fun TestScope.collectState(viewModel: CalculatorViewModel) {
-        launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.state.collect() }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.state.collect { }
+        }
         advanceUntilIdle()
     }
 

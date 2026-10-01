@@ -155,11 +155,15 @@ class CalculatorViewModel @Inject constructor(
             )
         }
 
+        // La preferencia del usuario manda **solo si esa tasa existe hoy**: si el proveedor
+        // no la ha publicado, caemos en la que sí está en lugar de dejar la calculadora
+        // mostrando "sin tasas" con la otra disponible a un toque de distancia.
         val source = requestedSource
+            ?.takeIf { requested -> options.any { option -> option.source == requested } }
             ?: options.firstOrNull()?.source
             ?: RateSource.OFICIAL
+        // `options` sale de `rates` en el mismo orden, así que basta una búsqueda.
         val selectedRate = options.firstOrNull { it.source == source }?.value
-            ?: rates.firstOrNull { it.source == source }?.value
 
         val igtfEnabledValue = igtf ?: false
         val conversion: Conversion? = calculateConversion(
@@ -175,7 +179,6 @@ class CalculatorViewModel @Inject constructor(
             direction = direction,
             selectedSource = source,
             rateOptions = options,
-            selectedRate = selectedRate,
             selectedRateText = selectedRate?.let { CurrencyFormatters.amount(it) } ?: "—",
             igtfEnabled = igtfEnabledValue,
             igtfRateText = AppConstants.IGTF_LABEL,

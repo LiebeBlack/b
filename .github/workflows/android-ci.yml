@@ -14,47 +14,74 @@ permissions:
   contents: read
 
 env:
-  ANDROID_COMPILE_SDK: "37"
-  BUILD_TOOLS_VERSION: "36.0.0"
+  ANDROID_API: "37"
   GRADLE_VERSION: "9.6.0"
 
 jobs:
   build:
     name: Build · Test · R8
-    runs-on: ubuntu-latest
+    # Etiqueta fija en lugar de ubuntu-latest: la imagen del runner no debería cambiar el
+    # resultado del build sin que nadie lo decida.
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: JDK 21 (Temurin)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
-      - name: Android SDK (cmdline-tools)
-        uses: android-actions/setup-android@v3
-
-      - name: Instalar plataforma y build-tools
+      - name: Android SDK: licencias y plataforma
+        # A propósito NO se usa android-actions/setup-android: su paso por defecto intenta
+        # instalar el paquete "tools", que ya no existe en los cmdline-tools actuales, y el
+        # job moría ahí con "Failed to find package 'tools'" antes de compilar una sola línea.
+        #
+        # La imagen del runner ya trae el SDK. Aquí solo se aceptan las licencias (necesarias
+        # para que AGP descargue por su cuenta lo que le falte: ver android.builder.sdkDownload
+        # en gradle.properties) y se instala la plataforma, sin que un fallo aquí aborte el
+        # trabajo: si algo no está, el propio AGP lo resuelve.
         run: |
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager --install "platforms;android-${ANDROID_COMPILE_SDK}" "build-tools;${BUILD_TOOLS_VERSION}" "platform-tools"
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$(find "$SDK/cmdline-tools" -maxdepth 3 -name sdkmanager -type f 2>/dev/null | sort | tail -n1)"
+          echo "SDK: $SDK"
+          echo "sdkmanager: ${SDKMANAGER:-<no encontrado>}"
+          # Nada de aquí aborta el job: lo peor que puede pasar es que AGP descargue lo que
+          # le falte por su cuenta (android.builder.sdkDownload=true).
+          if [ -n "$SDKMANAGER" ]; then
+            "$SDKMANAGER" --version || true
+            yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+            "$SDKMANAGER" --install "platforms;android-${ANDROID_API}" "platform-tools" || true
+          else
+            echo "Sin sdkmanager: se usa el SDK preinstalado de la imagen y la descarga de AGP."
+          fi
+          echo "--- plataformas instaladas ---"
+          ls "$SDK/platforms" || true
+          echo "--- licencias aceptadas ---"
+          ls "$SDK/licenses" || true
 
       - name: Gradle ${{ env.GRADLE_VERSION }} y caché
-        uses: gradle/actions/setup-gradle@v4
+        # Pin a v5 a propósito, no a v6: v6 introduce un proveedor de caché propietario
+        # ("enhanced") por defecto y cambia la licencia del componente de caché. v5 hace lo
+        # mismo sobre actions/cache y es el último major libre de esa atadura.
+        uses: gradle/actions/setup-gradle@v5
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
           cache-read-only: false
 
-      - name: Asegurar wrapper
+      - name: Verificar el wrapper (y regenerarlo si está roto)
+        # El wrapper está commiteado, pero si su JAR llegara corrupto o ausente el job se
+        # repara solo con el Gradle que acaba de instalar el paso anterior.
         run: |
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ] || [ ! -f gradlew ]; then
-            echo "Wrapper incompleto: generándolo con Gradle ${GRADLE_VERSION}"
-            gradle wrapper --gradle-version "${GRADLE_VERSION}"
-          fi
           chmod +x ./gradlew
+          if ! ./gradlew --version > /dev/null 2>&1; then
+            echo "El wrapper no funciona: regenerándolo con Gradle ${GRADLE_VERSION}"
+            gradle wrapper --gradle-version "${GRADLE_VERSION}"
+            chmod +x ./gradlew
+          fi
           ./gradlew --version
 
       - name: Compilar debug (los 8 módulos + KSP de Room/Hilt)
@@ -72,13 +99,12 @@ jobs:
 
       - name: Publicar artefactos (APK, reportes, métricas)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: divtrack-artifacts
           if-no-files-found: warn
           path: |
-            app/build/outputs/apk/debug/*.apk
-            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/**/*.apk
             app/build/reports/lint-results-*.html
             **/build/reports/tests/**
             **/build/compose-metrics/**

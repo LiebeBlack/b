@@ -17,7 +17,6 @@ data class SettingsUiState(
     val igtfEnabled: Boolean = false,
     val autoSyncEnabled: Boolean = true,
     val syncIntervalMinutes: Int = AppConstants.SYNC_DEFAULT_INTERVAL_MINUTES,
-    val isLoading: Boolean = true,
 )
 
 /** Dominio -> UI. El estado de la pantalla solo expone lo que se pinta. */
@@ -27,7 +26,6 @@ internal fun UserSettings.toUiState(): SettingsUiState = SettingsUiState(
     igtfEnabled = igtfEnabled,
     autoSyncEnabled = autoSyncEnabled,
     syncIntervalMinutes = syncIntervalMinutes,
-    isLoading = false,
 )
 
 sealed interface SettingsIntent {

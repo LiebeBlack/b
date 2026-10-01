@@ -33,7 +33,10 @@ fun SpreadChip(
     absoluteText: String?,
     modifier: Modifier = Modifier,
 ) {
-    val hasData = percentText != null && absoluteText != null
+    // Copias locales: `stringResource` con formato recibe `Any` (no `Any?`), así que el
+    // chequeo de nulos tiene que hacer smart cast sobre variables, no sobre parámetros.
+    val percent = percentText
+    val absolute = absoluteText
 
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -60,8 +63,8 @@ fun SpreadChip(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = if (hasData) {
-                        stringResource(R.string.spread_value, percentText, absoluteText)
+                    text = if (percent != null && absolute != null) {
+                        stringResource(R.string.spread_value, percent, absolute)
                     } else {
                         stringResource(R.string.spread_unavailable)
                     },

@@ -53,8 +53,12 @@ class FakeRateProvider(
         )
     }
 
+    /**
+     * Devuelve solo los puntos de la fuente pedida, como hace un proveedor real: si el doble
+     * ignorara [sourceKey], importar dos fuentes contaría el mismo punto dos veces.
+     */
     override suspend fun fetchHistory(sourceKey: String): List<RemoteHistoryPoint> {
         if (failing) throw IOException("proveedor $id sin conexión")
-        return history
+        return history.filter { point -> point.sourceKey == sourceKey }
     }
 }

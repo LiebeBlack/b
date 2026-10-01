@@ -86,8 +86,11 @@ class SettingsViewModelTest {
         ensureSyncScheduled = EnsureSyncScheduledUseCase(settingsRepository, scheduler),
     )
 
+    /** En `backgroundScope`: la recolección no termina nunca y `runTest` no debe esperarla. */
     private fun TestScope.collectState(viewModel: SettingsViewModel) {
-        launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.state.collect() }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.state.collect { }
+        }
         advanceUntilIdle()
     }
 }

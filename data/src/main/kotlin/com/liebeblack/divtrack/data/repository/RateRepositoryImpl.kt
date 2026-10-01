@@ -106,13 +106,14 @@ class RateRepositoryImpl @Inject constructor(
 
         val epochDay = timeProvider.today().toEpochDay()
 
-        val entities = outcome.rates.mapNotNull { remoteRate ->
-            val source = RateSource.fromKey(remoteRate.sourceKey) ?: return@mapNotNull null
-            remoteRate.toEntity(
+        val entities = outcome.rates.mapNotNull { resolved ->
+            val source = RateSource.fromKey(resolved.rate.sourceKey) ?: return@mapNotNull null
+            resolved.rate.toEntity(
+                providerId = resolved.providerId,
                 previousClose = resolvePreviousClose(
                     source = source,
                     epochDay = epochDay,
-                    currentValue = remoteRate.value,
+                    currentValue = resolved.rate.value,
                 ),
                 fetchedAtMillis = outcome.fetchedAtMillis,
             )

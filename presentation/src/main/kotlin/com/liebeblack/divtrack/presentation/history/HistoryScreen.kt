@@ -29,6 +29,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
@@ -86,7 +87,10 @@ fun HistoryScreen(
 ) {
     val colors = DivTrackThemeTokens.colors
 
-    val chartSeries = remember(state.series) {
+    // `colors` entra en las claves del `remember`: al cambiar de tema claro/oscuro los
+    // colores de las series cambian, y sin esta clave el gráfico se quedaría con los del
+    // tema anterior hasta que llegaran datos nuevos.
+    val chartSeries = remember(state.series, colors) {
         state.series.map { serie ->
             ChartSeriesData(
                 label = serie.source.key,
@@ -96,16 +100,19 @@ fun HistoryScreen(
         }
     }
 
-    val pointCount = remember(state.series) { state.series.maxOfOrNull { it.values.size } ?: 0 }
-
     // derivedStateOf para el crosshair: al arrastrar solo se recalcula el detalle del punto
     // seleccionado, no la pantalla completa ni las estadísticas del rango.
+    //
+    // Todo lo que lee este bloque viene de `latestState`, que es un `State`. Capturar aquí
+    // un valor calculado durante la composición (por ejemplo, cuántos puntos tiene la serie)
+    // dejaría ese número congelado en la primera composición: al cambiar de rango, el
+    // detalle del día seleccionado no volvería a aparecer. El propio índice se resuelve con
+    // `getOrNull`, así que no hace falta comprobar límites por adelantado.
     val latestState by rememberUpdatedState(state)
     val selectionDetail by remember {
         derivedStateOf {
             val snapshot = latestState
             val index = snapshot.selectionIndex ?: return@derivedStateOf null
-            if (index !in 0 until pointCount) return@derivedStateOf null
             val label = snapshot.selectionDateLabel ?: return@derivedStateOf null
             val oficial = snapshot.valueAt(index, RateSource.OFICIAL)
             val paralelo = snapshot.valueAt(index, RateSource.PARALELO)

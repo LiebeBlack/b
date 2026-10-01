@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!--
       Solo dos permisos, ambos normales (no peligrosos): no hay nada que pedir al usuario.
@@ -21,6 +22,26 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.DivTrack.Starting">
+
+        <!--
+          WorkManager con inicialización bajo demanda: DivTrackApplication implementa
+          Configuration.Provider para inyectarle el HiltWorkerFactory, así que el inicializador
+          que androidx.startup lanza al arrancar sobra y además pisaría esa configuración
+          (es un error fatal de lint, no un aviso: la app arrancaría con la configuración por
+          defecto y el worker se quedaría sin dependencias).
+
+          Se elimina solo ese nodo, no el agregador de startup: otras librerías lo siguen usando.
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
         <activity
             android:name=".MainActivity"

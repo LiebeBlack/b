@@ -34,8 +34,6 @@ data class DashboardUiState(
     val isOffline: Boolean = false,
 ) {
     val hasData: Boolean get() = rates.isNotEmpty()
-
-    fun rate(source: RateSource): RateUiModel? = rates.firstOrNull { it.source == source }
 }
 
 /** Dominio -> UI. El formateo es-VE se hace una sola vez, aquí, no en cada recomposición. */

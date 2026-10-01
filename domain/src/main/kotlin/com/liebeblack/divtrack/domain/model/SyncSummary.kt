@@ -22,6 +22,4 @@ data class SyncSummary(
     val fetchedAtMillis: Long,
 ) {
     val isPartial: Boolean get() = failures.isNotEmpty() && updatedSources.isNotEmpty()
-
-    val resolvedFromCacheOnly: Boolean get() = updatedSources.isEmpty()
 }

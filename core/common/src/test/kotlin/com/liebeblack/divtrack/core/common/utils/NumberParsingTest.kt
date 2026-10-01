@@ -12,27 +12,27 @@ class NumberParsingTest {
 
     @Test
     fun `coma decimal se interpreta como decimal`() {
-        assertEquals(12.5, NumberParsing.parseAmountOrNull("12,5"), DELTA)
+        assertEquals(12.5, NumberParsing.parseAmountOrNull("12,5")!!, DELTA)
     }
 
     @Test
     fun `punto de miles con coma decimal se interpreta correctamente`() {
-        assertEquals(1_234.56, NumberParsing.parseAmountOrNull("1.234,56"), DELTA)
+        assertEquals(1_234.56, NumberParsing.parseAmountOrNull("1.234,56")!!, DELTA)
     }
 
     @Test
     fun `formato ingles tambien se acepta`() {
-        assertEquals(1_234.56, NumberParsing.parseAmountOrNull("1,234.56"), DELTA)
+        assertEquals(1_234.56, NumberParsing.parseAmountOrNull("1,234.56")!!, DELTA)
     }
 
     @Test
     fun `punto con tres digitos se lee como separador de miles`() {
-        assertEquals(1_234.0, NumberParsing.parseAmountOrNull("1.234"), DELTA)
+        assertEquals(1_234.0, NumberParsing.parseAmountOrNull("1.234")!!, DELTA)
     }
 
     @Test
     fun `punto con dos digitos se lee como decimal`() {
-        assertEquals(36.5, NumberParsing.parseAmountOrNull("36.50"), DELTA)
+        assertEquals(36.5, NumberParsing.parseAmountOrNull("36.50")!!, DELTA)
     }
 
     @Test
@@ -59,7 +59,7 @@ class NumberParsingTest {
     fun `el formateo de entrada no usa separador de miles y es reversible`() {
         assertEquals("375,95", NumberParsing.formatForInput(375.95))
         assertEquals("100", NumberParsing.formatForInput(100.0))
-        assertEquals(375.95, NumberParsing.parseAmountOrNull("375,95"), DELTA)
+        assertEquals(375.95, NumberParsing.parseAmountOrNull("375,95")!!, DELTA)
     }
 
     private companion object {

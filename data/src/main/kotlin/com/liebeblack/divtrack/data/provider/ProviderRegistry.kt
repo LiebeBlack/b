@@ -11,9 +11,20 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
 
+/**
+ * Una tasa ya resuelta junto al proveedor que la aportó.
+ *
+ * La procedencia viaja con la tasa porque al aplanar varios proveedores en una sola lista se
+ * pierde quién publicó cada valor, y eso es justo lo que la UI muestra ("Fuente: DolarAPI").
+ */
+data class ResolvedRate(
+    val rate: RemoteRate,
+    val providerId: String,
+)
+
 /** Resultado agregado de una pasada de tasas vigentes. */
 data class ProviderFetchOutcome(
-    val rates: List<RemoteRate>,
+    val rates: List<ResolvedRate>,
     val providerIds: List<String>,
     val failures: List<ProviderFailure>,
     val fetchedAtMillis: Long,
@@ -45,7 +56,7 @@ class ProviderRegistry @Inject constructor(
     private val orderedProviders: List<RateProvider> = providers.sortedBy { it.priority }
 
     suspend fun fetchLatest(): ProviderFetchOutcome {
-        val resolved = LinkedHashMap<String, RemoteRate>()
+        val resolved = LinkedHashMap<String, ResolvedRate>()
         val providerIds = mutableListOf<String>()
         val failures = mutableListOf<ProviderFailure>()
         val fetchedAtMillis = mutableListOf<Long>()
@@ -62,7 +73,7 @@ class ProviderRegistry @Inject constructor(
                         val isKnownSource = rate.sourceKey in SourceKeys.all
                         val isStillMissing = resolved[rate.sourceKey] == null
                         if (isKnownSource && isStillMissing) {
-                            resolved[rate.sourceKey] = rate
+                            resolved[rate.sourceKey] = ResolvedRate(rate = rate, providerId = provider.id)
                             contributed = true
                         }
                     }

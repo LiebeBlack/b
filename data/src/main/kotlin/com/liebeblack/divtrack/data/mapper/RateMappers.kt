@@ -18,8 +18,12 @@ internal fun CurrentRateEntity.toDomain(): ExchangeRate = ExchangeRate(
     fetchedAtMillis = fetchedAtMillis,
 )
 
-/** Red -> Room, resolviendo el cierre anterior fuera del mapeo (requiere consulta local). */
+/**
+ * Red -> Room. El cierre anterior se resuelve fuera del mapeo (requiere consulta local) y el
+ * proveedor entra por parámetro: `RemoteRate` describe el dato, no quién lo publicó.
+ */
 internal fun RemoteRate.toEntity(
+    providerId: String,
     previousClose: Double?,
     fetchedAtMillis: Long,
 ): CurrentRateEntity = CurrentRateEntity(

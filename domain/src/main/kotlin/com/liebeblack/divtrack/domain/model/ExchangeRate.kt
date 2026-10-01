@@ -21,9 +21,6 @@ data class ExchangeRate(
     val updatedAtMillis: Long?,
     val fetchedAtMillis: Long,
 ) {
-    val changeAbsolute: Double?
-        get() = previousClose?.let { value - it }
-
     val changePercent: Double?
         get() = previousClose
             ?.takeIf { it != 0.0 }

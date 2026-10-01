@@ -26,9 +26,6 @@ object CurrencyFormatters {
     /** "859,06 Bs." */
     fun bolivars(value: Double, decimals: Int = 2): String = "${amount(value, decimals)} Bs."
 
-    /** "$10,00". El dólar va escapado para que no se confunda con una plantilla de string. */
-    fun dollars(value: Double, decimals: Int = 2): String = "\$${amount(value, decimals)}"
-
     /** "+11,15 %" / "-2,04 %" */
     fun percent(value: Double, decimals: Int = 2, withSign: Boolean = true): String {
         val formatted = formatter(decimals, grouping = false).format(kotlin.math.abs(value))
@@ -48,10 +45,6 @@ object CurrencyFormatters {
     /** "30 sep" */
     fun shortDate(date: LocalDate): String =
         DateTimeFormatter.ofPattern("d MMM", locale).format(date)
-
-    /** "sep 2026" */
-    fun monthLabel(date: LocalDate): String =
-        DateTimeFormatter.ofPattern("MMM yyyy", locale).format(date)
 
     private fun formatter(decimals: Int, grouping: Boolean): DecimalFormat {
         val symbols = DecimalFormatSymbols(locale).apply {

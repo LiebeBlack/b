@@ -78,7 +78,7 @@ class HistoryViewModel @Inject constructor(
 
     init {
         observeRange()
-        syncHistory(force = false)
+        syncHistoryFromRemote(force = false)
     }
 
     fun onIntent(intent: HistoryIntent) {
@@ -91,7 +91,7 @@ class HistoryViewModel @Inject constructor(
                 }
             }
 
-            HistoryIntent.SyncHistory -> syncHistory(force = true)
+            HistoryIntent.SyncHistory -> syncHistoryFromRemote(force = true)
 
             is HistoryIntent.SelectIndex -> selectionIndex.value = intent.index
         }
@@ -110,7 +110,12 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
-    private fun syncHistory(force: Boolean) {
+    /**
+     * Importa el histórico. El nombre NO puede ser `syncHistory`: colisionaría con la
+     * propiedad del caso de uso inyectada y el `when` de abajo acabaría analizando la
+     * función de esta misma clase (una llamada recursiva) en lugar del caso de uso.
+     */
+    private fun syncHistoryFromRemote(force: Boolean) {
         viewModelScope.launch {
             isSyncing.value = true
             when (val result = syncHistory(force)) {

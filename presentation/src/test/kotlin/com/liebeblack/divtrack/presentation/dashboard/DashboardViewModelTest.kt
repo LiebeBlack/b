@@ -113,12 +113,17 @@ class DashboardViewModelTest {
      * Recolecta los eventos one-shot en una lista propia, con un dispatcher no confinado
      * para que la suscripción exista **antes** de que el `init` del ViewModel emita. Es la
      * forma determinista de testear un `SharedFlow` sin depender de tiempos.
+     *
+     * Va en `backgroundScope` porque `toList` no completa nunca: si se lanzara en el scope
+     * del test, `runTest` esperaría por él hasta agotar su tiempo límite.
      */
     private fun TestScope.collectEffects(
         viewModel: DashboardViewModel,
         destination: MutableList<DashboardEffect>,
     ) {
-        launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.effects.toList(destination) }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.effects.toList(destination)
+        }
     }
 
     private fun rate(source: RateSource, value: Double, previousClose: Double?) = ExchangeRate(

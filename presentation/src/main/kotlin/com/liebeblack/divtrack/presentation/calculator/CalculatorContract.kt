@@ -25,7 +25,6 @@ data class CalculatorUiState(
     val direction: ConversionDirection = ConversionDirection.USD_TO_BS,
     val selectedSource: RateSource = RateSource.OFICIAL,
     val rateOptions: List<RateOptionUi> = emptyList(),
-    val selectedRate: Double? = null,
     val selectedRateText: String = "—",
     val igtfEnabled: Boolean = false,
     val igtfRateText: String = "",

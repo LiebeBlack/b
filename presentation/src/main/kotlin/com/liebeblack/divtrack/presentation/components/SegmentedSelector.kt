@@ -15,6 +15,9 @@ import androidx.compose.ui.text.style.TextOverflow
  *
  * Un solo componente cubre los cuatro usos de la app (fuente en la calculadora, rango del
  * histórico, tema e intervalo de sincronización), así que todos se ven y se comportan igual.
+ *
+ * `label` es `@Composable` porque cada llamada resuelve un recurso de texto
+ * (`stringResource`), y eso solo se puede hacer desde contexto de composición.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,7 +25,7 @@ fun <T> SegmentedSelector(
     options: List<T>,
     selected: T,
     onSelect: (T) -> Unit,
-    label: (T) -> String,
+    label: @Composable (T) -> String,
     modifier: Modifier = Modifier,
 ) {
     SingleChoiceSegmentedButtonRow(modifier = modifier) {

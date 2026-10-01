@@ -82,26 +82,37 @@ fun RateLineChart(
                 .fillMaxSize()
                 .pointerInput(pointCount) {
                     detectTapGestures { offset ->
-                        onSelectIndex(indexAt(offset.x, size.width.toFloat(), pointCount, plotPaddingPx()))
+                        onSelectIndex(
+                            indexAt(offset.x, size.width.toFloat(), pointCount, ChartPadding.toPx()),
+                        )
                     }
                 }
                 .pointerInput(pointCount) {
                     detectDragGestures(
                         onDragStart = { offset ->
-                            onSelectIndex(indexAt(offset.x, size.width.toFloat(), pointCount, plotPaddingPx()))
+                            onSelectIndex(
+                                indexAt(offset.x, size.width.toFloat(), pointCount, ChartPadding.toPx()),
+                            )
                         },
                         onDragEnd = {},
                         onDragCancel = {},
                         onDrag = { change, _ ->
                             change.consume()
-                            onSelectIndex(indexAt(change.position.x, size.width.toFloat(), pointCount, plotPaddingPx()))
+                            onSelectIndex(
+                                indexAt(
+                                    change.position.x,
+                                    size.width.toFloat(),
+                                    pointCount,
+                                    ChartPadding.toPx(),
+                                ),
+                            )
                         },
                     )
                 },
         ) {
             if (bounds == null || pointCount == 0) return@Canvas
 
-            val padding = plotPaddingPx()
+            val padding = ChartPadding.toPx()
             val plotWidth = (size.width - padding * 2f).coerceAtLeast(1f)
             val plotHeight = (size.height - padding * 2f).coerceAtLeast(1f)
 
@@ -289,6 +300,11 @@ private fun indexAt(x: Float, width: Float, pointCount: Int, padding: Float): In
     return (fraction * (pointCount - 1)).roundToInt().coerceIn(0, pointCount - 1)
 }
 
-private fun plotPaddingPx(): Float = 14f
+/**
+ * Margen del área de dibujo. En `dp`, convertido a píxeles dentro de los scopes de dibujo y
+ * de gestos (ambos implementan `Density`): con un valor en píxeles crudos, el margen se
+ * encogía en pantallas de densidad alta y las etiquetas del eje quedaban pegadas al borde.
+ */
+private val ChartPadding = 14.dp
 
 private const val FLOAT_EPSILON = 0.0001f

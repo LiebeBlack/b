@@ -37,8 +37,10 @@ class ProviderRegistryTest {
 
         val outcome = registry(preferred, fallback).fetchLatest()
 
-        val oficial = outcome.rates.first { it.sourceKey == SourceKeys.OFICIAL }
-        assertEquals(859.06, oficial.value, DELTA)
+        val oficial = outcome.rates.first { it.rate.sourceKey == SourceKeys.OFICIAL }
+        assertEquals(859.06, oficial.rate.value, DELTA)
+        // La procedencia viaja con la tasa: sin esto la UI no puede decir de dónde salió.
+        assertEquals("DolarAPI", oficial.providerId)
         assertEquals(listOf("DolarAPI", "Yadio"), outcome.providerIds)
     }
 

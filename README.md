@@ -24,7 +24,7 @@ Lo que sigue se comprobó **ejecutando** cosas, no asumiendo:
 | `pydolarve.org` | **descartada**: el dominio no resuelve (DNS) |
 | `api.dolarvzla.com` | **descartada**: responde 401, requiere clave privada |
 | Recursos de texto | 84 cadenas referenciadas = 84 definidas · es-VE e inglés con los mismos argumentos |
-| Símbolos internos importados | 109/109 existen (los 2 restantes son `R` y `BuildConfig`, generados) |
+| Símbolos internos importados | 110/110 existen (los 2 restantes son `R` y `BuildConfig`, generados) |
 | Estructura del código | 122/122 archivos con `package` = ruta, llaves balanceadas, 0 imports sin uso |
 | Grafo de inyección | Cada dependencia de cada constructor tiene `@Provides`, `@Binds` o `@IntoSet` |
 | Entorno local | **sin JDK, sin Android SDK, sin Gradle**: la compilación se valida en CI |
@@ -184,6 +184,52 @@ corrigió esto:
 | El refresco automático al abrir mostraba el indicador de pull-to-refresh. | El indicador solo aparece en el refresco manual. |
 | Código muerto: `findActivity`, `ThemeMode.next`, `cycleThemeMode`, `isDark`, `trendDescription`, una extensión de flujos sin usar y una constante sin usar. | Eliminado, junto con los 3 imports que quedaron huérfanos. |
 | Referencias con nombre completo (`com.liebeblack...TrendDirection`) dentro de `when`. | Imports e imports de ayuda; sin rutas completas en el cuerpo. |
+
+Una segunda pasada, esta vez **funcional** (siguiendo el recorrido del usuario en lugar de
+leer archivo por archivo), encontró dos fallos que ningún test cubría porque solo se ven al
+manipular la interfaz:
+
+| Hallazgo | Corrección |
+|---|---|
+| **Bug funcional**: en Histórico, el índice del crosshair vivía dentro de un `derivedStateOf` que capturaba `pointCount` por valor. Quedaba congelado en la primera composición: arrastrar sobre el gráfico no seleccionaba el punto correcto al cambiar de rango. | Se eliminó esa captura y el índice se resuelve contra el rango real de puntos (`valueAt` / `getOrNull`), así que se recalcula cuando la serie cambia. |
+| **Bug visual**: el margen interno del gráfico se restaba en píxeles crudos (`14f`), de modo que en pantallas de densidad alta el trazado se pegaba al borde. | El margen es una constante en `dp` (`ChartPadding = 14.dp`) convertida con `toPx()` en cada ámbito de dibujo y de gesto. |
+
+Una tercera pasada, esta vez **auditando la interfaz** (¿cada control hace algo? ¿cada estado
+se pinta? ¿compila?), encontró **dos errores de compilación** que ninguna de las dos
+revisiones anteriores vio porque no buscaban esto:
+
+| Hallazgo | Corrección |
+|---|---|
+| **Error de compilación**: `HistoryScreen` agrupaba las tarjetas de estadísticas con `key(...)` sin importar `androidx.compose.runtime.key`. El proyecto no compilaba. | Import añadido. |
+| **Error de compilación**: `SpreadChip` pasaba dos `String?` a `stringResource(id, vararg formatArgs: Any)`, que no acepta nulos, y el `if (hasData)` no hace *smart cast*. | Dos copias locales no nulas y comprobación directa, que sí lo hace. |
+| Las series del gráfico se recordaban solo por `state.series`: al cambiar de tema claro/oscuro el gráfico conservaba los colores del tema anterior. | `colors` entra en las claves del `remember`. |
+| Código muerto: `CalculatorUiState.selectedRate`, `SettingsUiState.isLoading`, `DashboardUiState.rate()`, `DivTrackColors.positive`, `ExchangeRate.changeAbsolute`, `SyncSummary.resolvedFromCacheOnly`, `CurrencyFormatters.dollars()`, `CurrencyFormatters.monthLabel()`, el endpoint `getDollar()` y un fallback redundante al resolver la tasa de la calculadora. | Eliminado. Nada de eso se leía ni se llamaba en ningún sitio, tests incluidos. |
+
+Lo que esta pasada dejó **verificado**, no corregido:
+
+| Comprobación | Resultado |
+|---|---|
+| Textos | 84 claves en es-VE y en inglés con los mismos argumentos, y las 8 llamadas con formato pasan el número exacto de argumentos |
+| Interactividad | Cada botón, selector, interruptor y gesto llega a una intención; 0 `onClick` vacíos, 0 `TODO`. El único `onRetry = {}` está en un `@Preview` |
+| Estados de pantalla | Panel y Histórico pintan carga, vacío, error y datos; Ajustes solo datos, porque su fuente es un DataStore ya en memoria |
+| Grafo de inyección | 25 constructores `@Inject` y un campo: toda dependencia tiene `@Provides`, `@Binds` o `@IntoSet` |
+| Estructura | 122/122 archivos con `package` = ruta, llaves y paréntesis balanceados, 0 imports sin uso, 0 declaraciones huérfanas |
+
+---
+
+## Web del proyecto
+
+`web/index.html` es una página **autocontenida** sobre el software: sin JavaScript, sin CDN,
+una sola petición de red (ninguna). Explica el producto con maquetas CSS de las cuatro
+pantallas, el flujo Online-First, el diagrama de módulos, el stack con versiones, los comandos
+de compilación y una tabla honesta de **qué está comprobado y qué no**. Usa la misma paleta y
+los mismos radios que `presentation/theme`, y respeta `prefers-color-scheme`.
+
+Se abre con doble clic (no necesita servidor) o se publica tal cual en GitHub Pages:
+
+```bash
+# Settings → Pages → Deploy from a branch → /web
+```
 
 ---
 

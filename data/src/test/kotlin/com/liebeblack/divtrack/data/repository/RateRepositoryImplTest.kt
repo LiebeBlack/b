@@ -4,6 +4,7 @@ import com.liebeblack.divtrack.core.common.error.DataError
 import com.liebeblack.divtrack.core.common.logging.NoOpLogger
 import com.liebeblack.divtrack.core.common.result.Result
 import com.liebeblack.divtrack.core.common.utils.SourceKeys
+import com.liebeblack.divtrack.core.database.entity.RateHistoryEntity
 import com.liebeblack.divtrack.core.network.error.NetworkErrorMapper
 import com.liebeblack.divtrack.core.network.model.RemoteRate
 import com.liebeblack.divtrack.core.network.model.RemoteHistoryPoint
@@ -56,6 +57,8 @@ class RateRepositoryImplTest {
 
     @Test
     fun `completa las dos tasas aunque un proveedor falle`() = runTest {
+        // El proveedor preferido se cae entero. Su relevo tiene que traer las dos tasas:
+        // que una API desaparezca no puede dejar al usuario a medias.
         val repository = repository(
             FakeRateProvider(
                 id = "DolarAPI",
@@ -66,7 +69,10 @@ class RateRepositoryImplTest {
             FakeRateProvider(
                 id = "Yadio",
                 priority = 10,
-                rates = listOf(rate(SourceKeys.PARALELO, 954.55)),
+                rates = listOf(
+                    rate(SourceKeys.OFICIAL, 860.0),
+                    rate(SourceKeys.PARALELO, 954.55),
+                ),
             ),
         )
 
@@ -106,7 +112,7 @@ class RateRepositoryImplTest {
 
     @Test
     fun `sin conectividad falla al instante y no molesta a los proveedores`() = runTest {
-        connectivity.isOnline = false
+        connectivity.online = false
         val provider = FakeRateProvider(
             id = "DolarAPI",
             priority = 0,
@@ -163,7 +169,7 @@ class RateRepositoryImplTest {
     @Test
     fun `la flecha de tendencia usa el cierre anterior guardado`() = runTest {
         localDataSource.upsertHistory(
-            listOf(historyPoint(SourceKeys.OFICIAL, epochDay = clock.today().toEpochDay() - 1, value = 850.0)),
+            listOf(historyEntity(SourceKeys.OFICIAL, epochDay = clock.today().toEpochDay() - 1, value = 850.0)),
         )
         val repository = repository(
             FakeRateProvider(
@@ -207,8 +213,17 @@ class RateRepositoryImplTest {
         updatedAtMillis = null,
     )
 
+    /** Punto tal como lo entrega un proveedor remoto (lo que consume [FakeRateProvider]). */
     private fun historyPoint(sourceKey: String, epochDay: Long, value: Double) =
         RemoteHistoryPoint(sourceKey = sourceKey, epochDay = epochDay, value = value)
+
+    /** Fila ya guardada en Room, que es lo que recibe el almacén local. */
+    private fun historyEntity(sourceKey: String, epochDay: Long, value: Double) = RateHistoryEntity(
+        source = sourceKey,
+        epochDay = epochDay,
+        value = value,
+        providerId = "DolarAPI",
+    )
 
     private companion object {
         const val DELTA = 0.000001
