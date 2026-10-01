@@ -38,9 +38,9 @@ private val DarkColorScheme = darkColorScheme(
     tertiary = Amber,
     onTertiary = Obsidian,
     background = Obsidian,
-    onBackground = CloudWhite,
+    onBackground = Frost,
     surface = Obsidian,
-    onSurface = CloudWhite,
+    onSurface = Frost,
     surfaceVariant = ObsidianElevated,
     onSurfaceVariant = ObsidianMuted,
     surfaceContainer = ObsidianElevated,
@@ -51,6 +51,9 @@ private val DarkColorScheme = darkColorScheme(
     outlineVariant = ObsidianBorder,
     error = TrendDown,
     onError = CloudWhite,
+    // El tinte M3 tiñe las superficies planas al elevarse: ensucia el look
+    // "terminal financiera" de superficies planas con borde. Desactivado.
+    surfaceTint = Color.Transparent,
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -68,16 +71,17 @@ private val LightColorScheme = lightColorScheme(
     onBackground = Obsidian,
     surface = CloudSurface,
     onSurface = Obsidian,
-    surfaceVariant = CloudWhite,
+    surfaceVariant = CloudShade,
     onSurfaceVariant = SlateText,
     surfaceContainer = CloudSurface,
     surfaceContainerHigh = CloudWhite,
-    surfaceContainerLow = CloudSurface,
+    surfaceContainerLow = CloudShade,
     surfaceContainerLowest = CloudWhite,
     outline = CloudBorder,
     outlineVariant = CloudBorder,
     error = TrendDown,
     onError = CloudWhite,
+    surfaceTint = Color.Transparent,
 )
 
 private val DarkExtraColors = DivTrackColors(

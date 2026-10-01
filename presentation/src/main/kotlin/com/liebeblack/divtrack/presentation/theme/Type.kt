@@ -34,7 +34,7 @@ val DivTrackTypography = Typography(
         fontWeight = FontWeight.Bold,
         fontSize = 46.sp,
         lineHeight = 50.sp,
-        letterSpacing = (-1.2).sp,
+        letterSpacing = (-1.6).sp,
         fontFeatureSettings = TABULAR_FIGURES,
     ),
     displayMedium = TextStyle(
@@ -42,7 +42,7 @@ val DivTrackTypography = Typography(
         fontWeight = FontWeight.Bold,
         fontSize = 38.sp,
         lineHeight = 42.sp,
-        letterSpacing = (-1).sp,
+        letterSpacing = (-1.2).sp,
         fontFeatureSettings = TABULAR_FIGURES,
     ),
     displaySmall = TextStyle(
@@ -50,7 +50,7 @@ val DivTrackTypography = Typography(
         fontWeight = FontWeight.Bold,
         fontSize = 30.sp,
         lineHeight = 34.sp,
-        letterSpacing = (-0.6).sp,
+        letterSpacing = (-0.8).sp,
         fontFeatureSettings = TABULAR_FIGURES,
     ),
     headlineMedium = TextStyle(
