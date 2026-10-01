@@ -8,10 +8,10 @@ import com.liebeblack.divtrack.domain.usecase.ObserveRatesUseCase
 import com.liebeblack.divtrack.domain.usecase.ObserveSettingsUseCase
 import com.liebeblack.divtrack.domain.usecase.SyncRatesUseCase
 import com.liebeblack.divtrack.domain.usecase.UpdateSettingsUseCase
-import java.time.Instant
 import com.liebeblack.divtrack.presentation.fake.FakeRateRepository
 import com.liebeblack.divtrack.presentation.fake.FakeSettingsRepository
 import com.liebeblack.divtrack.presentation.rule.MainDispatcherRule
+import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
