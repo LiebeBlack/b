@@ -248,9 +248,14 @@ private fun ProviderStatusRow(status: ProviderStatus, modifier: Modifier = Modif
     }
     val sourcesText = when {
         status.sources.isEmpty() -> stringResource(R.string.provider_sources_none)
-        else -> status.sources.joinToString(separator = " · ") { sourceKey ->
-            RateSource.fromKey(sourceKey)?.let { stringResource(it.labelRes()) } ?: sourceKey
-        }
+        // Las etiquetas se resuelven con `map` (lambda inline, conserva el contexto
+        // composable): `stringResource` dentro del lambda de `joinToString` no compila
+        // porque su `transform` no es inline.
+        else -> status.sources
+            .map { sourceKey ->
+                RateSource.fromKey(sourceKey)?.let { stringResource(it.labelRes()) } ?: sourceKey
+            }
+            .joinToString(separator = " · ")
     }
     // La edad del dato es parte del diagnóstico: "OK" con un dato de ayer es justamente
     // el caso del banco que dejó de publicar, y así se lee.
