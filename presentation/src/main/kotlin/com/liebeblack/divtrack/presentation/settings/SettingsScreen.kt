@@ -212,6 +212,7 @@ fun SettingsScreen(
         }
         TopSnackbarHost(
             hostState = snackbarHostState,
+            topPadding = padding.calculateTopPadding(),
         )
     }
 }

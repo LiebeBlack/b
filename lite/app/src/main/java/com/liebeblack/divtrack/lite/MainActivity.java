@@ -127,6 +127,7 @@ public final class MainActivity extends Activity {
         status.setText(getSharedPreferences(PREFERENCES, MODE_PRIVATE).contains(KEY_RATE)
                 ? R.string.status_cached
                 : R.string.status_starting);
+        status.setTextColor(getResources().getColor(R.color.lite_muted));
 
         networkExecutor.execute(new Runnable() {
             @Override
@@ -205,12 +206,12 @@ public final class MainActivity extends Activity {
         boolean hasCachedRate = getSharedPreferences(PREFERENCES, MODE_PRIVATE)
                 .contains(KEY_RATE);
         status.setText(messageResource);
-        status.setTextColor(getResources().getColor(R.color.lite_error));
         if (hasCachedRate) {
             status.append("\n");
             status.append(getString(R.string.status_cache_preserved));
         }
         finishRefresh();
+        status.setTextColor(getResources().getColor(R.color.lite_error));
     }
 
     private void finishRefresh() {
@@ -296,19 +297,15 @@ final class BcvRateClient {
     }
 
     static RateQuote fetchOfficialUsdRate() throws java.io.IOException {
-        java.io.IOException bcvFailure;
         try {
             return fetchBcvRate();
         } catch (java.io.IOException exception) {
-            bcvFailure = exception;
             Log.w("DivTrackLite", "Falló BCV; se probará DolarAPI.", exception);
         }
 
-        java.io.IOException dolarApiFailure;
         try {
             return fetchDolarApiRate();
         } catch (java.io.IOException exception) {
-            dolarApiFailure = exception;
             Log.w("DivTrackLite", "Falló DolarAPI; se probará ER-API.", exception);
         }
 
@@ -316,22 +313,20 @@ final class BcvRateClient {
             return fetchExchangeRateApiRate();
         } catch (java.io.IOException exception) {
             Log.w("DivTrackLite", "También falló ER-API.", exception);
-            java.io.IOException failure = new java.io.IOException(
+            throw new java.io.IOException(
                     "Fallaron BCV, DolarAPI y ER-API; se conserva la última tasa guardada.",
                     exception);
-            failure.addSuppressed(bcvFailure);
-            failure.addSuppressed(dolarApiFailure);
-            throw failure;
         }
     }
 
     private static RateQuote fetchBcvRate() throws java.io.IOException {
         String html = readHttps(BCV_URL, "www.bcv.org.ve", "text/html");
         BigDecimal rate = parseDollarRate(html);
-        Matcher dateMatcher = BCV_DATE.matcher(html.substring(
-                DOLLAR_SECTION.matcher(html).find()
-                        ? DOLLAR_SECTION.matcher(html).start()
-                        : 0));
+        Matcher sectionMatcher = DOLLAR_SECTION.matcher(html);
+        if (!sectionMatcher.find()) {
+            throw new BcvResponseException("No se encontró la sección de fecha del BCV.");
+        }
+        Matcher dateMatcher = BCV_DATE.matcher(html.substring(sectionMatcher.start()));
         long updatedAt = System.currentTimeMillis();
         if (dateMatcher.find()) {
             Long publishedAt = parseIsoTimestamp(dateMatcher.group(1));

@@ -269,6 +269,7 @@ fun DashboardScreen(
             }
             TopSnackbarHost(
                 hostState = snackbarHostState,
+                topPadding = padding.calculateTopPadding(),
             )
         }
     }

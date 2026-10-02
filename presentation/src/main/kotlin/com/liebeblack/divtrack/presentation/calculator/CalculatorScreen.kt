@@ -287,6 +287,7 @@ fun CalculatorScreen(
             }
             TopSnackbarHost(
                 hostState = snackbarHostState,
+                topPadding = padding.calculateTopPadding(),
             )
         }
     }
