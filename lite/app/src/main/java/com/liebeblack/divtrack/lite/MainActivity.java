@@ -226,18 +226,18 @@ public final class MainActivity extends Activity {
                 new ViewTreeObserver.OnGlobalLayoutListener() {
                     @Override
                     public void onGlobalLayout() {
+                        int availableWidth = rateValue.getWidth()
+                                - rateValue.getPaddingLeft()
+                                - rateValue.getPaddingRight();
+                        if (availableWidth <= 0) {
+                            return;
+                        }
                         if (rateValue.getViewTreeObserver().isAlive()) {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                                 rateValue.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                             } else {
                                 rateValue.getViewTreeObserver().removeGlobalOnLayoutListener(this);
                             }
-                        }
-                        int availableWidth = rateValue.getWidth()
-                                - rateValue.getPaddingLeft()
-                                - rateValue.getPaddingRight();
-                        if (availableWidth <= 0) {
-                            return;
                         }
 
                         float baseSize = preferredRateTextSizePx;
@@ -322,12 +322,8 @@ final class BcvRateClient {
     private static RateQuote fetchBcvRate() throws java.io.IOException {
         String html = readHttps(BCV_URL, "www.bcv.org.ve", "text/html");
         BigDecimal rate = parseDollarRate(html);
-        Matcher sectionMatcher = DOLLAR_SECTION.matcher(html);
-        if (!sectionMatcher.find()) {
-            throw new BcvResponseException("No se encontró la sección de fecha del BCV.");
-        }
-        Matcher dateMatcher = BCV_DATE.matcher(html.substring(sectionMatcher.start()));
         long updatedAt = System.currentTimeMillis();
+        Matcher dateMatcher = BCV_DATE.matcher(html);
         if (dateMatcher.find()) {
             Long publishedAt = parseIsoTimestamp(dateMatcher.group(1));
             if (publishedAt != null) {
@@ -416,6 +412,22 @@ final class BcvRateClient {
         return null;
     }
 
+    private static boolean isAllowedHost(String host, String expectedHost) {
+        if (host == null || expectedHost == null) {
+            return false;
+        }
+        if (host.equalsIgnoreCase(expectedHost)) {
+            return true;
+        }
+        if (expectedHost.startsWith("www.") && host.equalsIgnoreCase(expectedHost.substring(4))) {
+            return true;
+        }
+        if (host.startsWith("www.") && host.substring(4).equalsIgnoreCase(expectedHost)) {
+            return true;
+        }
+        return false;
+    }
+
     private static String readHttps(String address, String expectedHost, String accept)
             throws java.io.IOException {
         javax.net.ssl.HttpsURLConnection connection = null;
@@ -425,7 +437,7 @@ final class BcvRateClient {
         try {
             java.net.URL url = new java.net.URL(address);
             if (!"https".equalsIgnoreCase(url.getProtocol())
-                    || !expectedHost.equalsIgnoreCase(url.getHost())) {
+                    || !isAllowedHost(url.getHost(), expectedHost)) {
                 throw new BcvResponseException("Endpoint HTTPS no autorizado.");
             }
             connection = (javax.net.ssl.HttpsURLConnection) url.openConnection();
@@ -439,7 +451,7 @@ final class BcvRateClient {
                     "User-Agent",
                     "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 "
                             + "(KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36");
-            if (Build.VERSION.SDK_INT >= 16 && Build.VERSION.SDK_INT < 21) {
+            if (Build.VERSION.SDK_INT >= 14 && Build.VERSION.SDK_INT < 21) {
                 connection.setSSLSocketFactory(new Tls12SocketFactory(
                         (SSLSocketFactory) SSLSocketFactory.getDefault()));
             }
@@ -447,7 +459,7 @@ final class BcvRateClient {
             int responseCode = connection.getResponseCode();
             java.net.URL finalUrl = connection.getURL();
             if (!"https".equalsIgnoreCase(finalUrl.getProtocol())
-                    || !expectedHost.equalsIgnoreCase(finalUrl.getHost())) {
+                    || !isAllowedHost(finalUrl.getHost(), expectedHost)) {
                 throw new BcvResponseException("La respuesta salió del host HTTPS permitido.");
             }
             if (responseCode != 200) {
@@ -497,7 +509,7 @@ final class BcvRateClient {
         if (!rateMatcher.find()) {
             throw new java.io.IOException("No se encontró el valor USD publicado por el BCV.");
         }
-        String candidate = rateMatcher.group(1).trim();
+        String candidate = rateMatcher.group(1).replaceAll("\\s+", "");
         if (!NUMBER.matcher(candidate).matches()) {
             throw new java.io.IOException("El valor USD del BCV tiene un formato no válido.");
         }
@@ -519,9 +531,14 @@ final class BcvRateClient {
         String[] formats = {
                 "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
                 "yyyy-MM-dd'T'HH:mm:ssZ",
+                "yyyy-MM-dd'T'HH:mm:ss.SSS",
+                "yyyy-MM-dd'T'HH:mm:ss",
         };
         for (String formatString : formats) {
             SimpleDateFormat format = new SimpleDateFormat(formatString, Locale.US);
+            if (!formatString.endsWith("Z")) {
+                format.setTimeZone(java.util.TimeZone.getTimeZone("America/Caracas"));
+            }
             format.setLenient(false);
             java.text.ParsePosition position = new java.text.ParsePosition(0);
             Date parsed = format.parse(normalized, position);

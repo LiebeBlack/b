@@ -17,3 +17,6 @@
 dolarapi.baseUrl=https://ve.dolarapi.com/
 # Yadio: fuente upstream del paralelo (fallback automático del paralelo)
 yadio.baseUrl=https://api.yadio.io/
+# ExchangeRate-API: respaldo independiente del dólar oficial
+exchangerateapi.baseUrl=https://open.er-api.com/
+
