@@ -42,7 +42,7 @@ fun IgtfSwitchRow(
             Text(
                 text = stringResource(R.string.igtf_label, igtfRateText),
                 modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
             )

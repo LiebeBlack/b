@@ -95,14 +95,14 @@ fun RateCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(if (isHero) 6.dp else 3.dp)
+                    .height(if (isHero) 8.dp else 3.dp)
                     .background(if (isHero) accentColor else colors.parallelMuted.copy(alpha = 0.55f)),
             )
 
             Column(
                 modifier = Modifier.padding(
                     horizontal = Spacing.lg,
-                    vertical = if (isHero) Spacing.lg else Spacing.md,
+                    vertical = if (isHero) Spacing.xl else Spacing.md,
                 ),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -110,7 +110,7 @@ fun RateCard(
                     text = title,
                     modifier = Modifier.fillMaxWidth(),
                     style = if (isHero) {
-                        MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, lineHeight = 26.sp)
+                        MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp, lineHeight = 28.sp)
                     } else {
                         MaterialTheme.typography.titleMedium
                     },
@@ -121,48 +121,57 @@ fun RateCard(
                     overflow = TextOverflow.Ellipsis,
                 )
 
-                Spacer(modifier = Modifier.height(Spacing.md))
+                Spacer(modifier = Modifier.height(if (isHero) Spacing.lg else Spacing.md))
 
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                     val fontScale = LocalDensity.current.fontScale
                     if (isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(if (isHero) 40.dp else 32.dp)
                                 .align(Alignment.Center),
                             color = emphasisColor,
-                            strokeWidth = 3.dp,
+                            strokeWidth = if (isHero) 4.dp else 3.dp,
                         )
-                    } else {
+                    } else if (isHero) {
+                        // ── Cifra principal oficial: máxima jerarquía visual ──
                         val preferredFontSize = when {
-                            fontScale >= 1.3f -> 30f
-                            maxWidth >= 340.dp -> 50f
-                            maxWidth >= 280.dp -> 42f
-                            else -> 34f
+                            fontScale >= 1.3f -> 40f
+                            maxWidth >= 340.dp -> 72f
+                            maxWidth >= 280.dp -> 60f
+                            else -> 48f
                         }
                         val widthLimitedFontSize = if (valueText.isNotEmpty()) {
-                            maxWidth.value * 0.92f / (valueText.length * 0.57f * fontScale)
+                            maxWidth.value * 0.94f / (valueText.length * 0.52f * fontScale)
                         } else {
                             preferredFontSize
                         }
                         val heroFontSize = minOf(preferredFontSize, widthLimitedFontSize)
-                            .coerceAtLeast(18f)
+                            .coerceAtLeast(28f)
 
                         Text(
                             text = valueText,
-                            style = if (isHero) {
-                                MaterialTheme.typography.displayLarge.tabular().copy(
-                                    fontSize = heroFontSize.sp,
-                                    lineHeight = (heroFontSize + 6f).sp,
-                                    fontWeight = FontWeight.Black,
-                                )
-                            } else {
-                                MaterialTheme.typography.displaySmall.tabular().copy(
-                                    fontSize = 26.sp,
-                                    lineHeight = 32.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            },
+                            style = MaterialTheme.typography.displayLarge.tabular().copy(
+                                fontSize = heroFontSize.sp,
+                                lineHeight = (heroFontSize * 1.1f).sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = (-1.5).sp,
+                            ),
+                            color = emphasisColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    } else {
+                        // ── Tasa paralela: escala secundaria ──
+                        Text(
+                            text = valueText,
+                            style = MaterialTheme.typography.displaySmall.tabular().copy(
+                                fontSize = 26.sp,
+                                lineHeight = 32.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
                             color = emphasisColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -172,7 +181,7 @@ fun RateCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(Spacing.sm))
+                Spacer(modifier = Modifier.height(if (isHero) Spacing.md else Spacing.sm))
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -195,12 +204,16 @@ fun RateCard(
                             ) {
                                 TrendArrow(
                                     direction = trend,
-                                    arrowSize = 10.dp,
+                                    arrowSize = if (isHero) 14.dp else 10.dp,
                                     tint = if (isHero) trendColor else colors.parallelMuted,
                                 )
                                 Text(
                                     text = deltaText,
-                                    style = MaterialTheme.typography.labelMedium,
+                                    style = if (isHero) {
+                                        MaterialTheme.typography.labelLarge
+                                    } else {
+                                        MaterialTheme.typography.labelMedium
+                                    },
                                     color = if (isHero) trendColor else colors.parallelMuted,
                                     fontWeight = FontWeight.SemiBold,
                                 )

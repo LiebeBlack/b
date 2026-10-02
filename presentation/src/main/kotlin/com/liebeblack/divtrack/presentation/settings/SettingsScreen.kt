@@ -409,7 +409,7 @@ private fun SectionTitle(text: String) {
     Text(
         text = text,
         modifier = Modifier.fillMaxWidth(),
-        style = MaterialTheme.typography.titleSmall,
+        style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center,
     )

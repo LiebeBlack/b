@@ -228,7 +228,7 @@ fun CalculatorScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(Spacing.lg),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.lg),
                     ) {
                         ResultRow(
                             label = stringResource(R.string.result_mirror_bs),
@@ -320,13 +320,21 @@ private fun ResultRow(
         )
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val fontScale = LocalDensity.current.fontScale
-            val baseFontSize = when {
-                maxWidth < 280.dp -> 20f
-                maxWidth < 360.dp -> 22f
-                else -> 24f
+            val baseFontSize = if (emphasize) {
+                when {
+                    maxWidth < 280.dp -> 24f
+                    maxWidth < 360.dp -> 26f
+                    else -> 28f
+                }
+            } else {
+                when {
+                    maxWidth < 280.dp -> 18f
+                    maxWidth < 360.dp -> 20f
+                    else -> 22f
+                }
             }
             val widthLimitedFontSize = if (value.isNotEmpty()) {
-                maxWidth.value * 0.92f / (value.length * 0.57f * fontScale)
+                maxWidth.value * 0.92f / (value.length * 0.52f * fontScale)
             } else {
                 baseFontSize
             }
@@ -338,8 +346,9 @@ private fun ResultRow(
                 modifier = Modifier.fillMaxWidth(),
                 style = valueStyle.copy(
                     fontSize = resultFontSize.sp,
-                    lineHeight = (resultFontSize + 6f).sp,
+                    lineHeight = (resultFontSize * 1.15f).sp,
                     fontWeight = if (emphasize) FontWeight.Black else valueStyle.fontWeight,
+                    letterSpacing = if (emphasize) (-0.8).sp else valueStyle.letterSpacing,
                 ),
                 color = valueColor,
                 textAlign = TextAlign.Center,

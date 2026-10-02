@@ -46,7 +46,7 @@ fun LoadingState(message: String? = null, modifier: Modifier = Modifier) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(if (index == 0) 148.dp else 72.dp)
+                    .height(if (index == 0) 180.dp else 72.dp)
                     .padding(bottom = Spacing.md),
                 shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surfaceContainer,
