@@ -55,7 +55,7 @@ class RetryInterceptor(
     }
 
     private fun Response.isRetryable(request: okhttp3.Request): Boolean =
-        !request.cacheControl().onlyIfCached &&
+        !request.cacheControl.onlyIfCached &&
             (
                 code == HTTP_REQUEST_TIMEOUT ||
                     code == HTTP_TOO_MANY_REQUESTS ||

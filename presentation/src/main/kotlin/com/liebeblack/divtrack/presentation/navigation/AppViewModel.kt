@@ -51,7 +51,7 @@ class AppViewModel @Inject constructor(
 
     fun completeWelcome() {
         if (
-            welcomeCompleted.value == true ||
+            settings.value?.welcomeCompleted == true ||
             welcomeSaveCommitted ||
             _isCompletingWelcome.value
         ) {
