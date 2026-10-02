@@ -1,6 +1,7 @@
 package com.liebeblack.divtrack.presentation.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -102,6 +103,7 @@ fun ErrorState(
                 Spacer(modifier = Modifier.width(Spacing.sm))
                 Text(
                     text = message,
+                    modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -109,14 +111,22 @@ fun ErrorState(
 
             Spacer(modifier = Modifier.height(Spacing.md))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = onRetry) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+            ) {
+                Button(
+                    onClick = onRetry,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
                     Text(text = retryLabel)
                 }
 
                 if (secondaryLabel != null && onSecondaryAction != null) {
-                    Spacer(modifier = Modifier.width(Spacing.sm))
-                    TextButton(onClick = onSecondaryAction) {
+                    TextButton(
+                        onClick = onSecondaryAction,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
                         Text(text = secondaryLabel)
                     }
                 }

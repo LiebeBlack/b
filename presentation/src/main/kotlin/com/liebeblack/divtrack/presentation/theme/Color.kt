@@ -25,6 +25,7 @@ val SlateText = Color(0xFF44505F)
 // --- Acentos de marca ---
 val Mint = Color(0xFF19E39B)
 val MintDeep = Color(0xFF00A86B)
+val MintContrast = Color(0xFF007A4D)
 val Sky = Color(0xFF4C8DFF)
 val SkyDeep = Color(0xFF1F5FD0)
 val Amber = Color(0xFFFFB020)

@@ -52,6 +52,8 @@ fun SettingsRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val onIntent = remember(viewModel) { viewModel::onIntent }
+    val onCheckProviders = remember(viewModel) { viewModel::onCheckProviders }
 
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
@@ -64,8 +66,8 @@ fun SettingsRoute(
         state = state,
         appVersion = appVersion,
         snackbarHostState = snackbarHostState,
-        onIntent = viewModel::onIntent,
-        onCheckProviders = viewModel::onCheckProviders,
+        onIntent = onIntent,
+        onCheckProviders = onCheckProviders,
     )
 }
 
@@ -103,7 +105,7 @@ fun SettingsScreen(
                 helper = stringResource(R.string.settings_theme_helper),
             ) {
                 SegmentedSelector(
-                    options = ThemeMode.entries.toList(),
+                    options = ThemeMode.entries,
                     selected = state.themeMode,
                     onSelect = { mode -> onIntent(SettingsIntent.SelectTheme(mode)) },
                     label = { mode -> stringResource(mode.labelRes()) },
@@ -166,7 +168,11 @@ fun SettingsScreen(
                         selected = state.syncIntervalMinutes,
                         onSelect = { minutes -> onIntent(SettingsIntent.SetSyncInterval(minutes)) },
                         label = { minutes ->
-                            stringResource(R.string.settings_interval_minutes, minutes)
+                            if (minutes % 60 == 0) {
+                                stringResource(R.string.settings_interval_hours, minutes / 60)
+                            } else {
+                                stringResource(R.string.settings_interval_minutes, minutes)
+                            }
                         },
                         modifier = Modifier.fillMaxWidth(),
                     )

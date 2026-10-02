@@ -63,11 +63,12 @@
     <string name="settings_igtf_default">IGTF enabled by default</string>
     <string name="settings_igtf_default_helper">The calculator starts with the tax applied.</string>
     <string name="settings_auto_sync">Background sync</string>
-    <string name="settings_auto_sync_helper">Keeps rates fresh even when the app is closed.</string>
+    <string name="settings_auto_sync_helper">Attempts to update rates while the app is closed. Android may delay background work to save battery.</string>
     <string name="settings_wifi_only">Wi-Fi only</string>
     <string name="settings_wifi_only_helper">Background sync runs only on Wi-Fi or unmetered networks.</string>
     <string name="settings_interval">Frequency</string>
     <string name="settings_interval_minutes">%1$d min</string>
+    <string name="settings_interval_hours">%1$d hr</string>
     <string name="settings_about">About</string>
     <string name="settings_version">Version %1$s</string>
     <string name="settings_providers">Providers</string>

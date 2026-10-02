@@ -11,8 +11,8 @@ import com.liebeblack.divtrack.domain.model.UserSettings
 import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.common.UiText
 
-/** Intervalos de sincronización ofrecidos. El mínimo real lo impone WorkManager (15 min). */
-val SyncIntervalOptions: List<Int> = listOf(15, 30, 60, 120)
+/** Intervalos de sincronización ofrecidos. WorkManager impone el mínimo de 15 minutos. */
+val SyncIntervalOptions: List<Int> = listOf(15, 30, 60, 120, 240)
 
 /**
  * Valor del selector que representa "orden automático". Es solo un sentinela de UI: nunca

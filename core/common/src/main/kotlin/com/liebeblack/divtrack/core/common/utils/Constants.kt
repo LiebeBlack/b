@@ -11,7 +11,7 @@ object AppConstants {
 
     /** WorkManager no permite periodicidad menor a 15 minutos. */
     const val SYNC_MIN_INTERVAL_MINUTES: Int = 15
-    const val SYNC_DEFAULT_INTERVAL_MINUTES: Int = 30
+    const val SYNC_DEFAULT_INTERVAL_MINUTES: Int = 240
 
     /**
      * Retención del cierre diario en Room (años).

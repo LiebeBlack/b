@@ -68,11 +68,12 @@
     <string name="settings_igtf_default">IGTF activado por defecto</string>
     <string name="settings_igtf_default_helper">La calculadora arranca con el impuesto aplicado.</string>
     <string name="settings_auto_sync">Sincronización en segundo plano</string>
-    <string name="settings_auto_sync_helper">Mantiene las tasas al día incluso con la app cerrada.</string>
+    <string name="settings_auto_sync_helper">Intenta actualizar incluso con la app cerrada. Android puede retrasar la tarea para ahorrar batería.</string>
     <string name="settings_wifi_only">Solo por wifi</string>
     <string name="settings_wifi_only_helper">Sincroniza en segundo plano únicamente con wifi o red sin límite de datos.</string>
     <string name="settings_interval">Frecuencia</string>
     <string name="settings_interval_minutes">%1$d min</string>
+    <string name="settings_interval_hours">%1$d h</string>
     <string name="settings_about">Acerca de</string>
     <string name="settings_version">Versión %1$s</string>
     <string name="settings_providers">Proveedores</string>

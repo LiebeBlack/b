@@ -100,14 +100,35 @@ XxxScreen.kt      XxxRoute (única función que toca el ViewModel) + XxxScreen (
 
 - Panel: `spread` derivado una sola vez por emisión de Room.
 - Calculadora: `combine` de 5 flujos + `stateIn(WhileSubscribed(5 s))`. Nadie observa =
-  nadie calcula; por eso el `derivedStateOf` de la pantalla es la pieza crítica que pide el
-  pliego (y está implementado con `rememberUpdatedState`, porque sin él capturaría el
-  estado de la primera composición).
+  nadie calcula. Las opciones del selector se recuerdan mientras las tasas no cambian y las
+  rutas estabilizan sus callbacks; `derivedStateOf` no se usa para envolver el estado entero,
+  porque no evita recomponer el padre cuando cambia el importe.
 - Ajustes: reflejo directo de DataStore (`map` + `stateIn`); no hay estado local duplicado,
   así que la preferencia y la pantalla no pueden desincronizarse.
 - Errores: el fallo viaja tipado (`DataError`) y se traduce a un texto por causa
   (`DataError.toUiText()`). El estado de UI guarda el texto ya resuelto y si el problema fue
   de conectividad, que es lo que decide si se ofrece "Abrir ajustes de red".
+- Cada ViewModel de tasas reutiliza la sincronización que ya tiene activa, en vez de encolar
+  otro refresco por cada toque. El `Mutex` del repositorio serializa además las escrituras de
+  sincronizaciones que llegan desde pantallas distintas o WorkManager. Los indicadores se
+  limpian también ante cancelación o excepción.
+- El worker periódico devuelve `retry()` ante errores recuperables y excepciones de
+  sincronización, dejando que el backoff exponencial de WorkManager limite los reintentos
+  sin desactivar permanentemente la tarea tras un número fijo de fallos. La cancelación
+  estructurada se propaga. La reconciliación del scheduler lee preferencias y aplica el
+  cambio dentro de una sección exclusiva para evitar que una programación antigua gane una
+  carrera con la preferencia más reciente.
+- El intervalo predeterminado de WorkManager es de cuatro horas y sigue siendo configurable
+  (15 min, 30 min, 1 h, 2 h o 4 h). El trabajo periódico es persistente y sobrevive a la
+  muerte normal del proceso; Android decide la ventana efectiva según red, batería y
+  restricciones del fabricante. No se ejecuta mientras el usuario haya forzado la detención
+  de la app, hasta que vuelva a abrirla.
+- Compose delega el renderizado acelerado a la canalización gráfica de Android. No se fijan
+  hilos a núcleos ni se selecciona GPU por fabricante (MTK/Qualcomm): esa asignación depende
+  del sistema y forzarla desde la app perjudicaría compatibilidad y eficiencia energética.
+- El tema claro usa tonos principales y de error con contraste suficiente para texto de
+  botones; los estados de error y avisos se adaptan al ancho disponible y el refresco muestra
+  progreso sin permitir toques que no pueden iniciar otra pasada.
 
 ---
 

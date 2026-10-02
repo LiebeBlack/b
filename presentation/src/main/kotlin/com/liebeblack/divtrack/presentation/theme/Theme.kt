@@ -57,7 +57,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = MintDeep,
+    primary = MintContrast,
     onPrimary = CloudWhite,
     primaryContainer = Mint,
     onPrimaryContainer = Obsidian,
@@ -83,7 +83,7 @@ private val LightColorScheme = lightColorScheme(
     surfaceContainerLowest = CloudWhite,
     outline = CloudBorder,
     outlineVariant = CloudBorder,
-    error = TrendDown,
+    error = TrendDownDeep,
     onError = CloudWhite,
     surfaceTint = Color.Transparent,
 )

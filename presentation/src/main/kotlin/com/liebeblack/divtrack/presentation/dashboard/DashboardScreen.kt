@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -94,6 +95,7 @@ fun DashboardScreen(
     // El texto del error se resuelve una vez por estado, no en cada tarjeta.
     val errorMessage = state.errorText?.asString(context)
     val onRetry = remember(onIntent) { { onIntent(DashboardIntent.Retry) } }
+    val onRefresh = remember(onIntent) { { onIntent(DashboardIntent.Refresh) } }
     val onOpenNetworkSettings = remember(context) { { context.openNetworkSettings() } }
 
     Scaffold(
@@ -103,11 +105,21 @@ fun DashboardScreen(
             TopAppBar(
                 title = { Text(text = stringResource(R.string.dashboard_title)) },
                 actions = {
-                    IconButton(onClick = { onIntent(DashboardIntent.Refresh) }) {
-                        Icon(
-                            imageVector = Icons.Filled.Refresh,
-                            contentDescription = stringResource(R.string.action_refresh),
-                        )
+                    IconButton(
+                        onClick = onRefresh,
+                        enabled = !state.isRefreshing,
+                    ) {
+                        if (state.isRefreshing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Filled.Refresh,
+                                contentDescription = stringResource(R.string.action_refresh),
+                            )
+                        }
                     }
                 },
             )
@@ -115,7 +127,7 @@ fun DashboardScreen(
     ) { padding ->
         PullToRefreshBox(
             isRefreshing = state.isRefreshing,
-            onRefresh = { onIntent(DashboardIntent.Refresh) },
+            onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize(),
         ) {
             LazyColumn(
@@ -251,10 +263,10 @@ private fun OfflineBanner(message: String, modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.width(Spacing.sm))
             Text(
                 text = message,
+                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
             )
         }
     }

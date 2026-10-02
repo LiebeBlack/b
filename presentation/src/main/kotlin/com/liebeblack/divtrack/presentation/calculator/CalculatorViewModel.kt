@@ -20,6 +20,7 @@ import com.liebeblack.divtrack.presentation.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -61,8 +63,10 @@ class CalculatorViewModel @Inject constructor(
     private val direction = MutableStateFlow(ConversionDirection.USD_TO_BS)
     private val selectedSource = MutableStateFlow<RateSource?>(null)
     private val igtfEnabled = MutableStateFlow<Boolean?>(null)
-    private val availableRates = MutableStateFlow<List<ExchangeRate>>(emptyList())
+    private val availableRates = MutableStateFlow(CalculatorRates())
     private val isSyncing = MutableStateFlow(false)
+    private var syncJob: Job? = null
+    private var syncRequestedByUser = false
 
     private val _effects = MutableSharedFlow<CalculatorEffect>(
         extraBufferCapacity = 1,
@@ -108,7 +112,9 @@ class CalculatorViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            observeRates().collect { rates -> availableRates.value = rates }
+            observeRates()
+                .distinctUntilChanged()
+                .collect { rates -> availableRates.value = rates.toCalculatorRates() }
         }
 
         viewModelScope.launch {
@@ -154,22 +160,31 @@ class CalculatorViewModel @Inject constructor(
     }
 
     /**
-     * Sincroniza contra los proveedores. El mutex del repositorio la hace idempotente con la
-     * del dashboard y con WorkManager: si alguien ya está sincronizando, esta espera y no
-     * duplica trabajo.
+     * Comparte la sincronización en curso de esta pantalla. El mutex del repositorio
+     * serializa además los refrescos que lleguen desde otras pantallas o WorkManager.
      */
     private fun refresh(isUserInitiated: Boolean = false) {
-        viewModelScope.launch {
-            isSyncing.value = true
-            val result = syncRates()
-            isSyncing.value = false
+        if (syncJob?.isActive == true) {
+            if (isUserInitiated) syncRequestedByUser = true
+            return
+        }
 
-            if (result is Result.Error && isUserInitiated) {
-                _effects.emit(
-                    CalculatorEffect.ShowMessage(UiText.Res(R.string.calculator_sync_failed)),
-                )
+        syncRequestedByUser = isUserInitiated
+        isSyncing.value = true
+        syncJob = viewModelScope.launch {
+            try {
+                val result = syncRates()
+
+                if (result is Result.Error && syncRequestedByUser) {
+                    _effects.emit(
+                        CalculatorEffect.ShowMessage(UiText.Res(R.string.calculator_sync_failed)),
+                    )
+                }
+                // El éxito no necesita efecto: Room emite y el `combine` recalcula solo.
+            } finally {
+                syncRequestedByUser = false
+                isSyncing.value = false
             }
-            // El éxito no necesita efecto: Room emite y el `combine` recalcula solo.
         }
     }
 
@@ -202,15 +217,10 @@ class CalculatorViewModel @Inject constructor(
         direction: ConversionDirection,
         requestedSource: RateSource?,
         igtf: Boolean?,
-        rates: List<ExchangeRate>,
+        rates: CalculatorRates,
         isSyncing: Boolean,
     ): CalculatorUiState {
-        val options = rates.map { rate ->
-            RateOptionUi(
-                source = rate.source,
-                value = rate.value,
-            )
-        }
+        val options = rates.options
 
         // La preferencia del usuario manda **solo si esa tasa existe hoy**: si el proveedor
         // no la ha publicado, caemos en la que sí está en lugar de dejar la calculadora
@@ -233,16 +243,13 @@ class CalculatorViewModel @Inject constructor(
 
         // La fila "Tasa: X" también cuenta la edad del dato: una tasa de ayer es el motivo
         // nº1 de que las cuentas "no salgan", y no hay que dejar que se lea como actual.
-        val selectedRateAgeText = rates.firstOrNull { rate -> rate.source == source }
-            ?.let { rate -> rate.updatedAtMillis?.let { millis -> formatUpdatedAt(millis) } }
-
         return CalculatorUiState(
             inputText = input,
             direction = direction,
             selectedSource = source,
             rateOptions = options,
-            selectedRateText = selectedRate?.let { CurrencyFormatters.amount(it) } ?: "—",
-            selectedRateAgeText = selectedRateAgeText,
+            selectedRateText = selectedRate?.let { rates.formattedValues[source] } ?: "—",
+            selectedRateAgeText = rates.formattedUpdatedAt[source],
             isSyncing = isSyncing,
             igtfEnabled = igtfEnabledValue,
             igtfRateText = AppConstants.IGTF_LABEL,
@@ -260,13 +267,34 @@ class CalculatorViewModel @Inject constructor(
     private fun formatUpdatedAt(millis: Long): String =
         runCatching { CurrencyFormatters.timestamp(Instant.ofEpochMilli(millis)) }.getOrDefault("")
 
+    private fun List<ExchangeRate>.toCalculatorRates(): CalculatorRates = CalculatorRates(
+        options = map { rate ->
+            RateOptionUi(
+                source = rate.source,
+                value = rate.value,
+            )
+        },
+        formattedValues = associate { rate ->
+            rate.source to CurrencyFormatters.amount(rate.value)
+        },
+        formattedUpdatedAt = associate { rate ->
+            rate.source to rate.updatedAtMillis?.let(::formatUpdatedAt)
+        },
+    )
+
     /** Los cinco datos que alimentan el cálculo, agrupados para `combine`. */
     private data class CalculatorInputs(
         val input: String,
         val direction: ConversionDirection,
         val source: RateSource?,
         val igtf: Boolean?,
-        val rates: List<ExchangeRate>,
+        val rates: CalculatorRates,
+    )
+
+    private data class CalculatorRates(
+        val options: List<RateOptionUi> = emptyList(),
+        val formattedValues: Map<RateSource, String> = emptyMap(),
+        val formattedUpdatedAt: Map<RateSource, String?> = emptyMap(),
     )
 
     private companion object {

@@ -16,6 +16,7 @@ import com.liebeblack.divtrack.presentation.common.UiText
 import com.liebeblack.divtrack.presentation.common.toUiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,6 +55,9 @@ class DashboardViewModel @Inject constructor(
     )
     val effects: SharedFlow<DashboardEffect> = _effects.asSharedFlow()
 
+    private var refreshJob: Job? = null
+    private var refreshRequestedByUser = false
+
     init {
         observeRatesFromCache()
         refresh(isUserInitiated = false)
@@ -73,71 +77,85 @@ class DashboardViewModel @Inject constructor(
     }
 
     private fun refresh(isUserInitiated: Boolean) {
-        viewModelScope.launch {
+        if (refreshJob?.isActive == true) {
+            if (isUserInitiated) {
+                refreshRequestedByUser = true
+                _state.update { it.copy(isRefreshing = true) }
+            }
+            return
+        }
+
+        refreshRequestedByUser = isUserInitiated
+        refreshJob = viewModelScope.launch {
             // Solo el refresco manual muestra el indicador: al abrir la app, el esqueleto de
             // carga o los datos ya guardados cuentan la historia y no hace falta un spinner.
             if (isUserInitiated) {
                 _state.update { it.copy(isRefreshing = true) }
             }
 
-            when (val result = syncRates()) {
-                is Result.Success -> {
-                    val summary = result.data
-                    _state.update {
-                        it.copy(
-                            isRefreshing = false,
-                            isOffline = false,
-                            isConnectivityProblem = false,
-                            errorText = null,
+            try {
+                when (val result = syncRates()) {
+                    is Result.Success -> {
+                        val summary = result.data
+                        _state.update {
+                            it.copy(
+                                isRefreshing = false,
+                                isOffline = false,
+                                isConnectivityProblem = false,
+                                errorText = null,
+                            )
+                        }
+
+                        when {
+                            summary.isPartial -> _effects.emit(
+                                DashboardEffect.ShowMessage(UiText.Res(R.string.msg_partial_update)),
+                            )
+
+                            refreshRequestedByUser -> _effects.emit(
+                                DashboardEffect.ShowMessage(UiText.Res(R.string.msg_rates_updated)),
+                            )
+
+                            else -> Unit
+                        }
+                    }
+
+                    is Result.Error -> {
+                        val error = result.error
+                        val hasCachedData = _state.value.hasData
+                        val isConnectivity = error is DataError.Network
+
+                        _state.update {
+                            it.copy(
+                                isRefreshing = false,
+                                isOffline = true,
+                                isConnectivityProblem = isConnectivity,
+                                errorText = error.toUiText(),
+                            )
+                        }
+
+                        // No todos los fallos son "sin conexión": si el proveedor responde 503 o
+                        // la petición caduca, el usuario tiene que leer eso y no un diagnóstico
+                        // equivocado de su propia red. Cuando sí es conectividad, el mensaje
+                        // recuerda que los datos en pantalla siguen siendo válidos.
+                        _effects.emit(
+                            DashboardEffect.ShowMessage(
+                                when {
+                                    isConnectivity && hasCachedData ->
+                                        UiText.Res(R.string.msg_offline_showing_cache)
+
+                                    isConnectivity -> UiText.Res(R.string.msg_offline_no_data)
+
+                                    else -> error.toUiText()
+                                },
+                            ),
                         )
                     }
 
-                    when {
-                        summary.isPartial -> _effects.emit(
-                            DashboardEffect.ShowMessage(UiText.Res(R.string.msg_partial_update)),
-                        )
-
-                        isUserInitiated -> _effects.emit(
-                            DashboardEffect.ShowMessage(UiText.Res(R.string.msg_rates_updated)),
-                        )
-
-                        else -> Unit
-                    }
+                    Result.Loading -> Unit
                 }
-
-                is Result.Error -> {
-                    val error = result.error
-                    val hasCachedData = _state.value.hasData
-                    val isConnectivity = error is DataError.Network
-
-                    _state.update {
-                        it.copy(
-                            isRefreshing = false,
-                            isOffline = true,
-                            isConnectivityProblem = isConnectivity,
-                            errorText = error.toUiText(),
-                        )
-                    }
-
-                    // No todos los fallos son "sin conexión": si el proveedor responde 503 o
-                    // la petición caduca, el usuario tiene que leer eso y no un diagnóstico
-                    // equivocado de su propia red. Cuando sí es conectividad, el mensaje
-                    // recuerda que los datos en pantalla siguen siendo válidos.
-                    _effects.emit(
-                        DashboardEffect.ShowMessage(
-                            when {
-                                isConnectivity && hasCachedData ->
-                                    UiText.Res(R.string.msg_offline_showing_cache)
-
-                                isConnectivity -> UiText.Res(R.string.msg_offline_no_data)
-
-                                else -> error.toUiText()
-                            },
-                        ),
-                    )
-                }
-
-                Result.Loading -> _state.update { it.copy(isRefreshing = false) }
+            } finally {
+                refreshRequestedByUser = false
+                _state.update { it.copy(isRefreshing = false) }
             }
         }
     }

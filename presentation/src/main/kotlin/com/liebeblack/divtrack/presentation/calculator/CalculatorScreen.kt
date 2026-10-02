@@ -30,10 +30,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -62,6 +60,7 @@ fun CalculatorRoute(viewModel: CalculatorViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val onIntent = remember(viewModel) { viewModel::onIntent }
 
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
@@ -81,7 +80,7 @@ fun CalculatorRoute(viewModel: CalculatorViewModel = hiltViewModel()) {
     CalculatorScreen(
         state = state,
         snackbarHostState = snackbarHostState,
-        onIntent = viewModel::onIntent,
+        onIntent = onIntent,
     )
 }
 
@@ -95,22 +94,14 @@ fun CalculatorScreen(
 ) {
     val colors = DivTrackThemeTokens.colors
 
-    // --- derivedStateOf: uso crítico, como pide el spec ---
-    //
-    // Objetivo: al teclear no se recompone la pantalla entera, solo el bloque que muestra el
-    // equivalente en la otra moneda. `rememberUpdatedState` es imprescindible: sin él, el
-    // bloque `derivedStateOf` capturaría el `state` de la primera composición y quedaría
-    // obsoleto (bug clásico, silencioso y difícil de ver).
-    val latestState by rememberUpdatedState(state)
-    val mirroredAmount by remember {
-        derivedStateOf {
-            val snapshot = latestState
-            when {
-                !snapshot.isAmountValid -> ""
-                snapshot.isUsdToBs -> snapshot.totalBsText
-                else -> snapshot.totalUsdText
-            }
-        }
+    val mirroredAmount = when {
+        !state.isAmountValid -> ""
+        state.isUsdToBs -> state.totalBsText
+        else -> state.totalUsdText
+    }
+    val sourceOptions = remember(state.rateOptions) {
+        state.rateOptions.map { option -> option.source }
+            .ifEmpty { RateSource.ordered() }
     }
 
     val accentColor = if (state.selectedSource == RateSource.OFICIAL) {
@@ -170,8 +161,7 @@ fun CalculatorScreen(
             // ha publicado el oficial todavía, no tiene sentido dejar elegirlo para acabar
             // viendo "sin tasas disponibles".
             SegmentedSelector(
-                options = state.rateOptions.map { option -> option.source }
-                    .ifEmpty { RateSource.ordered() },
+                options = sourceOptions,
                 selected = state.selectedSource,
                 onSelect = { source -> onIntent(CalculatorIntent.SelectSource(source)) },
                 label = { source -> stringResource(source.labelRes()) },

@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.launch
 
 /**
@@ -47,6 +49,7 @@ class SettingsViewModel @Inject constructor(
 
     private val isCheckingProviders = MutableStateFlow(false)
     private val providerDiagnostics = MutableStateFlow<ProviderDiagnostics?>(null)
+    private val settingsUpdateMutex = Mutex()
 
     val state: StateFlow<SettingsUiState> = combine(
         observeSettings().map { settings -> settings.toUiState() },
@@ -65,35 +68,37 @@ class SettingsViewModel @Inject constructor(
 
     fun onIntent(intent: SettingsIntent) {
         viewModelScope.launch {
-            when (intent) {
-                is SettingsIntent.SelectTheme -> updateSettings.setThemeMode(intent.mode)
+            settingsUpdateMutex.withLock {
+                when (intent) {
+                    is SettingsIntent.SelectTheme -> updateSettings.setThemeMode(intent.mode)
 
-                is SettingsIntent.SelectDefaultSource ->
-                    updateSettings.setDefaultSource(intent.source)
+                    is SettingsIntent.SelectDefaultSource ->
+                        updateSettings.setDefaultSource(intent.source)
 
-                is SettingsIntent.SetIgtfDefault ->
-                    updateSettings.setIgtfEnabled(intent.enabled)
+                    is SettingsIntent.SetIgtfDefault ->
+                        updateSettings.setIgtfEnabled(intent.enabled)
 
-                is SettingsIntent.SetAutoSync -> {
-                    updateSettings.setAutoSyncEnabled(intent.enabled)
-                    ensureSyncScheduled()
+                    is SettingsIntent.SetAutoSync -> {
+                        updateSettings.setAutoSyncEnabled(intent.enabled)
+                        ensureSyncScheduled()
+                    }
+
+                    is SettingsIntent.SetSyncInterval -> {
+                        updateSettings.setSyncInterval(intent.minutes)
+                        ensureSyncScheduled()
+                    }
+
+                    is SettingsIntent.SelectProvider ->
+                        updateSettings.setDefaultProvider(intent.providerId)
+
+                    is SettingsIntent.SetWifiOnly -> {
+                        updateSettings.setSyncOnWifiOnly(intent.enabled)
+                        ensureSyncScheduled()
+                    }
                 }
 
-                is SettingsIntent.SetSyncInterval -> {
-                    updateSettings.setSyncInterval(intent.minutes)
-                    ensureSyncScheduled()
-                }
-
-                is SettingsIntent.SelectProvider ->
-                    updateSettings.setDefaultProvider(intent.providerId)
-
-                is SettingsIntent.SetWifiOnly -> {
-                    updateSettings.setSyncOnWifiOnly(intent.enabled)
-                    ensureSyncScheduled()
-                }
+                _effects.emit(SettingsEffect.ShowMessage(UiText.Res(R.string.settings_saved)))
             }
-
-            _effects.emit(SettingsEffect.ShowMessage(UiText.Res(R.string.settings_saved)))
         }
     }
 
