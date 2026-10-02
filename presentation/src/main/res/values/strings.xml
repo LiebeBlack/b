@@ -13,10 +13,10 @@
     <string name="nav_settings">Ajustes</string>
 
     <!-- ============================== Bienvenida ============================== -->
-    <string name="welcome_title">Tu referencia diaria del dólar</string>
+    <string name="welcome_title">Tu dólar diario, claro y al día</string>
     <string name="welcome_subtitle">Consulta las tasas, compara fuentes y convierte montos en una sola app.</string>
     <string name="welcome_rates_title">Tasas claras, con su fuente</string>
-    <string name="welcome_rates_body">El dólar oficial es la referencia principal. La tasa paralela aparece como referencia de mercado, junto con su variación y última actualización disponible.</string>
+    <string name="welcome_rates_body">El dólar oficial siempre ocupa el primer lugar. La tasa paralela es opcional y puedes activarla desde Ajustes.</string>
     <string name="welcome_calculator_title">Calculadora al instante</string>
     <string name="welcome_calculator_body">Convierte entre dólares y bolívares mientras escribes. Activa el IGTF cuando necesites incluirlo en el cálculo.</string>
     <string name="welcome_sync_title">Actualización automática</string>
@@ -28,14 +28,15 @@
     <!-- ============================== Dashboard ============================== -->
     <string name="dashboard_title">DivTrack</string>
     <string name="rate_card_title">Dólar %1$s</string>
-    <string name="rate_primary_badge">REFERENCIA</string>
     <string name="rate_provider">Fuente: %1$s</string>
+    <string name="rate_unavailable">Cotización oficial no disponible</string>
+    <string name="rate_loading_provider">Consultando fuentes oficiales…</string>
     <string name="rate_updated_at">Actualizado %1$s</string>
     <string name="rate_stale_warning">La fuente no publica datos nuevos</string>
     <string name="spread_title">Brecha paralelo / oficial</string>
     <string name="spread_value">%1$s por encima del oficial (%2$s)</string>
     <string name="spread_unavailable">Se necesitan ambas tasas para calcular la brecha</string>
-    <string name="dashboard_disclaimer">Tasas informativas, sin valor oficial. Verifica siempre antes de operar.</string>
+    <string name="dashboard_disclaimer">Cotizaciones informativas de fuentes públicas; DivTrack no es una entidad oficial. Verifica los valores antes de operar.</string>
     <string name="empty_rates_title">Todavía no hay tasas</string>
     <string name="empty_rates_message">Desliza hacia abajo o toca actualizar para obtener los valores más recientes.</string>
     <string name="loading_rates">Cargando las tasas más recientes…</string>
@@ -48,13 +49,10 @@
     <string name="calculator_hint">Escribe un monto y el resultado se calcula al instante, sin botones.</string>
     <string name="calculator_no_rate">Sin tasas disponibles. Sincroniza desde el panel de tasas.</string>
     <string name="result_mirror_bs">Total en bolívares</string>
-    <string name="result_mirror_usd">Total en dólares</string>
-    <string name="result_net_usd">Neto en USD</string>
-    <string name="result_net_bs">Neto en Bs.</string>
-    <string name="result_igtf">IGTF (%1$s)</string>
-    <string name="result_total_usd">Total en USD</string>
+    <string name="result_mirror_usd">Total en USD</string>
+    <string name="result_igtf">IGTF %1$s · estimado en Bs.</string>
     <string name="igtf_label">IGTF (%1$s)</string>
-    <string name="igtf_helper">Aplica el 3 % del Impuesto a las Grandes Transacciones Financieras sobre pagos en divisas.</string>
+    <string name="igtf_helper">Estimación informativa del 3 % en bolívares cuando corresponda. La aplicación real depende de la operación y la normativa vigente.</string>
     <string name="action_swap_direction">Invertir dirección (Bs. / USD)</string>
     <string name="action_copy_breakdown">Copiar desglose</string>
     <string name="action_clear">Limpiar</string>
@@ -65,8 +63,7 @@
     <string name="copy_amount_usd">Monto ingresado: $%1$s</string>
     <string name="copy_amount_bs">Monto ingresado: Bs. %1$s</string>
     <string name="copy_rate">Tasa aplicada: %1$s · %2$s Bs/USD</string>
-    <string name="copy_net">Neto: $%1$s USD · %2$s Bs</string>
-    <string name="copy_igtf_applied">IGTF aplicado: %1$s Bs</string>
+    <string name="copy_igtf_estimated">IGTF estimado: %1$s Bs</string>
     <string name="copy_igtf_not_applied">IGTF: No aplicado</string>
     <string name="copy_total">TOTAL: $%1$s USD · %2$s Bs</string>
     <string name="copy_signature">Calculado con DivTrack</string>
@@ -80,6 +77,8 @@
     <string name="theme_dark">Oscuro</string>
     <string name="settings_default_source">Tasa por defecto</string>
     <string name="settings_default_source_helper">Se usa al abrir la calculadora.</string>
+    <string name="settings_show_parallel_rate">Mostrar tasa paralela</string>
+    <string name="settings_show_parallel_rate_helper">Añade la tasa paralela y la brecha al panel de tasas.</string>
     <string name="settings_provider">Fuente de datos preferida</string>
     <string name="settings_provider_helper">Se consulta primero al sincronizar; las demás fuentes actúan de respaldo.</string>
     <string name="provider_automatic">Auto</string>
@@ -107,8 +106,9 @@
     <string name="provider_last_data">Último dato: %1$s</string>
     <string name="provider_no_timestamp">Sin marca de tiempo del proveedor</string>
     <string name="settings_disclaimer_title">Aviso</string>
-    <string name="settings_disclaimer_value">DivTrack no es una casa de cambio ni un ente oficial: publica tasas de referencia de fuentes públicas y no se hace responsable de decisiones tomadas con ellas.</string>
+    <string name="settings_disclaimer_value">DivTrack no es una casa de cambio ni un ente oficial: muestra cotizaciones de fuentes públicas y no se hace responsable de decisiones tomadas con ellas.</string>
     <string name="settings_saved">Preferencia guardada</string>
+    <string name="settings_save_failed">No se pudo guardar la preferencia. Intenta de nuevo</string>
 
     <!-- ============================== Estados y mensajes ============================== -->
     <string name="action_refresh">Actualizar tasas</string>

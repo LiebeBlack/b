@@ -49,4 +49,8 @@ class FakeUserPreferencesDataSource(
     override suspend fun setWelcomeCompleted(completed: Boolean) {
         state.value = state.value.copy(welcomeCompleted = completed)
     }
+
+    override suspend fun setShowParallelRate(enabled: Boolean) {
+        state.value = state.value.copy(showParallelRate = enabled)
+    }
 }

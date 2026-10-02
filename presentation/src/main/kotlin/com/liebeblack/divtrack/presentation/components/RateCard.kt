@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,10 +42,8 @@ import com.liebeblack.divtrack.presentation.theme.tabular
  * y el bloque interior quedaba alineado a la izquierda dentro de una tarjeta que la
  * pantalla centra. La franja superior da el mismo código de color sin costo de ancho.
  *
- * [isHero] escala la cifra: el dólar oficial es la referencia de todo (contratos,
- * alquileres, la calculadora por defecto) y se muestra como protagonista
- * (`displayMedium`, 38 sp); el paralelo se muestra un 20 % menor (`displaySmall`,
- * 30 sp) para que la jerarquía se lea de un vistazo.
+ * [isHero] escala la cifra: el dólar oficial se muestra como protagonista (`displayMedium`,
+ * 38 sp) y con mayor peso; el paralelo usa una escala secundaria.
  *
  * Composable sin estado (primitivas + lambda): Compose puede saltarse la recomposición
  * cuando nada cambia, que es exactamente lo que buscamos en gama baja.
@@ -61,6 +60,7 @@ fun RateCard(
     modifier: Modifier = Modifier,
     isStale: Boolean = false,
     isHero: Boolean = false,
+    isLoading: Boolean = false,
 ) {
     val colors = DivTrackThemeTokens.colors
     val trendColor = when (trend) {
@@ -74,14 +74,14 @@ fun RateCard(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         color = if (isHero) {
-            colors.officialAccent.copy(alpha = 0.08f)
+            colors.officialAccent.copy(alpha = 0.12f)
         } else {
             MaterialTheme.colorScheme.surfaceContainer
         },
         border = BorderStroke(
             width = if (isHero) 1.5.dp else 1.dp,
             color = if (isHero) {
-                colors.officialAccent.copy(alpha = 0.55f)
+                colors.officialAccent.copy(alpha = 0.72f)
             } else {
                 MaterialTheme.colorScheme.outlineVariant
             },
@@ -91,8 +91,6 @@ fun RateCard(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Código de color de la fuente como cabecera: se ve con el mismo relieve
-            // que la barra lateral pero nunca roba ancho al contenido.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -107,82 +105,57 @@ fun RateCard(
                 ),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Row(
+                Text(
+                    text = title,
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                ) {
-                    Text(
-                        text = title,
-                        modifier = Modifier.weight(1f),
-                        style = if (isHero) {
-                            MaterialTheme.typography.titleMedium
-                        } else {
-                            MaterialTheme.typography.titleSmall
-                        },
-                        color = emphasisColor,
-                        maxLines = if (LocalDensity.current.fontScale >= 1.3f) 2 else 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-
-                    if (isHero) {
-                        Surface(
-                            color = colors.officialAccent.copy(alpha = 0.12f),
-                            shape = MaterialTheme.shapes.small,
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(
-                                    horizontal = Spacing.sm,
-                                    vertical = Spacing.xs,
-                                ),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .background(
-                                            color = colors.officialAccent,
-                                            shape = MaterialTheme.shapes.small,
-                                        ),
-                                )
-                                Text(
-                                    text = stringResource(R.string.rate_primary_badge),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = emphasisColor,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                )
-                            }
-                        }
-                    }
-                }
+                    style = if (isHero) {
+                        MaterialTheme.typography.titleLarge
+                    } else {
+                        MaterialTheme.typography.titleMedium
+                    },
+                    color = emphasisColor,
+                    fontWeight = FontWeight.Black,
+                    textAlign = TextAlign.Center,
+                    maxLines = if (LocalDensity.current.fontScale >= 1.3f) 2 else 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
 
                 Spacer(modifier = Modifier.height(Spacing.md))
 
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                     val fontScale = LocalDensity.current.fontScale
-                    Text(
-                        text = valueText,
-                        style = if (isHero && maxWidth >= 400.dp && fontScale < 1.3f) {
-                            MaterialTheme.typography.displayMedium.tabular()
-                        } else {
-                            MaterialTheme.typography.displaySmall.tabular()
-                        },
-                        color = emphasisColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Start,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .align(Alignment.Center),
+                            color = emphasisColor,
+                            strokeWidth = 3.dp,
+                        )
+                    } else {
+                        Text(
+                            text = valueText,
+                            style = if (isHero && maxWidth >= 400.dp && fontScale < 1.3f) {
+                                MaterialTheme.typography.displayMedium.tabular()
+                            } else {
+                                MaterialTheme.typography.displaySmall.tabular()
+                            },
+                            color = emphasisColor,
+                            fontWeight = FontWeight.Black,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(Spacing.sm))
 
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm),
                 ) {
                     if (deltaText != null) {
                         Surface(
@@ -215,14 +188,14 @@ fun RateCard(
 
                     Text(
                         text = providerText,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         style = MaterialTheme.typography.labelSmall,
                         color = if (isHero) {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         } else {
                             colors.parallelMuted
                         },
-                        textAlign = TextAlign.End,
+                        textAlign = TextAlign.Center,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -244,7 +217,7 @@ fun RateCard(
                         } else {
                             colors.parallelMuted
                         },
-                        textAlign = TextAlign.Start,
+                        textAlign = TextAlign.Center,
                     )
                 }
             }

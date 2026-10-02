@@ -42,4 +42,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setWelcomeCompleted(completed: Boolean) =
         preferencesDataSource.setWelcomeCompleted(completed)
+
+    override suspend fun setShowParallelRate(enabled: Boolean) =
+        preferencesDataSource.setShowParallelRate(enabled)
 }

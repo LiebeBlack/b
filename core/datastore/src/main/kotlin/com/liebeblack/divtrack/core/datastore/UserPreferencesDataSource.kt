@@ -45,6 +45,8 @@ interface UserPreferencesDataSource {
     suspend fun setSyncOnWifiOnly(enabled: Boolean)
 
     suspend fun setWelcomeCompleted(completed: Boolean)
+
+    suspend fun setShowParallelRate(enabled: Boolean)
 }
 
 @Singleton
@@ -100,6 +102,10 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         dataStore.edit { it[Keys.WELCOME_COMPLETED] = completed }
     }
 
+    override suspend fun setShowParallelRate(enabled: Boolean) {
+        dataStore.edit { it[Keys.SHOW_PARALLEL_RATE] = enabled }
+    }
+
     private fun normaliseThemeMode(value: String): String = when (value.uppercase()) {
         UserPreferences.THEME_LIGHT -> UserPreferences.THEME_LIGHT
         UserPreferences.THEME_DARK -> UserPreferences.THEME_DARK
@@ -117,6 +123,7 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         preferredProviderId = this[Keys.PREFERRED_PROVIDER].orEmpty(),
         syncOnWifiOnly = this[Keys.SYNC_ON_WIFI_ONLY] ?: false,
         welcomeCompleted = this[Keys.WELCOME_COMPLETED] ?: false,
+        showParallelRate = this[Keys.SHOW_PARALLEL_RATE] ?: false,
     )
 
     private object Keys {
@@ -129,5 +136,6 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         val PREFERRED_PROVIDER = stringPreferencesKey("preferred_provider_id")
         val SYNC_ON_WIFI_ONLY = booleanPreferencesKey("sync_on_wifi_only")
         val WELCOME_COMPLETED = booleanPreferencesKey("welcome_completed")
+        val SHOW_PARALLEL_RATE = booleanPreferencesKey("show_parallel_rate")
     }
 }

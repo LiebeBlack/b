@@ -2,30 +2,26 @@ package com.liebeblack.divtrack.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
-/**
- * Paleta "terminal financiera": oscuro profundo con acentos saturados. Se prefieren
- * superficies planas con bordes finos antes que sombras: se ve más premium y cuesta menos
- * en gama baja (sin elevación que renderizar).
- */
+/** Esmeralda premium y crema cálida, con superficies simples para renderizar bien en gama baja. */
 
 // --- Superficies (dark-first) ---
-val Obsidian = Color(0xFF0A0E13)
-val ObsidianElevated = Color(0xFF131A22)
-val ObsidianBorder = Color(0xFF223040)
-val ObsidianMuted = Color(0xFF98A2B3)
+val Obsidian = Color(0xFF06130E)
+val ObsidianElevated = Color(0xFF0D2118)
+val ObsidianBorder = Color(0xFF1C3D2C)
+val ObsidianMuted = Color(0xFFB0C0B6)
 
 // --- Superficies (light) ---
-val CloudWhite = Color(0xFFF7F9FC)
-val CloudSurface = Color(0xFFFFFFFF)
-val CloudBorder = Color(0xFFD8DEE7)
-val CloudShade = Color(0xFFE9EDF3)
-val CloudCanvas = Color(0xFFEDF1F6)
-val SlateText = Color(0xFF44505F)
+val CloudWhite = Color(0xFFFFFCF4)
+val CloudSurface = Color(0xFFFFFDF8)
+val CloudBorder = Color(0xFFE4D9C3)
+val CloudShade = Color(0xFFF1E8D5)
+val CloudCanvas = Color(0xFFF7F1E5)
+val SlateText = Color(0xFF454E46)
 
 // --- Acentos de marca ---
-val Mint = Color(0xFF19E39B)
-val MintDeep = Color(0xFF00A86B)
-val MintContrast = Color(0xFF007A4D)
+val Mint = Color(0xFF39F0A5)
+val MintDeep = Color(0xFF008F5B)
+val MintContrast = Color(0xFF006B46)
 val Sky = Color(0xFF4C8DFF)
 val SkyDeep = Color(0xFF1F5FD0)
 val Amber = Color(0xFFFFB020)

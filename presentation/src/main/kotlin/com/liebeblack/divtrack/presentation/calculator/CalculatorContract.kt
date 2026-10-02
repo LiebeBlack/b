@@ -84,8 +84,6 @@ data class BreakdownSummary(
     val rateText: String,
     val igtfEnabled: Boolean,
     val igtfText: String,
-    val netUsdText: String,
-    val netBsText: String,
     val totalBsText: String,
     val totalUsdText: String,
 )

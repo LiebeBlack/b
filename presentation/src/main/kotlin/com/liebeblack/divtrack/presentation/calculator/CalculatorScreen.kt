@@ -3,9 +3,7 @@ package com.liebeblack.divtrack.presentation.calculator
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -39,7 +37,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -101,11 +98,6 @@ fun CalculatorScreen(
 ) {
     val colors = DivTrackThemeTokens.colors
 
-    val mirroredAmount = when {
-        !state.isAmountValid -> ""
-        state.isUsdToBs -> state.totalBsText
-        else -> state.totalUsdText
-    }
     val sourceOptions = remember(state.rateOptions) {
         state.rateOptions.map { option -> option.source }
             .ifEmpty { RateSource.ordered() }
@@ -189,8 +181,10 @@ fun CalculatorScreen(
                             append(stringResource(R.string.rate_updated_at, age))
                         }
                     },
-                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                 )
 
                 AmountField(
@@ -213,46 +207,31 @@ fun CalculatorScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.surfaceContainer,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    border = BorderStroke(
+                        1.dp,
+                        accentColor.copy(alpha = 0.28f),
+                    ),
                 ) {
-                    BoxWithConstraints(modifier = Modifier.padding(Spacing.lg)) {
-                        val stackResults = maxWidth < 360.dp ||
-                            LocalDensity.current.fontScale >= 1.3f
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        ) {
-                            ResultRow(
-                                label = if (state.isUsdToBs) {
-                                    stringResource(R.string.result_mirror_bs)
-                                } else {
-                                    stringResource(R.string.result_mirror_usd)
-                                },
-                                value = mirroredAmount.ifEmpty { "—" },
-                                stacked = stackResults,
-                                emphasize = true,
-                            )
-                            ResultRow(
-                                label = stringResource(R.string.result_net_usd),
-                                value = state.netUsdText,
-                                stacked = stackResults,
-                            )
-                            ResultRow(
-                                label = stringResource(R.string.result_net_bs),
-                                value = state.netBsText,
-                                stacked = stackResults,
-                            )
-                            ResultRow(
-                                label = stringResource(R.string.result_igtf, state.igtfRateText),
-                                value = state.igtfBsText,
-                                stacked = stackResults,
-                            )
-                            ResultRow(
-                                label = stringResource(R.string.result_total_usd),
-                                value = state.totalUsdText,
-                                stacked = stackResults,
-                            )
-                        }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(Spacing.lg),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                    ) {
+                        ResultRow(
+                            label = stringResource(R.string.result_mirror_bs),
+                            value = state.totalBsText,
+                            emphasize = true,
+                        )
+                        ResultRow(
+                            label = stringResource(R.string.result_mirror_usd),
+                            value = state.totalUsdText,
+                            emphasize = true,
+                        )
+                        ResultRow(
+                            label = stringResource(R.string.result_igtf, state.igtfRateText),
+                            value = state.igtfBsText,
+                        )
                     }
                 }
 
@@ -298,7 +277,6 @@ fun CalculatorScreen(
 private fun ResultRow(
     label: String,
     value: String,
-    stacked: Boolean,
     modifier: Modifier = Modifier,
     emphasize: Boolean = false,
 ) {
@@ -307,46 +285,25 @@ private fun ResultRow(
     } else {
         MaterialTheme.typography.titleMedium.tabular()
     }
-    if (stacked) {
-        Column(
-            modifier = modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.End,
-        ) {
-            Text(
-                text = label,
-                modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = value,
-                modifier = Modifier.fillMaxWidth(),
-                style = valueStyle,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.End,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    } else {
-        Row(
-            modifier = modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = value,
-                style = valueStyle,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.End,
-            )
-        }
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = value,
+            modifier = Modifier.fillMaxWidth(),
+            style = valueStyle,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }

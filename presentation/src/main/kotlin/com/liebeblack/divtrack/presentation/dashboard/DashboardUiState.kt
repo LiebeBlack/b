@@ -32,6 +32,7 @@ data class DashboardUiState(
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val rates: List<RateUiModel> = emptyList(),
+    val showParallelRate: Boolean = false,
     val spreadPercentText: String? = null,
     val spreadAbsoluteText: String? = null,
 
@@ -50,8 +51,14 @@ data class DashboardUiState(
 ) {
     val hasData: Boolean get() = rates.isNotEmpty()
 
+    val visibleRates: List<RateUiModel>
+        get() = if (showParallelRate) rates else rates.filter { it.source == RateSource.OFICIAL }
+
     /** Alguna tasa visible viene del "banco que dejó de publicar": merece aviso permanente. */
-    val hasStaleData: Boolean get() = rates.any { it.isStale }
+    val hasStaleData: Boolean
+        get() = rates.any { rate ->
+            (showParallelRate || rate.source == RateSource.OFICIAL) && rate.isStale
+        }
 }
 
 /** Dominio -> UI. El formateo es-VE se hace una sola vez, aquí, no en cada recomposición. */

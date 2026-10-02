@@ -8,10 +8,12 @@ import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.domain.model.SyncSummary
 import com.liebeblack.divtrack.domain.usecase.CalculateSpreadUseCase
 import com.liebeblack.divtrack.domain.usecase.ObserveRatesUseCase
+import com.liebeblack.divtrack.domain.usecase.ObserveSettingsUseCase
 import com.liebeblack.divtrack.domain.usecase.SyncRatesUseCase
 import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.common.UiText
 import com.liebeblack.divtrack.presentation.fake.FakeRateRepository
+import com.liebeblack.divtrack.presentation.fake.FakeSettingsRepository
 import com.liebeblack.divtrack.presentation.fake.FakeTimeProvider
 import com.liebeblack.divtrack.presentation.rule.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,6 +40,7 @@ class DashboardViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val rateRepository = FakeRateRepository()
+    private val settingsRepository = FakeSettingsRepository()
 
     @Test
     fun `las tarjetas y la brecha se derivan de las tasas guardadas`() = runTest {
@@ -55,6 +58,27 @@ class DashboardViewModelTest {
         assertEquals("954,55 Bs.", state.rates.first { it.source == RateSource.PARALELO }.valueText)
         assertEquals("+11,12 %", state.spreadPercentText)
         assertEquals("95,49 Bs.", state.spreadAbsoluteText)
+    }
+
+    @Test
+    fun `la tasa paralela queda oculta hasta activarla desde ajustes`() = runTest {
+        rateRepository.rates.value = listOf(
+            rate(RateSource.OFICIAL, 859.06, previousClose = null),
+            rate(RateSource.PARALELO, 954.55, previousClose = null),
+        )
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertEquals(listOf(RateSource.OFICIAL), viewModel.state.value.visibleRates.map { it.source })
+
+        settingsRepository.settings.value = settingsRepository.settings.value.copy(showParallelRate = true)
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(RateSource.OFICIAL, RateSource.PARALELO),
+            viewModel.state.value.visibleRates.map { it.source },
+        )
     }
 
     @Test
@@ -106,6 +130,7 @@ class DashboardViewModelTest {
 
     private fun TestScope.createViewModel() = DashboardViewModel(
         observeRates = ObserveRatesUseCase(rateRepository),
+        observeSettings = ObserveSettingsUseCase(settingsRepository),
         syncRates = SyncRatesUseCase(rateRepository),
         calculateSpread = CalculateSpreadUseCase(),
         timeProvider = FakeTimeProvider(),

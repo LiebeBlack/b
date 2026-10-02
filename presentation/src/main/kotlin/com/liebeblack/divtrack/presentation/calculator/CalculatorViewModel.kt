@@ -202,8 +202,6 @@ class CalculatorViewModel @Inject constructor(
                         rateText = current.selectedRateText,
                         igtfEnabled = current.igtfEnabled,
                         igtfText = current.igtfBsText,
-                        netUsdText = current.netUsdText,
-                        netBsText = current.netBsText,
                         totalBsText = current.totalBsText,
                         totalUsdText = current.totalUsdText,
                     ),

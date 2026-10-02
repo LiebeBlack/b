@@ -26,4 +26,6 @@ interface SettingsRepository {
     suspend fun setSyncOnWifiOnly(enabled: Boolean)
 
     suspend fun setWelcomeCompleted(completed: Boolean)
+
+    suspend fun setShowParallelRate(enabled: Boolean)
 }

@@ -21,4 +21,5 @@ data class UserSettings(
     val defaultProviderId: String? = null,
     val syncOnWifiOnly: Boolean = false,
     val welcomeCompleted: Boolean = false,
+    val showParallelRate: Boolean = false,
 )

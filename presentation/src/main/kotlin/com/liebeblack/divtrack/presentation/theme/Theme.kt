@@ -32,9 +32,9 @@ private val DarkColorScheme = darkColorScheme(
     onPrimary = Obsidian,
     primaryContainer = MintDeep,
     onPrimaryContainer = Obsidian,
-    secondary = Sky,
+    secondary = MintDeep,
     onSecondary = Obsidian,
-    secondaryContainer = SkyDeep,
+    secondaryContainer = Color(0xFF124A34),
     onSecondaryContainer = CloudWhite,
     tertiary = Amber,
     onTertiary = Obsidian,
@@ -45,10 +45,10 @@ private val DarkColorScheme = darkColorScheme(
     surfaceVariant = ObsidianElevated,
     onSurfaceVariant = ObsidianMuted,
     surfaceContainer = ObsidianElevated,
-    surfaceContainerHigh = ObsidianBorder,
+    surfaceContainerHigh = Color(0xFF153B2A),
     surfaceContainerLow = Obsidian,
     surfaceContainerLowest = Obsidian,
-    outline = ObsidianBorder,
+    outline = Color(0xFF397653),
     outlineVariant = ObsidianBorder,
     error = TrendDown,
     onError = CloudWhite,
@@ -62,16 +62,16 @@ private val LightColorScheme = lightColorScheme(
     onPrimary = CloudWhite,
     primaryContainer = Mint,
     onPrimaryContainer = Obsidian,
-    secondary = SkyDeep,
+    secondary = MintContrast,
     onSecondary = CloudWhite,
-    secondaryContainer = Sky,
+    secondaryContainer = Color(0xFFB8E8D3),
     onSecondaryContainer = Obsidian,
     // Ámbar oscuro en terciario: es el color que pinta avisos de dato rancio como TEXTO
     // en modo claro, y el ámbar brillante sobre blanco no llegaba al contraste mínimo.
     tertiary = AmberDeep,
     onTertiary = CloudWhite,
-    // Lienzo más profundo que las tarjetas: el modo claro gana la misma separación
-    // de capas que siempre tuvo el oscuro (tarjeta blanca que de verdad destaca).
+    // Lienzo crema cálido: conserva una separación visible con las superficies de tarjeta
+    // sin el tinte azulado del esquema neutro.
     background = CloudCanvas,
     onBackground = Obsidian,
     surface = CloudSurface,

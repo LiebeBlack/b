@@ -2,6 +2,7 @@ package com.liebeblack.divtrack.presentation.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import java.io.IOException
 import com.liebeblack.divtrack.domain.model.ProviderDiagnostics
 import com.liebeblack.divtrack.domain.usecase.DiagnoseProvidersUseCase
 import com.liebeblack.divtrack.domain.usecase.EnsureSyncScheduledUseCase
@@ -68,36 +69,43 @@ class SettingsViewModel @Inject constructor(
 
     fun onIntent(intent: SettingsIntent) {
         viewModelScope.launch {
-            settingsUpdateMutex.withLock {
-                when (intent) {
-                    is SettingsIntent.SelectTheme -> updateSettings.setThemeMode(intent.mode)
+            try {
+                settingsUpdateMutex.withLock {
+                    when (intent) {
+                        is SettingsIntent.SelectTheme -> updateSettings.setThemeMode(intent.mode)
 
-                    is SettingsIntent.SelectDefaultSource ->
-                        updateSettings.setDefaultSource(intent.source)
+                        is SettingsIntent.SelectDefaultSource ->
+                            updateSettings.setDefaultSource(intent.source)
 
-                    is SettingsIntent.SetIgtfDefault ->
-                        updateSettings.setIgtfEnabled(intent.enabled)
+                        is SettingsIntent.SetIgtfDefault ->
+                            updateSettings.setIgtfEnabled(intent.enabled)
 
-                    is SettingsIntent.SetAutoSync -> {
-                        updateSettings.setAutoSyncEnabled(intent.enabled)
-                        ensureSyncScheduled()
+                        is SettingsIntent.SetAutoSync -> {
+                            updateSettings.setAutoSyncEnabled(intent.enabled)
+                            ensureSyncScheduled()
+                        }
+
+                        is SettingsIntent.SetSyncInterval -> {
+                            updateSettings.setSyncInterval(intent.minutes)
+                            ensureSyncScheduled()
+                        }
+
+                        is SettingsIntent.SelectProvider ->
+                            updateSettings.setDefaultProvider(intent.providerId)
+
+                        is SettingsIntent.SetWifiOnly -> {
+                            updateSettings.setSyncOnWifiOnly(intent.enabled)
+                            ensureSyncScheduled()
+                        }
+
+                        is SettingsIntent.SetShowParallelRate ->
+                            updateSettings.setShowParallelRate(intent.enabled)
                     }
 
-                    is SettingsIntent.SetSyncInterval -> {
-                        updateSettings.setSyncInterval(intent.minutes)
-                        ensureSyncScheduled()
-                    }
-
-                    is SettingsIntent.SelectProvider ->
-                        updateSettings.setDefaultProvider(intent.providerId)
-
-                    is SettingsIntent.SetWifiOnly -> {
-                        updateSettings.setSyncOnWifiOnly(intent.enabled)
-                        ensureSyncScheduled()
-                    }
+                    _effects.emit(SettingsEffect.ShowMessage(UiText.Res(R.string.settings_saved)))
                 }
-
-                _effects.emit(SettingsEffect.ShowMessage(UiText.Res(R.string.settings_saved)))
+            } catch (_: IOException) {
+                _effects.emit(SettingsEffect.ShowMessage(UiText.Res(R.string.settings_save_failed)))
             }
         }
     }

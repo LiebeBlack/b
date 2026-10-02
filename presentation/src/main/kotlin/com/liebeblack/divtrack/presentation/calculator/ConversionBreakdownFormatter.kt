@@ -33,7 +33,7 @@ internal fun buildBreakdownText(context: Context, summary: BreakdownSummary): St
         ConversionDirection.BS_TO_USD -> R.string.copy_direction_bs_to_usd
     }
     val taxLine = if (summary.igtfEnabled) {
-        context.getString(R.string.copy_igtf_applied, summary.igtfText)
+        context.getString(R.string.copy_igtf_estimated, summary.igtfText)
     } else {
         context.getString(R.string.copy_igtf_not_applied)
     }
@@ -43,7 +43,6 @@ internal fun buildBreakdownText(context: Context, summary: BreakdownSummary): St
         context.getString(direction),
         amount,
         context.getString(R.string.copy_rate, sourceLabel, summary.rateText),
-        context.getString(R.string.copy_net, summary.netUsdText, summary.netBsText),
         taxLine,
         context.getString(R.string.copy_total, summary.totalUsdText, summary.totalBsText),
         context.getString(R.string.copy_signature),

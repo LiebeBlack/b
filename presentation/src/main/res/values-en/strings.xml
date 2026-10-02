@@ -8,10 +8,10 @@
     <string name="nav_settings">Settings</string>
 
     <!-- ============================== Welcome ============================== -->
-    <string name="welcome_title">Your daily dollar reference</string>
+    <string name="welcome_title">Your daily dollar, clear and current</string>
     <string name="welcome_subtitle">Check rates, compare sources, and convert amounts in one app.</string>
     <string name="welcome_rates_title">Rates with clear sources</string>
-    <string name="welcome_rates_body">The official dollar is the primary reference. The parallel rate is shown as a market reference, with its change and latest available update.</string>
+    <string name="welcome_rates_body">The official dollar always comes first. The parallel rate is optional and can be enabled in Settings.</string>
     <string name="welcome_calculator_title">Instant calculator</string>
     <string name="welcome_calculator_body">Convert between dollars and bolivars as you type. Enable IGTF when you want it included in the calculation.</string>
     <string name="welcome_sync_title">Automatic updates</string>
@@ -23,14 +23,15 @@
     <!-- ============================== Dashboard ============================== -->
     <string name="dashboard_title">DivTrack</string>
     <string name="rate_card_title">%1$s dollar</string>
-    <string name="rate_primary_badge">PRIMARY</string>
     <string name="rate_provider">Source: %1$s</string>
+    <string name="rate_unavailable">Official quote unavailable</string>
+    <string name="rate_loading_provider">Checking official sources…</string>
     <string name="rate_updated_at">Updated %1$s</string>
     <string name="rate_stale_warning">The source is not publishing new data</string>
     <string name="spread_title">Parallel / official gap</string>
     <string name="spread_value">%1$s above the official rate (%2$s)</string>
     <string name="spread_unavailable">Both rates are needed to compute the gap</string>
-    <string name="dashboard_disclaimer">Reference rates only, not official quotes. Always verify before trading.</string>
+    <string name="dashboard_disclaimer">Informational quotes from public sources; DivTrack is not an official entity. Verify values before trading.</string>
     <string name="empty_rates_title">No rates yet</string>
     <string name="empty_rates_message">Pull down or tap refresh to fetch the latest values.</string>
     <string name="loading_rates">Loading the latest rates…</string>
@@ -43,13 +44,10 @@
     <string name="calculator_hint">Type an amount and the result updates as you type.</string>
     <string name="calculator_no_rate">No rates available. Sync them from the rates tab.</string>
     <string name="result_mirror_bs">Total in bolivars</string>
-    <string name="result_mirror_usd">Total in dollars</string>
-    <string name="result_net_usd">Net USD</string>
-    <string name="result_net_bs">Net Bs.</string>
-    <string name="result_igtf">IGTF (%1$s)</string>
-    <string name="result_total_usd">Total USD</string>
+    <string name="result_mirror_usd">Total in USD</string>
+    <string name="result_igtf">IGTF %1$s · estimated in Bs.</string>
     <string name="igtf_label">IGTF (%1$s)</string>
-    <string name="igtf_helper">Applies the 3 % Large Financial Transactions Tax on foreign-currency payments.</string>
+    <string name="igtf_helper">Informational estimate of 3 % in bolivars where applicable. Actual application depends on the transaction and current regulations.</string>
     <string name="action_swap_direction">Swap direction (Bs. / USD)</string>
     <string name="action_copy_breakdown">Copy breakdown</string>
     <string name="action_clear">Clear</string>
@@ -60,8 +58,7 @@
     <string name="copy_amount_usd">Amount entered: $%1$s</string>
     <string name="copy_amount_bs">Amount entered: Bs. %1$s</string>
     <string name="copy_rate">Rate applied: %1$s · %2$s Bs/USD</string>
-    <string name="copy_net">Net: $%1$s USD · %2$s Bs</string>
-    <string name="copy_igtf_applied">IGTF applied: %1$s Bs</string>
+    <string name="copy_igtf_estimated">Estimated IGTF: %1$s Bs</string>
     <string name="copy_igtf_not_applied">IGTF: Not applied</string>
     <string name="copy_total">TOTAL: $%1$s USD · %2$s Bs</string>
     <string name="copy_signature">Calculated with DivTrack</string>
@@ -75,6 +72,8 @@
     <string name="theme_dark">Dark</string>
     <string name="settings_default_source">Default rate</string>
     <string name="settings_default_source_helper">Used when the calculator opens.</string>
+    <string name="settings_show_parallel_rate">Show parallel rate</string>
+    <string name="settings_show_parallel_rate_helper">Add the parallel rate and rate gap to the rates panel.</string>
     <string name="settings_provider">Preferred data source</string>
     <string name="settings_provider_helper">It is queried first when syncing; the other sources act as fallbacks.</string>
     <string name="provider_automatic">Auto</string>
@@ -102,8 +101,9 @@
     <string name="provider_last_data">Last data: %1$s</string>
     <string name="provider_no_timestamp">No timestamp from the provider</string>
     <string name="settings_disclaimer_title">Disclaimer</string>
-    <string name="settings_disclaimer_value">DivTrack is neither an exchange house nor an official body: it publishes reference rates from public sources and is not liable for decisions made with them.</string>
+    <string name="settings_disclaimer_value">DivTrack is neither an exchange house nor an official body: it shows quotes from public sources and is not liable for decisions made with them.</string>
     <string name="settings_saved">Preference saved</string>
+    <string name="settings_save_failed">Couldn\'t save the preference. Try again</string>
 
     <!-- ============================== States and messages ============================== -->
     <string name="action_refresh">Refresh rates</string>

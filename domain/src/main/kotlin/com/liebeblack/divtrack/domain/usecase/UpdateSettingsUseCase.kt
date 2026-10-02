@@ -27,4 +27,7 @@ class UpdateSettingsUseCase @Inject constructor(
 
     suspend fun setWelcomeCompleted(completed: Boolean) =
         repository.setWelcomeCompleted(completed)
+
+    suspend fun setShowParallelRate(enabled: Boolean) =
+        repository.setShowParallelRate(enabled)
 }

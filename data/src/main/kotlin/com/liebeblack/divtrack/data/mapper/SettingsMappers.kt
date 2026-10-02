@@ -21,4 +21,5 @@ internal fun UserPreferences.toDomain(): UserSettings = UserSettings(
     defaultProviderId = preferredProviderId.takeIf { it in ProviderIds.ordered },
     syncOnWifiOnly = syncOnWifiOnly,
     welcomeCompleted = welcomeCompleted,
+    showParallelRate = showParallelRate,
 )

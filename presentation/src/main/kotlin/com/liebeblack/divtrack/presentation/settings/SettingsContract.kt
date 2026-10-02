@@ -43,6 +43,7 @@ data class SettingsUiState(
     /** Proveedor preferido; `null` = orden automático por prioridad. */
     val defaultProviderId: String? = null,
     val syncOnWifiOnly: Boolean = false,
+    val showParallelRate: Boolean = false,
     /** Diagnóstico de fuentes ya ejecutado en esta sesión; `null` = todavía no se comprobó. */
     val providerDiagnostics: ProviderDiagnostics? = null,
     val isCheckingProviders: Boolean = false,
@@ -57,6 +58,7 @@ internal fun UserSettings.toUiState(): SettingsUiState = SettingsUiState(
     syncIntervalMinutes = syncIntervalMinutes,
     defaultProviderId = defaultProviderId,
     syncOnWifiOnly = syncOnWifiOnly,
+    showParallelRate = showParallelRate,
 )
 
 sealed interface SettingsIntent {
@@ -75,6 +77,8 @@ sealed interface SettingsIntent {
     data class SelectProvider(val providerId: String?) : SettingsIntent
 
     data class SetWifiOnly(val enabled: Boolean) : SettingsIntent
+
+    data class SetShowParallelRate(val enabled: Boolean) : SettingsIntent
 }
 
 sealed interface SettingsEffect {

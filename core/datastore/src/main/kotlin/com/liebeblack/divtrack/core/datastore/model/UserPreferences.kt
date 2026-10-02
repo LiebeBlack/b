@@ -35,6 +35,9 @@ data class UserPreferences(
 
     /** Indica si la bienvenida de primer uso ya se completó. */
     val welcomeCompleted: Boolean = false,
+
+    /** Muestra la tasa paralela junto a la oficial en el panel. */
+    val showParallelRate: Boolean = false,
 ) {
     companion object {
         const val THEME_SYSTEM: String = "SYSTEM"

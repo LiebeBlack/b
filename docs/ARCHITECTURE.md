@@ -133,12 +133,24 @@ XxxScreen.kt      XxxRoute (única función que toca el ViewModel) + XxxScreen (
   amplias. Los selectores fluyen a varias filas en lugar de comprimir sus opciones; los
   resultados de la calculadora cambian a disposición vertical en pantallas estrechas o con
   escala de texto grande. La tipografía sigue respetando el tamaño de fuente del sistema.
-- En las tarjetas de tasas, el oficial es el foco visual con acento verde, superficie
-  ligeramente teñida y distintivo de referencia; el paralelo usa tonos topo discretos.
+- En las tarjetas de tasas, el oficial es el foco visual, obligatorio y centrado, con
+  tipografía de peso Black y acento verde; el paralelo usa tonos topo discretos cuando se habilita.
   Las tendencias se muestran en cápsulas de color y sin sombras ni animaciones costosas.
+- La tasa paralela queda oculta por defecto y el usuario puede activarla desde Ajustes; el
+  valor se persiste en DataStore. La tarjeta oficial permanece prioritaria y centrada; si el
+  proveedor aún no la entrega, se mantiene su tarjeta con estado no disponible.
+- El tema oscuro usa superficies verde bosque y el tema claro una paleta crema cálida; ambos
+  mantienen el verde dólar como acento principal y contraste legible en textos. Se usan
+  superficies tonales y bordes suaves en lugar de blur o transparencias animadas para no
+  añadir coste de GPU en dispositivos modestos.
+- El desglose de calculadora presenta totales y el IGTF estimado en bolívares, sin exponer
+  subtotales netos en la tarjeta ni en el texto copiado. La cifra es informativa y no implica
+  validación o aval del BCV/SENIAT; la aplicación del impuesto depende de la operación y la
+  normativa vigente.
 - Al abrir el panel, la UI mantiene un esqueleto estático con el texto de carga mientras
-  intenta sincronizar con las APIs. Solo después observa Room: así no muestra primero una
-  tasa antigua y la reemplaza unos instantes después. Si falla la red, se revela el último
+  intenta sincronizar con las APIs. Room se observa desde el inicio para que la caché y el
+  estado offline estén disponibles; la UI retiene la carga inicial hasta concluir la primera
+  sincronización para evitar destellos de datos antiguos. Si falla la red, se revela el último
   dato persistido; los refrescos manuales conservan visibles las tarjetas existentes.
 - La bienvenida informativa se presenta solo si DataStore confirma que no se completó.
   La confirmación se persiste antes de abrir las pestañas; mientras se leen preferencias

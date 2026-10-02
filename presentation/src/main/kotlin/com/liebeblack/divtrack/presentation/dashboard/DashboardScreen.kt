@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
@@ -40,13 +39,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.liebeblack.divtrack.domain.model.RateSource
+import com.liebeblack.divtrack.domain.model.TrendDirection
 import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.common.CollectEffects
 import com.liebeblack.divtrack.presentation.common.asString
 import com.liebeblack.divtrack.presentation.common.labelRes
 import com.liebeblack.divtrack.presentation.common.openNetworkSettings
 import com.liebeblack.divtrack.presentation.components.ErrorState
-import com.liebeblack.divtrack.presentation.components.LoadingState
 import com.liebeblack.divtrack.presentation.components.RateCard
 import com.liebeblack.divtrack.presentation.components.SpreadChip
 import com.liebeblack.divtrack.presentation.theme.DivTrackThemeTokens
@@ -91,6 +90,12 @@ fun DashboardScreen(
 ) {
     val colors = DivTrackThemeTokens.colors
     val context = LocalContext.current
+    val officialRate = remember(state.rates) {
+        state.rates.firstOrNull { it.source == RateSource.OFICIAL }
+    }
+    val parallelRate = remember(state.rates) {
+        state.rates.firstOrNull { it.source == RateSource.PARALELO }
+    }
 
     // El texto del error se resuelve una vez por estado, no en cada tarjeta.
     val errorMessage = state.errorText?.asString(context)
@@ -145,7 +150,13 @@ fun DashboardScreen(
             ) {
                 if (state.isLoading) {
                     item(key = "loading") {
-                        LoadingState(message = stringResource(R.string.loading_rates))
+                        Text(
+                            text = stringResource(R.string.loading_rates),
+                            modifier = Modifier.fillMaxWidth(),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                        )
                     }
                 } else {
                     // El snackbar se va solo; este aviso permanece mientras no haya conexión,
@@ -165,7 +176,7 @@ fun DashboardScreen(
                         }
                     }
 
-                    if (!state.hasData) {
+                    if (officialRate == null && !state.hasData) {
                         item(key = "error") {
                             ErrorState(
                                 message = errorMessage
@@ -185,45 +196,77 @@ fun DashboardScreen(
                             )
                         }
                     }
+                }
 
-                    // Las claves estables evitan recomponer la tarjeta que no cambió.
-                    items(items = state.rates, key = { rate -> rate.source.key }) { rate ->
-                        val isOfficial = rate.source == RateSource.OFICIAL
-                        RateCard(
-                            title = stringResource(
-                                R.string.rate_card_title,
-                                stringResource(rate.source.labelRes()),
-                            ),
-                            valueText = rate.valueText,
-                            trend = rate.trend,
-                            deltaText = rate.deltaText,
-                            providerText = stringResource(R.string.rate_provider, rate.providerText),
-                            updatedAtText = rate.updatedAtText?.let { updated ->
-                                stringResource(R.string.rate_updated_at, updated)
-                            },
-                            isStale = rate.isStale,
-                            accentColor = if (isOfficial) colors.officialAccent else colors.parallelAccent,
-                            isHero = isOfficial,
+                item(key = "official-rate") {
+                    RateCard(
+                        title = stringResource(
+                            R.string.rate_card_title,
+                            stringResource(RateSource.OFICIAL.labelRes()),
+                        ),
+                        valueText = officialRate?.valueText ?: "—",
+                        trend = officialRate?.trend ?: TrendDirection.FLAT,
+                        deltaText = officialRate?.deltaText,
+                        providerText = when {
+                            state.isLoading -> stringResource(R.string.rate_loading_provider)
+                            officialRate == null -> stringResource(R.string.rate_unavailable)
+                            else -> stringResource(R.string.rate_provider, officialRate.providerText)
+                        },
+                        updatedAtText = officialRate?.updatedAtText?.let { updated ->
+                            stringResource(R.string.rate_updated_at, updated)
+                        },
+                        isStale = officialRate?.isStale == true,
+                        accentColor = colors.officialAccent,
+                        isHero = true,
+                        isLoading = state.isLoading,
+                    )
+                }
+
+                if (!state.isLoading && state.showParallelRate) {
+                    parallelRate?.let { rate ->
+                        item(key = rate.source.key) {
+                            RateCard(
+                                title = stringResource(
+                                    R.string.rate_card_title,
+                                    stringResource(rate.source.labelRes()),
+                                ),
+                                valueText = rate.valueText,
+                                trend = rate.trend,
+                                deltaText = rate.deltaText,
+                                providerText = stringResource(R.string.rate_provider, rate.providerText),
+                                updatedAtText = rate.updatedAtText?.let { updated ->
+                                    stringResource(R.string.rate_updated_at, updated)
+                                },
+                                isStale = rate.isStale,
+                                accentColor = colors.parallelAccent,
+                            )
+                        }
+                    }
+                }
+
+                if (
+                    !state.isLoading &&
+                    state.showParallelRate &&
+                    officialRate != null &&
+                    parallelRate != null
+                ) {
+                    item(key = "spread") {
+                        SpreadChip(
+                            percentText = state.spreadPercentText,
+                            absoluteText = state.spreadAbsoluteText,
                         )
                     }
+                }
 
-                    if (state.hasData) {
-                        item(key = "spread") {
-                            SpreadChip(
-                                percentText = state.spreadPercentText,
-                                absoluteText = state.spreadAbsoluteText,
-                            )
-                        }
-
-                        item(key = "legal") {
-                            Text(
-                                text = stringResource(R.string.dashboard_disclaimer),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
+                if (!state.isLoading && state.hasData) {
+                    item(key = "legal") {
+                        Text(
+                            text = stringResource(R.string.dashboard_disclaimer),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
             }

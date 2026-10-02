@@ -10,6 +10,7 @@ import com.liebeblack.divtrack.domain.model.ExchangeRate
 import com.liebeblack.divtrack.domain.model.Spread
 import com.liebeblack.divtrack.domain.usecase.CalculateSpreadUseCase
 import com.liebeblack.divtrack.domain.usecase.ObserveRatesUseCase
+import com.liebeblack.divtrack.domain.usecase.ObserveSettingsUseCase
 import com.liebeblack.divtrack.domain.usecase.SyncRatesUseCase
 import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.common.UiText
@@ -38,6 +39,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val observeRates: ObserveRatesUseCase,
+    private val observeSettings: ObserveSettingsUseCase,
     private val syncRates: SyncRatesUseCase,
     private val calculateSpread: CalculateSpreadUseCase,
     private val timeProvider: TimeProvider,
@@ -57,6 +59,7 @@ class DashboardViewModel @Inject constructor(
 
     init {
         observeRatesFromCache()
+        observeParallelRatePreference()
         refresh(isUserInitiated = false)
     }
 
@@ -71,6 +74,14 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             observeRates().collect { rates ->
                 _state.update { current -> current.withRates(rates) }
+            }
+        }
+    }
+
+    private fun observeParallelRatePreference() {
+        viewModelScope.launch {
+            observeSettings().collect { settings ->
+                _state.update { it.copy(showParallelRate = settings.showParallelRate) }
             }
         }
     }

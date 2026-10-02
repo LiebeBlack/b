@@ -133,6 +133,15 @@ fun SettingsScreen(
                 }
 
                 SettingsSwitchRow(
+                    title = stringResource(R.string.settings_show_parallel_rate),
+                    helper = stringResource(R.string.settings_show_parallel_rate_helper),
+                    checked = state.showParallelRate,
+                    onCheckedChange = { enabled ->
+                        onIntent(SettingsIntent.SetShowParallelRate(enabled))
+                    },
+                )
+
+                SettingsSwitchRow(
                     title = stringResource(R.string.settings_igtf_default),
                     helper = stringResource(R.string.settings_igtf_default_helper),
                     checked = state.igtfEnabled,

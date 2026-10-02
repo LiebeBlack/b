@@ -88,6 +88,10 @@ class FakeSettingsRepository(
     override suspend fun setWelcomeCompleted(completed: Boolean) {
         settings.value = settings.value.copy(welcomeCompleted = completed)
     }
+
+    override suspend fun setShowParallelRate(enabled: Boolean) {
+        settings.value = settings.value.copy(showParallelRate = enabled)
+    }
 }
 
 /** Programador simulado: registra lo que WorkManager habría hecho. */
