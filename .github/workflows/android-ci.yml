@@ -66,6 +66,12 @@ jobs:
       - name: Release con R8
         run: ./gradlew :app:assembleRelease -PcomposeMetrics=true --stacktrace
 
+      - name: DivTrack Lite release con R8
+        run: ./gradlew -p lite :app:assembleRelease --stacktrace
+
+      - name: DivTrack Lite debug (respaldo si no hay firma release)
+        run: ./gradlew -p lite :app:assembleDebug --stacktrace
+
       - name: Lint
         continue-on-error: true
         run: ./gradlew :app:lintDebug --stacktrace
@@ -78,6 +84,7 @@ jobs:
           if-no-files-found: warn
           path: |
             app/build/outputs/apk/**/*.apk
+            lite/app/build/outputs/apk/**/*.apk
             app/build/reports/lint-results-*.html
             **/build/reports/tests/**
             **/build/compose-metrics/**
@@ -119,8 +126,10 @@ jobs:
           set -euo pipefail
           BUILD_TOOLS="/usr/local/lib/android/sdk/build-tools/${ANDROID_BUILD_TOOLS}"
 
-          RELEASE_UNSIGNED=$(find artifacts -name 'app-release-unsigned.apk' | head -n1)
-          DEBUG_APK=$(find artifacts -name 'app-debug.apk' | head -n1)
+          RELEASE_UNSIGNED=$(find artifacts/app/build/outputs/apk -name 'app-release-unsigned.apk' | head -n1)
+          DEBUG_APK=$(find artifacts/app/build/outputs/apk -name 'app-debug.apk' | head -n1)
+          LITE_RELEASE_UNSIGNED=$(find artifacts/lite/app/build/outputs/apk/release -name '*-release-unsigned.apk' | head -n1)
+          LITE_DEBUG_APK=$(find artifacts/lite/app/build/outputs/apk/debug -name '*.apk' | head -n1)
 
           if [ -z "${RELEASE_UNSIGNED}" ] || [ ! -f "${RELEASE_UNSIGNED}" ]; then
             echo "::error::No se encontró el APK release sin firmar."
@@ -139,7 +148,6 @@ jobs:
               --ks-pass "pass:${KEYSTORE_PASS}" \
               --key-pass "pass:${KEY_PASS}" \
               --out DivTrack-release.apk app-aligned.apk
-            rm -f divtrack.jks app-aligned.apk
             SELECTED_APK=DivTrack-release.apk
             EXPECTED_APPLICATION_ID=com.liebeblack.divtrack
             echo "apk=DivTrack-release.apk" >> "$GITHUB_OUTPUT"
@@ -167,6 +175,41 @@ jobs:
             exit 1
           fi
 
+          if [ -n "${KEYSTORE_B64:-}" ] &&
+             [ -n "${KEY_ALIAS:-}" ] &&
+             [ -n "${KEYSTORE_PASS:-}" ] &&
+             [ -n "${KEY_PASS:-}" ]; then
+            if [ -z "${LITE_RELEASE_UNSIGNED}" ] || [ ! -f "${LITE_RELEASE_UNSIGNED}" ]; then
+              echo "::error::No se encontró el APK release de DivTrack Lite."
+              exit 1
+            fi
+            "${BUILD_TOOLS}/zipalign" -f -p 4 "${LITE_RELEASE_UNSIGNED}" apklite-aligned.apk
+            "${BUILD_TOOLS}/apksigner" sign \
+              --ks divtrack.jks \
+              --ks-key-alias "${KEY_ALIAS}" \
+              --ks-pass "pass:${KEYSTORE_PASS}" \
+              --key-pass "pass:${KEY_PASS}" \
+              --out apklite.apk apklite-aligned.apk
+            rm -f apklite-aligned.apk
+            LITE_CHANNEL="release"
+          else
+            if [ -z "${LITE_DEBUG_APK}" ] || [ ! -f "${LITE_DEBUG_APK}" ]; then
+              echo "::error::No se encontró APK debug firmado para DivTrack Lite."
+              exit 1
+            fi
+            cp "${LITE_DEBUG_APK}" apklite.apk
+            LITE_CHANNEL="debug (firma de desarrollo)"
+          fi
+
+          "${BUILD_TOOLS}/apksigner" verify apklite.apk
+          LITE_BADGING=$("${BUILD_TOOLS}/aapt2" dump badging apklite.apk)
+          if ! printf '%s\n' "${LITE_BADGING}" | grep -Fq "package: name='com.liebeblack.divtrack.lite' "; then
+            echo "::error::El APK Lite tiene un applicationId inesperado."
+            exit 1
+          fi
+          rm -f divtrack.jks app-aligned.apk apklite-aligned.apk
+          echo "lite_channel=${LITE_CHANNEL}" >> "$GITHUB_OUTPUT"
+
       - name: Leer versión del APK
         id: version
         run: |
@@ -181,6 +224,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           APK_PATH: ${{ steps.apk.outputs.apk }}
           CHANNEL: ${{ steps.apk.outputs.channel }}
+          LITE_CHANNEL: ${{ steps.apk.outputs.lite_channel }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
@@ -199,10 +243,13 @@ jobs:
           Compilado automáticamente desde [\`${SHORT_SHA}\`](https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}).
 
           - **Canal:** ${CHANNEL}
+          - **Canal Lite:** ${LITE_CHANNEL}
           - **Fecha:** ${STAMP}
           - **Instalación:** descarga el APK y ábrelo (activa "orígenes desconocidos" si lo pide).
+          - **Lite:** descarga \`apklite.apk\` para la versión ultraligera, limitada a la tasa BCV.
 
           > El release se reemplaza en cada push a \`main\` una vez que compila y pasan los tests.
           EOF
           )" \
-            "${APK_PATH}"
+            "${APK_PATH}" \
+            apklite.apk#DivTrack Lite (${LITE_CHANNEL})
