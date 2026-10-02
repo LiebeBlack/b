@@ -268,11 +268,11 @@ fun DashboardScreen(
                         )
                     }
                 }
-                TopSnackbarHost(
-                    hostState = snackbarHostState,
-                    topPadding = padding.calculateTopPadding(),
-                )
             }
+            TopSnackbarHost(
+                hostState = snackbarHostState,
+                topPadding = padding.calculateTopPadding(),
+            )
         }
     }
 }
