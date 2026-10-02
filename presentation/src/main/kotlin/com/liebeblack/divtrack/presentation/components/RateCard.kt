@@ -134,36 +134,34 @@ fun RateCard(
                             strokeWidth = 3.dp,
                         )
                     } else {
+                        val preferredFontSize = when {
+                            fontScale >= 1.3f -> 30f
+                            maxWidth >= 340.dp -> 50f
+                            maxWidth >= 280.dp -> 42f
+                            else -> 34f
+                        }
+                        val lengthAdjustment = when {
+                            valueText.length >= 16 -> 16f
+                            valueText.length >= 13 -> 10f
+                            valueText.length >= 10 -> 5f
+                            else -> 0f
+                        }
+                        val heroFontSize = (preferredFontSize - lengthAdjustment)
+                            .coerceAtLeast(22f)
+
                         Text(
                             text = valueText,
                             style = if (isHero) {
-                                val baseStyle = when {
-                                    fontScale >= 1.3f -> MaterialTheme.typography.displaySmall
-                                    maxWidth >= 340.dp -> MaterialTheme.typography.displayLarge
-                                    maxWidth >= 280.dp -> MaterialTheme.typography.displayMedium
-                                    else -> MaterialTheme.typography.displaySmall
-                                }
-                                baseStyle.tabular().copy(
-                                    fontSize = when {
-                                        fontScale >= 1.3f -> 30.sp
-                                        maxWidth >= 340.dp -> 50.sp
-                                        maxWidth >= 280.dp -> 42.sp
-                                        else -> 34.sp
-                                    },
-                                    lineHeight = when {
-                                        fontScale >= 1.3f -> 36.sp
-                                        maxWidth >= 340.dp -> 56.sp
-                                        maxWidth >= 280.dp -> 48.sp
-                                        else -> 40.sp
-                                    },
+                                MaterialTheme.typography.displayLarge.tabular().copy(
+                                    fontSize = heroFontSize.sp,
+                                    lineHeight = (heroFontSize + 6f).sp,
                                     fontWeight = FontWeight.Black,
                                 )
                             } else {
                                 MaterialTheme.typography.displaySmall.tabular()
                             },
                             color = emphasisColor,
-                            fontWeight = FontWeight.Black,
-                            maxLines = 1,
+                            maxLines = if (isHero && fontScale >= 1.3f) 2 else 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth(),
