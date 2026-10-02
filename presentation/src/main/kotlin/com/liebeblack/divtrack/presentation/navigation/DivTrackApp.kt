@@ -100,7 +100,10 @@ private fun DivTrackNavigation(appVersion: String) {
         // barra de estado. Aquí se anula para no reservar ese espacio dos veces.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                tonalElevation = 0.dp,
+            ) {
                 TopLevelDestination.ordered().forEach { destination ->
                     NavigationBarItem(
                         selected = destination.key == currentKey,
