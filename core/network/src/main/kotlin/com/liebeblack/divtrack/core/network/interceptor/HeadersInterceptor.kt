@@ -33,6 +33,6 @@ class HeadersInterceptor(
 
     companion object {
         /** Se mantiene corto y estable: es lo que los proveedores ven en sus métricas. */
-        const val USER_AGENT: String = "DivTrack/2.3.7-VT (Android)"
+        const val USER_AGENT: String = "DivTrack/4.7 (Android)"
     }
 }

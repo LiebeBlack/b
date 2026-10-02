@@ -142,7 +142,7 @@ XxxScreen.kt      XxxRoute (única función que toca el ViewModel) + XxxScreen (
   dato persistido; los refrescos manuales conservan visibles las tarjetas existentes.
 - La bienvenida informativa se presenta solo si DataStore confirma que no se completó.
   La confirmación se persiste antes de abrir las pestañas; mientras se leen preferencias
-  se muestra una carga breve y no se presenta la bienvenida por error a usuarios existentes.
+  se muestra una carga breve para decidir con el estado persistido, sin parpadeos de navegación.
 
 ---
 
