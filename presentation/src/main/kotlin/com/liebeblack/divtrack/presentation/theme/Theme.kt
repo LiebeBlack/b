@@ -23,6 +23,8 @@ data class DivTrackColors(
     val trendDown: Color,
     val trendFlat: Color,
     val officialAccent: Color,
+    val officialSurface: Color,
+    val officialBorder: Color,
     val parallelAccent: Color,
     val parallelMuted: Color,
 )
@@ -94,6 +96,8 @@ private val DarkExtraColors = DivTrackColors(
     trendDown = TrendDown,
     trendFlat = TrendFlat,
     officialAccent = OfficialAccent,
+    officialSurface = Color(0xFF0D2D20),
+    officialBorder = Color(0xFF39F0A5),
     parallelAccent = ParallelAccent,
     parallelMuted = ParallelMutedDark,
 )
@@ -105,6 +109,8 @@ private val LightExtraColors = DivTrackColors(
     trendDown = TrendDownDeep,
     trendFlat = TrendFlatDeep,
     officialAccent = MintContrast,
+    officialSurface = Color(0xFFEAF4E8),
+    officialBorder = MintContrast,
     parallelAccent = Amber,
     parallelMuted = ParallelMutedLight,
 )

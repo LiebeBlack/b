@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.liebeblack.divtrack.domain.model.TrendDirection
 import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.theme.DivTrackThemeTokens
@@ -42,8 +43,8 @@ import com.liebeblack.divtrack.presentation.theme.tabular
  * y el bloque interior quedaba alineado a la izquierda dentro de una tarjeta que la
  * pantalla centra. La franja superior da el mismo código de color sin costo de ancho.
  *
- * [isHero] escala la cifra: el dólar oficial se muestra como protagonista (`displayMedium`,
- * 38 sp) y con mayor peso; el paralelo usa una escala secundaria.
+ * [isHero] da máxima jerarquía a la tasa oficial con cifra Black grande y centrada; el
+ * paralelo conserva una escala secundaria.
  *
  * Composable sin estado (primitivas + lambda): Compose puede saltarse la recomposición
  * cuando nada cambia, que es exactamente lo que buscamos en gama baja.
@@ -74,14 +75,14 @@ fun RateCard(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         color = if (isHero) {
-            colors.officialAccent.copy(alpha = 0.12f)
+            colors.officialSurface
         } else {
             MaterialTheme.colorScheme.surfaceContainer
         },
         border = BorderStroke(
             width = if (isHero) 1.5.dp else 1.dp,
             color = if (isHero) {
-                colors.officialAccent.copy(alpha = 0.72f)
+                colors.officialBorder
             } else {
                 MaterialTheme.colorScheme.outlineVariant
             },
@@ -94,8 +95,8 @@ fun RateCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(if (isHero) 5.dp else 3.dp)
-                    .background(if (isHero) emphasisColor else colors.parallelMuted.copy(alpha = 0.55f)),
+                    .height(if (isHero) 6.dp else 3.dp)
+                    .background(if (isHero) accentColor else colors.parallelMuted.copy(alpha = 0.55f)),
             )
 
             Column(
@@ -109,7 +110,7 @@ fun RateCard(
                     text = title,
                     modifier = Modifier.fillMaxWidth(),
                     style = if (isHero) {
-                        MaterialTheme.typography.titleLarge
+                        MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, lineHeight = 26.sp)
                     } else {
                         MaterialTheme.typography.titleMedium
                     },
@@ -135,8 +136,28 @@ fun RateCard(
                     } else {
                         Text(
                             text = valueText,
-                            style = if (isHero && maxWidth >= 400.dp && fontScale < 1.3f) {
-                                MaterialTheme.typography.displayMedium.tabular()
+                            style = if (isHero) {
+                                val baseStyle = when {
+                                    fontScale >= 1.3f -> MaterialTheme.typography.displaySmall
+                                    maxWidth >= 340.dp -> MaterialTheme.typography.displayLarge
+                                    maxWidth >= 280.dp -> MaterialTheme.typography.displayMedium
+                                    else -> MaterialTheme.typography.displaySmall
+                                }
+                                baseStyle.tabular().copy(
+                                    fontSize = when {
+                                        fontScale >= 1.3f -> 30.sp
+                                        maxWidth >= 340.dp -> 50.sp
+                                        maxWidth >= 280.dp -> 42.sp
+                                        else -> 34.sp
+                                    },
+                                    lineHeight = when {
+                                        fontScale >= 1.3f -> 36.sp
+                                        maxWidth >= 340.dp -> 56.sp
+                                        maxWidth >= 280.dp -> 48.sp
+                                        else -> 40.sp
+                                    },
+                                    fontWeight = FontWeight.Black,
+                                )
                             } else {
                                 MaterialTheme.typography.displaySmall.tabular()
                             },
