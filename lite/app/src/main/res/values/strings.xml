@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DivTrack Lite</string>
+    <string name="screen_title">DÓLAR OFICIAL</string>
+    <string name="currency_label">BCV · USD / VES</string>
+    <string name="rate_placeholder">—</string>
+    <string name="bolivar_label">bolívares por dólar</string>
+    <string name="source_label">FUENTE OFICIAL · BANCO CENTRAL DE VENEZUELA</string>
+    <string name="refresh">Actualizar</string>
+    <string name="status_starting">Consultando la tasa oficial…</string>
+    <string name="status_cached">Tasa guardada. Comprobando actualización…</string>
+    <string name="status_no_cache">Aún no hay una tasa guardada.</string>
+    <string name="status_updated">Tasa actualizada desde el BCV.</string>
+    <string name="status_update_failed">No se pudo actualizar. Se conserva el último dato.</string>
+    <string name="status_empty_failed">No se pudo consultar el BCV. Revisa la conexión.</string>
+    <string name="checked_at">Última consulta: %1$s</string>
+    <string name="refreshing">Actualizando…</string>
+</resources>
