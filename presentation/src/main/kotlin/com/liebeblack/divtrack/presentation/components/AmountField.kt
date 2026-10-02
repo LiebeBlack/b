@@ -12,10 +12,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import com.liebeblack.divtrack.presentation.theme.tabular
 
 /**
- * Campo de importe grande, con prefijo de moneda y teclado decimal.
+ * Campo de importe grande, con la moneda incluida en la etiqueta para mantener la cifra
+ * centrada respecto a todo el campo (un icono lateral la desplaza visualmente).
  *
  * El saneado del texto se delega al ViewModel (`NumberParsing`): aquí no se filtra nada para
  * que el cursor y la selección se comporten de forma nativa. El cálculo es automático en
@@ -35,12 +37,11 @@ fun AmountField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier.fillMaxWidth(),
-        label = { Text(text = label) },
-        leadingIcon = {
+        label = {
             Text(
-                text = prefix,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = "$prefix · $label",
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         },
         singleLine = true,

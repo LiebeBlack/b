@@ -7,6 +7,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -29,7 +30,7 @@ fun <T> SegmentedSelector(
 ) {
     FlowRow(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         options.forEach { option ->

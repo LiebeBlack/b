@@ -208,7 +208,10 @@ fun CalculatorScreen(
                     accentColor = accentColor,
                 )
 
-                TextButton(onClick = { onIntent(CalculatorIntent.SwapDirection) }) {
+                TextButton(
+                    onClick = { onIntent(CalculatorIntent.SwapDirection) },
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                ) {
                     Text(text = stringResource(R.string.action_swap_direction))
                 }
 
