@@ -113,6 +113,14 @@ verificados. Ninguna URL está escrita en el código Kotlin: entran por `BuildCo
 `android-37.0` + `build-tools 37.0.0`, compila debug, corre los tests, compila release con R8
 y publica APK, reportes y métricas del compilador de Compose como artefactos.
 
+El APK para instalar se descarga desde **Releases**, no desde el artefacto de CI:
+`app-release-unsigned.apk` no está firmado. El flujo de publicación verifica la firma y el
+`applicationId` antes de subir el archivo. Sin secretos de firma configurados publica el APK
+debug (`com.liebeblack.divtrack.debug`), firmado con una clave temporal del runner; para
+actualizar ese canal puede ser necesario desinstalar la versión anterior. Las versiones
+release (`com.liebeblack.divtrack`) deben firmarse siempre con la misma clave para instalarse
+como actualización.
+
 Ojo con el nombre de la plataforma en CI: la de API 37 se publica como **`platforms;android-37.0`**
 (o `platforms/android-37.0` con el CLI nuevo). `platforms;android-37` **no existe**, y era el
 motivo de que el paso de SDK no dejara nada instalado.
