@@ -21,11 +21,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,6 +41,7 @@ import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.domain.model.TrendDirection
 import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.common.CollectEffects
+import com.liebeblack.divtrack.presentation.common.TopSnackbarHost
 import com.liebeblack.divtrack.presentation.common.asString
 import com.liebeblack.divtrack.presentation.common.labelRes
 import com.liebeblack.divtrack.presentation.common.openNetworkSettings
@@ -105,9 +105,8 @@ fun DashboardScreen(
 
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text(text = stringResource(R.string.dashboard_title)) },
                 actions = {
                     IconButton(
@@ -269,6 +268,10 @@ fun DashboardScreen(
                         )
                     }
                 }
+                TopSnackbarHost(
+                    hostState = snackbarHostState,
+                    topPadding = padding.calculateTopPadding(),
+                )
             }
         }
     }

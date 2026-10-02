@@ -25,17 +25,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -46,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.common.CollectEffects
+import com.liebeblack.divtrack.presentation.common.TopSnackbarHost
 import com.liebeblack.divtrack.presentation.common.asString
 import com.liebeblack.divtrack.presentation.common.copyToClipboard
 import com.liebeblack.divtrack.presentation.common.labelRes
@@ -108,12 +109,16 @@ fun CalculatorScreen(
     } else {
         colors.parallelAccent
     }
+    val resultValueColor = if (state.selectedSource == RateSource.OFICIAL) {
+        colors.officialAccent
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
 
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text(text = stringResource(R.string.calculator_title)) },
                 actions = {
                     // Misma mecánica que el dashboard: refresco manual visible y bloqueado
@@ -221,11 +226,13 @@ fun CalculatorScreen(
                         ResultRow(
                             label = stringResource(R.string.result_mirror_bs),
                             value = state.totalBsText,
+                            valueColor = resultValueColor,
                             emphasize = true,
                         )
                         ResultRow(
                             label = stringResource(R.string.result_mirror_usd),
                             value = state.totalUsdText,
+                            valueColor = resultValueColor,
                             emphasize = true,
                         )
                         ResultRow(
@@ -260,15 +267,21 @@ fun CalculatorScreen(
                 if (hintText != null) {
                     Text(
                         text = hintText,
+                        modifier = Modifier.fillMaxWidth(),
                         style = MaterialTheme.typography.bodySmall,
                         color = if (state.hasRate) {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         } else {
                             MaterialTheme.colorScheme.error
                         },
+                        textAlign = TextAlign.Center,
                     )
                 }
             }
+            TopSnackbarHost(
+                hostState = snackbarHostState,
+                topPadding = padding.calculateTopPadding(),
+            )
         }
     }
 }
@@ -279,6 +292,7 @@ private fun ResultRow(
     value: String,
     modifier: Modifier = Modifier,
     emphasize: Boolean = false,
+    valueColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     val valueStyle = if (emphasize) {
         MaterialTheme.typography.headlineSmall.tabular()
@@ -300,7 +314,7 @@ private fun ResultRow(
             text = value,
             modifier = Modifier.fillMaxWidth(),
             style = valueStyle,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = valueColor,
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

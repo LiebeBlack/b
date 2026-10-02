@@ -15,15 +15,14 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -40,6 +39,7 @@ import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.domain.model.ThemeMode
 import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.common.CollectEffects
+import com.liebeblack.divtrack.presentation.common.TopSnackbarHost
 import com.liebeblack.divtrack.presentation.common.asString
 import com.liebeblack.divtrack.presentation.common.labelRes
 import com.liebeblack.divtrack.presentation.components.SegmentedSelector
@@ -85,9 +85,8 @@ fun SettingsScreen(
 ) {
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
-            TopAppBar(title = { Text(text = stringResource(R.string.settings_title)) })
+            CenterAlignedTopAppBar(title = { Text(text = stringResource(R.string.settings_title)) })
         },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -209,6 +208,10 @@ fun SettingsScreen(
                 AboutCard(appVersion = appVersion)
             }
         }
+        TopSnackbarHost(
+            hostState = snackbarHostState,
+            topPadding = padding.calculateTopPadding(),
+        )
     }
 }
 
@@ -304,21 +307,27 @@ private fun ProviderStatusRow(status: ProviderStatus, modifier: Modifier = Modif
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = status.providerId,
+                    modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
                 )
                 Text(
                     text = sourcesText,
+                    modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                 )
                 if (status.isOk) {
                     Text(
                         text = lastUpdatedText
                             ?.let { fresh -> stringResource(R.string.provider_last_data, fresh) }
                             ?: stringResource(R.string.provider_no_timestamp),
+                        modifier = Modifier.fillMaxWidth(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
                     )
                 }
             }
@@ -389,8 +398,10 @@ private fun AboutCard(appVersion: String, modifier: Modifier = Modifier) {
 private fun SectionTitle(text: String) {
     Text(
         text = text,
+        modifier = Modifier.fillMaxWidth(),
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center,
     )
 }
 
@@ -398,8 +409,10 @@ private fun SectionTitle(text: String) {
 private fun SectionBody(text: String) {
     Text(
         text = text,
+        modifier = Modifier.fillMaxWidth(),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
     )
 }
 

@@ -91,6 +91,13 @@ XxxScreen.kt      XxxRoute (única función que toca el ViewModel) + XxxScreen (
   Compose pueda saltarse recomposiciones.
 - **`SharedFlow<Effect>`** con `extraBufferCapacity = 1` y `DROP_OLDEST` para snackbars y
   portapapeles: son eventos, no estado, y no deben repetirse al rotar.
+- Los avisos breves de dashboard, calculadora y ajustes se muestran centrados en la parte
+  superior, debajo de la barra de la pantalla, mediante un host compartido; no requieren
+  permisos de notificación del sistema.
+- La bienvenida usa insets seguros y contenido desplazable: se centra cuando cabe en el
+  alto disponible y conserva el botón accesible al desplazarse en pantallas compactas o con
+  escala de fuente grande. La navegación inferior mantiene etiquetas visibles, estados
+  seleccionados contrastados y tipografía de la escala común.
 - **El ViewModel nunca toca `Context`.** Los textos viajan como `UiText.Res(id)` y se
   resuelven en Compose: así los ViewModel se testean en JVM pura.
 - **Los composables de UI no reciben ViewModel.** Solo estado y lambdas; `key` estable en

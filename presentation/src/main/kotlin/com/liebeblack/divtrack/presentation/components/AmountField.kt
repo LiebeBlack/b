@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import com.liebeblack.divtrack.presentation.theme.tabular
 
 /**
@@ -44,7 +45,9 @@ fun AmountField(
         },
         singleLine = true,
         shape = MaterialTheme.shapes.large,
-        textStyle = MaterialTheme.typography.displaySmall.tabular(),
+        textStyle = MaterialTheme.typography.displaySmall.tabular().copy(
+            textAlign = TextAlign.Center,
+        ),
         isError = isError,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Decimal,

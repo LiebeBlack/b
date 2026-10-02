@@ -115,9 +115,9 @@ fun RateCard(
                         MaterialTheme.typography.titleMedium
                     },
                     color = emphasisColor,
-                    fontWeight = FontWeight.Black,
+                    fontWeight = if (isHero) FontWeight.Black else FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
-                    maxLines = if (LocalDensity.current.fontScale >= 1.3f) 2 else 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
 
@@ -158,10 +158,14 @@ fun RateCard(
                                     fontWeight = FontWeight.Black,
                                 )
                             } else {
-                                MaterialTheme.typography.displaySmall.tabular()
+                                MaterialTheme.typography.displaySmall.tabular().copy(
+                                    fontSize = 26.sp,
+                                    lineHeight = 32.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
                             },
                             color = emphasisColor,
-                            maxLines = if (isHero && fontScale >= 1.3f) 2 else 1,
+                            maxLines = if (fontScale >= 1.3f || valueText.length >= 10) 2 else 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth(),
@@ -215,7 +219,7 @@ fun RateCard(
                             colors.parallelMuted
                         },
                         textAlign = TextAlign.Center,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
