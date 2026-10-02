@@ -1,8 +1,10 @@
 package com.liebeblack.divtrack.presentation.navigation
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -13,17 +15,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import com.liebeblack.divtrack.domain.model.ThemeMode
 import com.liebeblack.divtrack.presentation.calculator.CalculatorRoute
+import com.liebeblack.divtrack.presentation.components.WelcomeScreen
 import com.liebeblack.divtrack.presentation.dashboard.DashboardRoute
 import com.liebeblack.divtrack.presentation.settings.SettingsRoute
 import com.liebeblack.divtrack.presentation.theme.DivTrackTheme
@@ -43,11 +48,28 @@ fun DivTrackApp(
     modifier: Modifier = Modifier,
     viewModel: AppViewModel = hiltViewModel(),
 ) {
-    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val themeMode = settings?.themeMode ?: ThemeMode.SYSTEM
+    val welcomeCompleted = settings?.welcomeCompleted
+    val isCompletingWelcome by viewModel.isCompletingWelcome.collectAsStateWithLifecycle()
+    val welcomeSaveFailed by viewModel.welcomeSaveFailed.collectAsStateWithLifecycle()
 
     DivTrackTheme(themeMode = themeMode) {
         Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            DivTrackNavigation(appVersion = appVersion)
+            when (welcomeCompleted) {
+                true -> DivTrackNavigation(appVersion = appVersion)
+                false -> WelcomeScreen(
+                    isSaving = isCompletingWelcome,
+                    saveFailed = welcomeSaveFailed,
+                    onContinue = viewModel::completeWelcome,
+                )
+                null -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
         }
     }
 }

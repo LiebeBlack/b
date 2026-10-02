@@ -31,12 +31,9 @@ import kotlinx.coroutines.launch
  * ViewModel del dashboard. Agnóstico del framework de UI: no importa nada de Compose
  * (solo `lifecycle-viewmodel`), así que se testea en JVM pura.
  *
- * Flujo Online-First:
- * 1. Al abrir, se suscribe a Room -> la UI muestra lo último guardado al instante.
- * 2. Dispara una sincronización en segundo plano -> si la red responde, Room emite y la
- *    pantalla se repinta sola.
- * 3. Si la red falla, el estado local NO se toca y se emite un efecto para el snackbar con
- *    la causa real del fallo (sin conexión, timeout o el código HTTP del proveedor).
+ * Al abrir, sincroniza primero y mantiene el estado de carga visible para que las tasas
+ * guardadas no aparezcan un instante antes de ser reemplazadas. Al terminar, Room entrega
+ * el dato actualizado o conserva el último valor si la red falló.
  */
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
@@ -57,10 +54,14 @@ class DashboardViewModel @Inject constructor(
 
     private var refreshJob: Job? = null
     private var refreshRequestedByUser = false
+    private var ratesObserved = false
 
     init {
-        observeRatesFromCache()
-        refresh(isUserInitiated = false)
+        val initialRefresh = refresh(isUserInitiated = false)
+        viewModelScope.launch {
+            initialRefresh.join()
+            observeRatesFromCache()
+        }
     }
 
     fun onIntent(intent: DashboardIntent) {
@@ -72,23 +73,25 @@ class DashboardViewModel @Inject constructor(
 
     private fun observeRatesFromCache() {
         viewModelScope.launch {
-            observeRates().collect { rates -> _state.update { current -> current.withRates(rates) } }
+            observeRates().collect { rates ->
+                ratesObserved = true
+                _state.update { current -> current.withRates(rates) }
+            }
         }
     }
 
-    private fun refresh(isUserInitiated: Boolean) {
-        if (refreshJob?.isActive == true) {
+    private fun refresh(isUserInitiated: Boolean): Job {
+        val activeRefresh = refreshJob
+        if (activeRefresh?.isActive == true) {
             if (isUserInitiated) {
                 refreshRequestedByUser = true
                 _state.update { it.copy(isRefreshing = true) }
             }
-            return
+            return activeRefresh
         }
 
         refreshRequestedByUser = isUserInitiated
-        refreshJob = viewModelScope.launch {
-            // Solo el refresco manual muestra el indicador: al abrir la app, el esqueleto de
-            // carga o los datos ya guardados cuentan la historia y no hace falta un spinner.
+        return viewModelScope.launch {
             if (isUserInitiated) {
                 _state.update { it.copy(isRefreshing = true) }
             }
@@ -137,27 +140,29 @@ class DashboardViewModel @Inject constructor(
                         // la petición caduca, el usuario tiene que leer eso y no un diagnóstico
                         // equivocado de su propia red. Cuando sí es conectividad, el mensaje
                         // recuerda que los datos en pantalla siguen siendo válidos.
-                        _effects.emit(
-                            DashboardEffect.ShowMessage(
-                                when {
-                                    isConnectivity && hasCachedData ->
-                                        UiText.Res(R.string.msg_offline_showing_cache)
+                        if (refreshRequestedByUser && ratesObserved) {
+                            _effects.emit(
+                                DashboardEffect.ShowMessage(
+                                    when {
+                                        isConnectivity && hasCachedData ->
+                                            UiText.Res(R.string.msg_offline_showing_cache)
 
-                                    isConnectivity -> UiText.Res(R.string.msg_offline_no_data)
+                                        isConnectivity -> UiText.Res(R.string.msg_offline_no_data)
 
-                                    else -> error.toUiText()
-                                },
-                            ),
-                        )
+                                        else -> error.toUiText()
+                                    },
+                                ),
+                            )
+                        }
                     }
 
                     Result.Loading -> Unit
                 }
             } finally {
                 refreshRequestedByUser = false
-                _state.update { it.copy(isRefreshing = false) }
+                _state.update { it.copy(isLoading = !ratesObserved, isRefreshing = false) }
             }
-        }
+        }.also { refreshJob = it }
     }
 
     /** Aplica las tasas de Room y deriva el spread una sola vez por emisión. */

@@ -43,6 +43,8 @@ interface UserPreferencesDataSource {
     suspend fun setPreferredProvider(providerId: String)
 
     suspend fun setSyncOnWifiOnly(enabled: Boolean)
+
+    suspend fun setWelcomeCompleted(completed: Boolean)
 }
 
 @Singleton
@@ -94,6 +96,10 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         dataStore.edit { it[Keys.SYNC_ON_WIFI_ONLY] = enabled }
     }
 
+    override suspend fun setWelcomeCompleted(completed: Boolean) {
+        dataStore.edit { it[Keys.WELCOME_COMPLETED] = completed }
+    }
+
     private fun normaliseThemeMode(value: String): String = when (value.uppercase()) {
         UserPreferences.THEME_LIGHT -> UserPreferences.THEME_LIGHT
         UserPreferences.THEME_DARK -> UserPreferences.THEME_DARK
@@ -110,6 +116,7 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         lastSyncAtMillis = this[Keys.LAST_SYNC_AT],
         preferredProviderId = this[Keys.PREFERRED_PROVIDER].orEmpty(),
         syncOnWifiOnly = this[Keys.SYNC_ON_WIFI_ONLY] ?: false,
+        welcomeCompleted = this[Keys.WELCOME_COMPLETED] ?: false,
     )
 
     private object Keys {
@@ -121,5 +128,6 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         val LAST_SYNC_AT = longPreferencesKey("last_sync_at")
         val PREFERRED_PROVIDER = stringPreferencesKey("preferred_provider_id")
         val SYNC_ON_WIFI_ONLY = booleanPreferencesKey("sync_on_wifi_only")
+        val WELCOME_COMPLETED = booleanPreferencesKey("welcome_completed")
     }
 }

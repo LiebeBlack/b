@@ -189,14 +189,14 @@ class ProviderRegistry @Inject constructor(
             )
         } catch (cancellation: CancellationException) {
             throw cancellation
-        } catch (throwable: Throwable) {
-            logger.warn(TAG, "Diagnóstico: ${provider.id} no respondió: ${throwable.message}", throwable)
+        } catch (exception: Exception) {
+            logger.warn(TAG, "Diagnóstico: ${provider.id} no respondió: ${exception.message}", exception)
             ProviderStatus(
                 providerId = provider.id,
                 isOk = false,
                 sources = emptyList(),
                 lastUpdatedAtMillis = null,
-                error = ProviderFailure(providerId = provider.id, error = errorMapper.map(throwable)),
+                error = ProviderFailure(providerId = provider.id, error = errorMapper.map(exception)),
             )
         }
     }
@@ -243,8 +243,8 @@ class ProviderRegistry @Inject constructor(
         kotlin.Result.success(block())
     } catch (cancellation: CancellationException) {
         throw cancellation
-    } catch (throwable: Throwable) {
-        kotlin.Result.failure(throwable)
+    } catch (exception: Exception) {
+        kotlin.Result.failure(exception)
     }
 
     private companion object {

@@ -20,4 +20,5 @@ internal fun UserPreferences.toDomain(): UserSettings = UserSettings(
     // o un id conocido de ProviderIds.
     defaultProviderId = preferredProviderId.takeIf { it in ProviderIds.ordered },
     syncOnWifiOnly = syncOnWifiOnly,
+    welcomeCompleted = welcomeCompleted,
 )

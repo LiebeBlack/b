@@ -7,6 +7,19 @@
     <string name="nav_calculator">Calculator</string>
     <string name="nav_settings">Settings</string>
 
+    <!-- ============================== Welcome ============================== -->
+    <string name="welcome_title">Your daily dollar reference</string>
+    <string name="welcome_subtitle">Check rates, compare sources, and convert amounts in one app.</string>
+    <string name="welcome_rates_title">Rates with clear sources</string>
+    <string name="welcome_rates_body">The official dollar is the primary reference. The parallel rate is shown as a market reference, with its change and latest available update.</string>
+    <string name="welcome_calculator_title">Instant calculator</string>
+    <string name="welcome_calculator_body">Convert between dollars and bolivars as you type. Enable IGTF when you want it included in the calculation.</string>
+    <string name="welcome_sync_title">Automatic updates</string>
+    <string name="welcome_sync_body">The app can refresh rates in the background. Android may delay this work based on battery, connectivity, and device restrictions.</string>
+    <string name="welcome_disclaimer">Rates are informational and may change. Verify the value before making a decision.</string>
+    <string name="welcome_continue">Get started</string>
+    <string name="welcome_save_failed">Could not save your choice. Check storage and try again.</string>
+
     <!-- ============================== Dashboard ============================== -->
     <string name="dashboard_title">DivTrack</string>
     <string name="rate_card_title">%1$s dollar</string>
@@ -20,6 +33,7 @@
     <string name="dashboard_disclaimer">Reference rates only, not official quotes. Always verify before trading.</string>
     <string name="empty_rates_title">No rates yet</string>
     <string name="empty_rates_message">Pull down or tap refresh to fetch the latest values.</string>
+    <string name="loading_rates">Loading the latest rates…</string>
 
     <!-- ============================== Calculator ============================== -->
     <string name="calculator_title">Calculator</string>

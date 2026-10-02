@@ -20,4 +20,5 @@ data class UserSettings(
     val syncIntervalMinutes: Int = AppConstants.SYNC_DEFAULT_INTERVAL_MINUTES,
     val defaultProviderId: String? = null,
     val syncOnWifiOnly: Boolean = false,
+    val welcomeCompleted: Boolean = false,
 )

@@ -136,6 +136,13 @@ XxxScreen.kt      XxxRoute (única función que toca el ViewModel) + XxxScreen (
 - En las tarjetas de tasas, el oficial es el foco visual con acento verde, superficie
   ligeramente teñida y distintivo de referencia; el paralelo usa tonos topo discretos.
   Las tendencias se muestran en cápsulas de color y sin sombras ni animaciones costosas.
+- Al abrir el panel, la UI mantiene un esqueleto estático con el texto de carga mientras
+  intenta sincronizar con las APIs. Solo después observa Room: así no muestra primero una
+  tasa antigua y la reemplaza unos instantes después. Si falla la red, se revela el último
+  dato persistido; los refrescos manuales conservan visibles las tarjetas existentes.
+- La bienvenida informativa se presenta solo si DataStore confirma que no se completó.
+  La confirmación se persiste antes de abrir las pestañas; mientras se leen preferencias
+  se muestra una carga breve y no se presenta la bienvenida por error a usuarios existentes.
 
 ---
 
@@ -147,8 +154,9 @@ instancias de `Retrofit` que solo cambian de `baseUrl`.
 Orden de interceptores, de fuera hacia dentro:
 
 1. **HeadersInterceptor** — `Accept`, `Accept-Language: es-VE`, `User-Agent`.
-2. **CacheFallbackInterceptor** — si la red falla, reintenta contra la caché en disco;
-   si tampoco hay nada, propaga el error original.
+2. **CacheFallbackInterceptor** — si la red falla o recibe 408, 429 o 5xx, intenta servir
+   una respuesta guardada en disco; si no hay una utilizable, conserva el error o respuesta
+   original. Los 504 sintéticos de una caché vacía no activan reintentos de red.
 3. **RetryInterceptor** — backoff exponencial con jitter ante `IOException`, 408, 429 y 5xx,
    respetando `Retry-After` (acotado a 3 s para no castigar al usuario).
 4. **HttpLoggingInterceptor** — solo en debug, y solo cabeceras.

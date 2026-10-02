@@ -45,4 +45,8 @@ class FakeUserPreferencesDataSource(
     override suspend fun setSyncOnWifiOnly(enabled: Boolean) {
         state.value = state.value.copy(syncOnWifiOnly = enabled)
     }
+
+    override suspend fun setWelcomeCompleted(completed: Boolean) {
+        state.value = state.value.copy(welcomeCompleted = completed)
+    }
 }

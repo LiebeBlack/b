@@ -21,6 +21,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.liebeblack.divtrack.presentation.theme.Spacing
 
@@ -30,8 +31,19 @@ import com.liebeblack.divtrack.presentation.theme.Spacing
  * fotogramas y aporta poco.
  */
 @Composable
-fun LoadingState(modifier: Modifier = Modifier) {
+fun LoadingState(message: String? = null, modifier: Modifier = Modifier) {
     Column(modifier = modifier.fillMaxWidth().padding(Spacing.lg)) {
+        if (message != null) {
+            Text(
+                text = message,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = Spacing.md),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
         repeat(3) { index ->
             Surface(
                 modifier = Modifier

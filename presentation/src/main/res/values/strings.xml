@@ -12,6 +12,19 @@
     <string name="nav_calculator">Calculadora</string>
     <string name="nav_settings">Ajustes</string>
 
+    <!-- ============================== Bienvenida ============================== -->
+    <string name="welcome_title">Tu referencia diaria del dólar</string>
+    <string name="welcome_subtitle">Consulta las tasas, compara fuentes y convierte montos en una sola app.</string>
+    <string name="welcome_rates_title">Tasas claras, con su fuente</string>
+    <string name="welcome_rates_body">El dólar oficial es la referencia principal. La tasa paralela aparece como referencia de mercado, junto con su variación y última actualización disponible.</string>
+    <string name="welcome_calculator_title">Calculadora al instante</string>
+    <string name="welcome_calculator_body">Convierte entre dólares y bolívares mientras escribes. Activa el IGTF cuando necesites incluirlo en el cálculo.</string>
+    <string name="welcome_sync_title">Actualización automática</string>
+    <string name="welcome_sync_body">La app puede actualizar las tasas en segundo plano. Android puede retrasar esa tarea según batería, conexión y restricciones del dispositivo.</string>
+    <string name="welcome_disclaimer">Las tasas son informativas y pueden cambiar. Verifica el valor antes de tomar una decisión.</string>
+    <string name="welcome_continue">Comenzar</string>
+    <string name="welcome_save_failed">No se pudo guardar. Comprueba el almacenamiento e inténtalo de nuevo.</string>
+
     <!-- ============================== Dashboard ============================== -->
     <string name="dashboard_title">DivTrack</string>
     <string name="rate_card_title">Dólar %1$s</string>
@@ -25,6 +38,7 @@
     <string name="dashboard_disclaimer">Tasas informativas, sin valor oficial. Verifica siempre antes de operar.</string>
     <string name="empty_rates_title">Todavía no hay tasas</string>
     <string name="empty_rates_message">Desliza hacia abajo o toca actualizar para obtener los valores más recientes.</string>
+    <string name="loading_rates">Cargando las tasas más recientes…</string>
 
     <!-- ============================== Calculadora ============================== -->
     <string name="calculator_title">Calculadora</string>

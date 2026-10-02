@@ -107,9 +107,9 @@ fun DashboardScreen(
                 actions = {
                     IconButton(
                         onClick = onRefresh,
-                        enabled = !state.isRefreshing,
+                        enabled = !state.isRefreshing && !state.isLoading,
                     ) {
-                        if (state.isRefreshing) {
+                        if (state.isRefreshing || state.isLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
                                 strokeWidth = 2.dp,
@@ -143,95 +143,87 @@ fun DashboardScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
-                // El snackbar se va solo; este aviso permanece mientras no haya conexión, que
-                // es lo que el usuario necesita saber mientras mira tasas que no se actualizan.
-                if (state.isOffline && state.hasData) {
-                    item(key = "offline") {
-                        OfflineBanner(
-                            message = errorMessage
-                                ?: stringResource(R.string.msg_offline_showing_cache),
-                        )
+                if (state.isLoading) {
+                    item(key = "loading") {
+                        LoadingState(message = stringResource(R.string.loading_rates))
                     }
-                }
-
-                // Una fuente dejó de publicar (el caso típico: el banco) y responde con
-                // su último dato. Aviso permanente y diferenciado del de conexión, porque
-                // la respuesta correcta del usuario tampoco es revisar su wifi.
-                if (state.hasStaleData) {
-                    item(key = "stale") {
-                        OfflineBanner(
-                            message = stringResource(R.string.msg_stale_data),
-                        )
+                } else {
+                    // El snackbar se va solo; este aviso permanece mientras no haya conexión,
+                    // que es lo que el usuario necesita saber mientras mira tasas guardadas.
+                    if (state.isOffline && state.hasData) {
+                        item(key = "offline") {
+                            OfflineBanner(
+                                message = errorMessage
+                                    ?: stringResource(R.string.msg_offline_showing_cache),
+                            )
+                        }
                     }
-                }
 
-                if (!state.hasData && state.isLoading) {
-                    item(key = "loading") { LoadingState() }
-                }
+                    if (state.hasStaleData) {
+                        item(key = "stale") {
+                            OfflineBanner(message = stringResource(R.string.msg_stale_data))
+                        }
+                    }
 
-                if (!state.hasData && !state.isLoading) {
-                    item(key = "error") {
-                        ErrorState(
-                            message = errorMessage
-                                ?: stringResource(R.string.msg_offline_no_data),
-                            retryLabel = stringResource(R.string.action_retry),
-                            onRetry = onRetry,
-                            // Solo se ofrece el atajo si el fallo es de red: cuando el que
-                            // falla es el proveedor, los ajustes del teléfono no arreglan nada.
-                            secondaryLabel = if (state.isConnectivityProblem) {
-                                stringResource(R.string.action_open_network_settings)
-                            } else {
-                                null
+                    if (!state.hasData) {
+                        item(key = "error") {
+                            ErrorState(
+                                message = errorMessage
+                                    ?: stringResource(R.string.msg_offline_no_data),
+                                retryLabel = stringResource(R.string.action_retry),
+                                onRetry = onRetry,
+                                secondaryLabel = if (state.isConnectivityProblem) {
+                                    stringResource(R.string.action_open_network_settings)
+                                } else {
+                                    null
+                                },
+                                onSecondaryAction = if (state.isConnectivityProblem) {
+                                    onOpenNetworkSettings
+                                } else {
+                                    null
+                                },
+                            )
+                        }
+                    }
+
+                    // Las claves estables evitan recomponer la tarjeta que no cambió.
+                    items(items = state.rates, key = { rate -> rate.source.key }) { rate ->
+                        val isOfficial = rate.source == RateSource.OFICIAL
+                        RateCard(
+                            title = stringResource(
+                                R.string.rate_card_title,
+                                stringResource(rate.source.labelRes()),
+                            ),
+                            valueText = rate.valueText,
+                            trend = rate.trend,
+                            deltaText = rate.deltaText,
+                            providerText = stringResource(R.string.rate_provider, rate.providerText),
+                            updatedAtText = rate.updatedAtText?.let { updated ->
+                                stringResource(R.string.rate_updated_at, updated)
                             },
-                            onSecondaryAction = if (state.isConnectivityProblem) {
-                                onOpenNetworkSettings
-                            } else {
-                                null
-                            },
-                        )
-                    }
-                }
-
-                // `key` estable por fuente: al actualizarse una tasa, la otra tarjeta no
-                // vuelve a componerse. El oficial es la referencia nacional (contratos,
-                // sueldos, la calculadora por defecto): se muestra como héroe; el paralelo,
-                // un 20 % menor para que la jerarquía se lea de un vistazo.
-                items(items = state.rates, key = { rate -> rate.source.key }) { rate ->
-                    val isOfficial = rate.source == RateSource.OFICIAL
-                    RateCard(
-                        title = stringResource(
-                            R.string.rate_card_title,
-                            stringResource(rate.source.labelRes()),
-                        ),
-                        valueText = rate.valueText,
-                        trend = rate.trend,
-                        deltaText = rate.deltaText,
-                        providerText = stringResource(R.string.rate_provider, rate.providerText),
-                        updatedAtText = rate.updatedAtText?.let { updated ->
-                            stringResource(R.string.rate_updated_at, updated)
-                        },
-                        isStale = rate.isStale,
-                        accentColor = if (isOfficial) colors.officialAccent else colors.parallelAccent,
-                        isHero = isOfficial,
-                    )
-                }
-
-                if (state.hasData) {
-                    item(key = "spread") {
-                        SpreadChip(
-                            percentText = state.spreadPercentText,
-                            absoluteText = state.spreadAbsoluteText,
+                            isStale = rate.isStale,
+                            accentColor = if (isOfficial) colors.officialAccent else colors.parallelAccent,
+                            isHero = isOfficial,
                         )
                     }
 
-                    item(key = "legal") {
-                        Text(
-                            text = stringResource(R.string.dashboard_disclaimer),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                    if (state.hasData) {
+                        item(key = "spread") {
+                            SpreadChip(
+                                percentText = state.spreadPercentText,
+                                absoluteText = state.spreadAbsoluteText,
+                            )
+                        }
+
+                        item(key = "legal") {
+                            Text(
+                                text = stringResource(R.string.dashboard_disclaimer),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
                     }
                 }
             }

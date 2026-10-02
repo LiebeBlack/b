@@ -24,4 +24,7 @@ class UpdateSettingsUseCase @Inject constructor(
     suspend fun setDefaultProvider(providerId: String?) = repository.setDefaultProvider(providerId)
 
     suspend fun setSyncOnWifiOnly(enabled: Boolean) = repository.setSyncOnWifiOnly(enabled)
+
+    suspend fun setWelcomeCompleted(completed: Boolean) =
+        repository.setWelcomeCompleted(completed)
 }

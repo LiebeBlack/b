@@ -24,4 +24,6 @@ interface SettingsRepository {
     suspend fun setDefaultProvider(providerId: String?)
 
     suspend fun setSyncOnWifiOnly(enabled: Boolean)
+
+    suspend fun setWelcomeCompleted(completed: Boolean)
 }

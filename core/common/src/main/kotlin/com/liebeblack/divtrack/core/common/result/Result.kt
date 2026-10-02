@@ -58,7 +58,8 @@ val Result<*>.isSuccess: Boolean get() = this is Result.Success
 val Result<*>.isError: Boolean get() = this is Result.Error
 
 /**
- * Ejecuta [block] y convierte cualquier excepción en [Result.Error] usando [mapError].
+ * Ejecuta [block] y convierte cualquier excepción recuperable en [Result.Error] usando
+ * [mapError]. Los errores fatales de la JVM se dejan propagar.
  *
  * Re-lanza [kotlin.coroutines.cancellation.CancellationException] para no romper la
  * cancelación estructurada de corrutinas.
@@ -70,6 +71,6 @@ suspend fun <T> resultOf(
     Result.Success(block())
 } catch (cancellation: kotlin.coroutines.cancellation.CancellationException) {
     throw cancellation
-} catch (throwable: Throwable) {
-    Result.Error(mapError(throwable))
+} catch (exception: Exception) {
+    Result.Error(mapError(exception))
 }

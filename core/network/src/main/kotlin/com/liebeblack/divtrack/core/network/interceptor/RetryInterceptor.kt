@@ -40,7 +40,7 @@ class RetryInterceptor(
             try {
                 val response = chain.proceed(request)
 
-                if (attempt >= maxRetries || !response.isRetryable()) return response
+                if (attempt >= maxRetries || !response.isRetryable(request)) return response
 
                 val retryAfterMillis = response.retryAfterMillis()
                 response.close()
@@ -54,13 +54,21 @@ class RetryInterceptor(
         }
     }
 
-    private fun Response.isRetryable(): Boolean =
-        code == HTTP_REQUEST_TIMEOUT ||
-            code == HTTP_TOO_MANY_REQUESTS ||
-            code in HTTP_SERVER_ERROR_RANGE
+    private fun Response.isRetryable(request: okhttp3.Request): Boolean =
+        !request.cacheControl().onlyIfCached &&
+            (
+                code == HTTP_REQUEST_TIMEOUT ||
+                    code == HTTP_TOO_MANY_REQUESTS ||
+                    code in HTTP_SERVER_ERROR_RANGE
+                )
 
     private fun Response.retryAfterMillis(): Long? =
-        header("Retry-After")?.trim()?.toLongOrNull()?.times(SECONDS_TO_MILLIS)
+        header("Retry-After")
+            ?.trim()
+            ?.toLongOrNull()
+            ?.coerceAtLeast(0L)
+            ?.coerceAtMost(MAX_RETRY_AFTER_MILLIS / SECONDS_TO_MILLIS)
+            ?.times(SECONDS_TO_MILLIS)
 
     /**
      * Solo lo que puede mejorar solo. Un `UnknownHostException` es DNS (o un dominio que ya

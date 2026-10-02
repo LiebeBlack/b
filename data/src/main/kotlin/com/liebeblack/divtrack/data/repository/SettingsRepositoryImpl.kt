@@ -39,4 +39,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setSyncOnWifiOnly(enabled: Boolean) =
         preferencesDataSource.setSyncOnWifiOnly(enabled)
+
+    override suspend fun setWelcomeCompleted(completed: Boolean) =
+        preferencesDataSource.setWelcomeCompleted(completed)
 }

@@ -32,6 +32,9 @@ data class UserPreferences(
 
     /** El trabajo periódico solo corre con wifi (ahorra datos móviles). */
     val syncOnWifiOnly: Boolean = false,
+
+    /** Indica si la bienvenida de primer uso ya se completó. */
+    val welcomeCompleted: Boolean = false,
 ) {
     companion object {
         const val THEME_SYSTEM: String = "SYSTEM"

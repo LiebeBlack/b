@@ -84,6 +84,10 @@ class FakeSettingsRepository(
     override suspend fun setSyncOnWifiOnly(enabled: Boolean) {
         settings.value = settings.value.copy(syncOnWifiOnly = enabled)
     }
+
+    override suspend fun setWelcomeCompleted(completed: Boolean) {
+        settings.value = settings.value.copy(welcomeCompleted = completed)
+    }
 }
 
 /** Programador simulado: registra lo que WorkManager habría hecho. */
