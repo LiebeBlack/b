@@ -2,14 +2,18 @@ package com.liebeblack.divtrack.presentation.calculator
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -35,7 +39,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -145,129 +152,143 @@ fun CalculatorScreen(
             )
         },
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(
-                    start = Spacing.lg,
-                    end = Spacing.lg,
-                    top = padding.calculateTopPadding() + Spacing.sm,
-                    bottom = padding.calculateBottomPadding() + Spacing.xl,
-                ),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
-        ) {
-            // Solo se ofrecen las tasas que existen de verdad en Room. Si un proveedor no
-            // ha publicado el oficial todavía, no tiene sentido dejar elegirlo para acabar
-            // viendo "sin tasas disponibles".
-            SegmentedSelector(
-                options = sourceOptions,
-                selected = state.selectedSource,
-                onSelect = { source -> onIntent(CalculatorIntent.SelectSource(source)) },
-                label = { source -> stringResource(source.labelRes()) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            // La fila "Tasa" incluye la edad del dato: una tasa de ayer bien explicada
-            // evita el clásico "las cuentas no salen" por convertir con un precio vencido.
-            Text(
-                text = buildString {
-                    append(stringResource(R.string.calculator_rate_line, state.selectedRateText))
-                    state.selectedRateAgeText?.takeIf { it.isNotEmpty() }?.let { age ->
-                        append(" · ")
-                        append(stringResource(R.string.rate_updated_at, age))
-                    }
-                },
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            AmountField(
-                value = state.inputText,
-                onValueChange = { value -> onIntent(CalculatorIntent.AmountChanged(value)) },
-                label = if (state.isUsdToBs) {
-                    stringResource(R.string.calculator_amount_usd)
-                } else {
-                    stringResource(R.string.calculator_amount_bs)
-                },
-                prefix = if (state.isUsdToBs) "$" else "Bs.",
-                accentColor = accentColor,
-            )
-
-            TextButton(onClick = { onIntent(CalculatorIntent.SwapDirection) }) {
-                Text(text = stringResource(R.string.action_swap_direction))
-            }
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .widthIn(max = 640.dp)
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        start = Spacing.lg,
+                        end = Spacing.lg,
+                        top = padding.calculateTopPadding() + Spacing.sm,
+                        bottom = padding.calculateBottomPadding() + Spacing.xl,
+                    ),
+                verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
-                Column(
-                    modifier = Modifier.padding(Spacing.lg),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                // Solo se ofrecen las tasas que existen de verdad en Room. Si un proveedor no
+                // ha publicado el oficial todavía, no tiene sentido dejar elegirlo para acabar
+                // viendo "sin tasas disponibles".
+                SegmentedSelector(
+                    options = sourceOptions,
+                    selected = state.selectedSource,
+                    onSelect = { source -> onIntent(CalculatorIntent.SelectSource(source)) },
+                    label = { source -> stringResource(source.labelRes()) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                // La fila "Tasa" incluye la edad del dato: una tasa de ayer bien explicada
+                // evita el clásico "las cuentas no salen" por convertir con un precio vencido.
+                Text(
+                    text = buildString {
+                        append(stringResource(R.string.calculator_rate_line, state.selectedRateText))
+                        state.selectedRateAgeText?.takeIf { it.isNotEmpty() }?.let { age ->
+                            append(" · ")
+                            append(stringResource(R.string.rate_updated_at, age))
+                        }
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                AmountField(
+                    value = state.inputText,
+                    onValueChange = { value -> onIntent(CalculatorIntent.AmountChanged(value)) },
+                    label = if (state.isUsdToBs) {
+                        stringResource(R.string.calculator_amount_usd)
+                    } else {
+                        stringResource(R.string.calculator_amount_bs)
+                    },
+                    prefix = if (state.isUsdToBs) "$" else "Bs.",
+                    accentColor = accentColor,
+                )
+
+                TextButton(onClick = { onIntent(CalculatorIntent.SwapDirection) }) {
+                    Text(text = stringResource(R.string.action_swap_direction))
+                }
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 ) {
-                    ResultRow(
-                        label = if (state.isUsdToBs) {
-                            stringResource(R.string.result_mirror_bs)
+                    BoxWithConstraints(modifier = Modifier.padding(Spacing.lg)) {
+                        val stackResults = maxWidth < 360.dp ||
+                            LocalDensity.current.fontScale >= 1.3f
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        ) {
+                            ResultRow(
+                                label = if (state.isUsdToBs) {
+                                    stringResource(R.string.result_mirror_bs)
+                                } else {
+                                    stringResource(R.string.result_mirror_usd)
+                                },
+                                value = mirroredAmount.ifEmpty { "—" },
+                                stacked = stackResults,
+                                emphasize = true,
+                            )
+                            ResultRow(
+                                label = stringResource(R.string.result_net_usd),
+                                value = state.netUsdText,
+                                stacked = stackResults,
+                            )
+                            ResultRow(
+                                label = stringResource(R.string.result_net_bs),
+                                value = state.netBsText,
+                                stacked = stackResults,
+                            )
+                            ResultRow(
+                                label = stringResource(R.string.result_igtf, state.igtfRateText),
+                                value = state.igtfBsText,
+                                stacked = stackResults,
+                            )
+                            ResultRow(
+                                label = stringResource(R.string.result_total_usd),
+                                value = state.totalUsdText,
+                                stacked = stackResults,
+                            )
+                        }
+                    }
+                }
+
+                IgtfSwitchRow(
+                    checked = state.igtfEnabled,
+                    onCheckedChange = { enabled -> onIntent(CalculatorIntent.ToggleIgtf(enabled)) },
+                    igtfRateText = state.igtfRateText,
+                )
+
+                Button(
+                    onClick = { onIntent(CalculatorIntent.CopyBreakdown) },
+                    enabled = state.canCopy,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(imageVector = Icons.Filled.Share, contentDescription = null)
+                    Spacer(modifier = Modifier.width(Spacing.sm))
+                    Text(text = stringResource(R.string.action_copy_breakdown))
+                }
+
+                val hintText = when {
+                    !state.hasRate -> stringResource(R.string.calculator_no_rate)
+                    !state.isAmountValid -> stringResource(R.string.calculator_hint)
+                    else -> null
+                }
+
+                if (hintText != null) {
+                    Text(
+                        text = hintText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (state.hasRate) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
                         } else {
-                            stringResource(R.string.result_mirror_usd)
+                            MaterialTheme.colorScheme.error
                         },
-                        value = mirroredAmount.ifEmpty { "—" },
-                        emphasize = true,
-                    )
-                    ResultRow(
-                        label = stringResource(R.string.result_net_usd),
-                        value = state.netUsdText,
-                    )
-                    ResultRow(
-                        label = stringResource(R.string.result_net_bs),
-                        value = state.netBsText,
-                    )
-                    ResultRow(
-                        label = stringResource(R.string.result_igtf, state.igtfRateText),
-                        value = state.igtfBsText,
-                    )
-                    ResultRow(
-                        label = stringResource(R.string.result_total_usd),
-                        value = state.totalUsdText,
                     )
                 }
-            }
-
-            IgtfSwitchRow(
-                checked = state.igtfEnabled,
-                onCheckedChange = { enabled -> onIntent(CalculatorIntent.ToggleIgtf(enabled)) },
-                igtfRateText = state.igtfRateText,
-            )
-
-            Button(
-                onClick = { onIntent(CalculatorIntent.CopyBreakdown) },
-                enabled = state.canCopy,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Icon(imageVector = Icons.Filled.Share, contentDescription = null)
-                Spacer(modifier = Modifier.width(Spacing.sm))
-                Text(text = stringResource(R.string.action_copy_breakdown))
-            }
-
-            val hintText = when {
-                !state.hasRate -> stringResource(R.string.calculator_no_rate)
-                !state.isAmountValid -> stringResource(R.string.calculator_hint)
-                else -> null
-            }
-
-            if (hintText != null) {
-                Text(
-                    text = hintText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (state.hasRate) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.error
-                    },
-                )
             }
         }
     }
@@ -277,27 +298,55 @@ fun CalculatorScreen(
 private fun ResultRow(
     label: String,
     value: String,
+    stacked: Boolean,
     modifier: Modifier = Modifier,
     emphasize: Boolean = false,
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            text = value,
-            style = if (emphasize) {
-                MaterialTheme.typography.headlineSmall.tabular()
-            } else {
-                MaterialTheme.typography.titleMedium.tabular()
-            },
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+    val valueStyle = if (emphasize) {
+        MaterialTheme.typography.headlineSmall.tabular()
+    } else {
+        MaterialTheme.typography.titleMedium.tabular()
+    }
+    if (stacked) {
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.End,
+        ) {
+            Text(
+                text = label,
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = value,
+                modifier = Modifier.fillMaxWidth(),
+                style = valueStyle,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.End,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    } else {
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = value,
+                style = valueStyle,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.End,
+            )
+        }
     }
 }

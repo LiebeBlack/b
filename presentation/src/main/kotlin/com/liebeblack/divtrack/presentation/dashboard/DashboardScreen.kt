@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -44,7 +45,6 @@ import com.liebeblack.divtrack.presentation.common.CollectEffects
 import com.liebeblack.divtrack.presentation.common.asString
 import com.liebeblack.divtrack.presentation.common.labelRes
 import com.liebeblack.divtrack.presentation.common.openNetworkSettings
-import com.liebeblack.divtrack.presentation.components.EmptyState
 import com.liebeblack.divtrack.presentation.components.ErrorState
 import com.liebeblack.divtrack.presentation.components.LoadingState
 import com.liebeblack.divtrack.presentation.components.RateCard
@@ -131,7 +131,10 @@ fun DashboardScreen(
             modifier = Modifier.fillMaxSize(),
         ) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .widthIn(max = 720.dp)
+                    .fillMaxSize(),
                 contentPadding = PaddingValues(
                     start = Spacing.lg,
                     end = Spacing.lg,
@@ -185,12 +188,6 @@ fun DashboardScreen(
                             } else {
                                 null
                             },
-                        )
-                    }
-                    item(key = "empty") {
-                        EmptyState(
-                            title = stringResource(R.string.empty_rates_title),
-                            message = stringResource(R.string.empty_rates_message),
                         )
                     }
                 }

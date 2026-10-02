@@ -129,6 +129,10 @@ XxxScreen.kt      XxxRoute (única función que toca el ViewModel) + XxxScreen (
 - El tema claro usa tonos principales y de error con contraste suficiente para texto de
   botones; los estados de error y avisos se adaptan al ancho disponible y el refresco muestra
   progreso sin permitir toques que no pueden iniciar otra pasada.
+- Dashboard, calculadora y ajustes centran el contenido con un ancho máximo en pantallas
+  amplias. Los selectores fluyen a varias filas en lugar de comprimir sus opciones; los
+  resultados de la calculadora cambian a disposición vertical en pantallas estrechas o con
+  escala de texto grande. La tipografía sigue respetando el tamaño de fuente del sistema.
 
 ---
 

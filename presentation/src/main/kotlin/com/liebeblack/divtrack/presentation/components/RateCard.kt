@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -114,18 +116,22 @@ fun RateCard(
                     Spacer(modifier = Modifier.height(Spacing.xs))
                 }
 
-                Text(
-                    text = valueText,
-                    style = if (isHero) {
-                        MaterialTheme.typography.displayMedium.tabular()
-                    } else {
-                        MaterialTheme.typography.displaySmall.tabular()
-                    },
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                )
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val fontScale = LocalDensity.current.fontScale
+                    Text(
+                        text = valueText,
+                        style = if (isHero && maxWidth >= 400.dp && fontScale < 1.3f) {
+                            MaterialTheme.typography.displayMedium.tabular()
+                        } else {
+                            MaterialTheme.typography.displaySmall.tabular()
+                        },
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(Spacing.sm))
 

@@ -2,6 +2,7 @@ package com.liebeblack.divtrack.presentation.settings
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -88,110 +90,115 @@ fun SettingsScreen(
             TopAppBar(title = { Text(text = stringResource(R.string.settings_title)) })
         },
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(
-                    start = Spacing.lg,
-                    end = Spacing.lg,
-                    top = padding.calculateTopPadding() + Spacing.sm,
-                    bottom = padding.calculateBottomPadding() + Spacing.xl,
-                ),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-        ) {
-            SettingsCard(
-                title = stringResource(R.string.settings_theme),
-                helper = stringResource(R.string.settings_theme_helper),
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .widthIn(max = 720.dp)
+                    .fillMaxWidth()
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        start = Spacing.lg,
+                        end = Spacing.lg,
+                        top = padding.calculateTopPadding() + Spacing.sm,
+                        bottom = padding.calculateBottomPadding() + Spacing.xl,
+                    ),
+                verticalArrangement = Arrangement.spacedBy(Spacing.lg),
             ) {
-                SegmentedSelector(
-                    options = ThemeMode.entries,
-                    selected = state.themeMode,
-                    onSelect = { mode -> onIntent(SettingsIntent.SelectTheme(mode)) },
-                    label = { mode -> stringResource(mode.labelRes()) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            SettingsCard(
-                title = stringResource(R.string.settings_default_source),
-                helper = stringResource(R.string.settings_default_source_helper),
-            ) {
-                SegmentedSelector(
-                    options = RateSource.ordered(),
-                    selected = state.defaultSource,
-                    onSelect = { source -> onIntent(SettingsIntent.SelectDefaultSource(source)) },
-                    label = { source -> stringResource(source.labelRes()) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            SettingsSwitchRow(
-                title = stringResource(R.string.settings_igtf_default),
-                helper = stringResource(R.string.settings_igtf_default_helper),
-                checked = state.igtfEnabled,
-                onCheckedChange = { enabled -> onIntent(SettingsIntent.SetIgtfDefault(enabled)) },
-            )
-
-            SettingsCard(
-                title = stringResource(R.string.settings_provider),
-                helper = stringResource(R.string.settings_provider_helper),
-            ) {
-                SegmentedSelector(
-                    options = ProviderOptions,
-                    selected = state.defaultProviderId ?: AUTOMATIC_PROVIDER_ID,
-                    onSelect = { providerId ->
-                        onIntent(
-                            SettingsIntent.SelectProvider(
-                                providerId.takeUnless { it == AUTOMATIC_PROVIDER_ID },
-                            ),
-                        )
-                    },
-                    label = { providerId -> stringResource(providerLabelRes(providerId)) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            SettingsSwitchRow(
-                title = stringResource(R.string.settings_auto_sync),
-                helper = stringResource(R.string.settings_auto_sync_helper),
-                checked = state.autoSyncEnabled,
-                onCheckedChange = { enabled -> onIntent(SettingsIntent.SetAutoSync(enabled)) },
-            )
-
-            // La frecuencia y el ajuste de red solo se ofrecen si la sincronización está
-            // encendida: un control activo que no hace nada es peor que no mostrarlo.
-            if (state.autoSyncEnabled) {
-                SettingsCard(title = stringResource(R.string.settings_interval)) {
+                SettingsCard(
+                    title = stringResource(R.string.settings_theme),
+                    helper = stringResource(R.string.settings_theme_helper),
+                ) {
                     SegmentedSelector(
-                        options = SyncIntervalOptions,
-                        selected = state.syncIntervalMinutes,
-                        onSelect = { minutes -> onIntent(SettingsIntent.SetSyncInterval(minutes)) },
-                        label = { minutes ->
-                            if (minutes % 60 == 0) {
-                                stringResource(R.string.settings_interval_hours, minutes / 60)
-                            } else {
-                                stringResource(R.string.settings_interval_minutes, minutes)
-                            }
-                        },
+                        options = ThemeMode.entries,
+                        selected = state.themeMode,
+                        onSelect = { mode -> onIntent(SettingsIntent.SelectTheme(mode)) },
+                        label = { mode -> stringResource(mode.labelRes()) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+
+                SettingsCard(
+                    title = stringResource(R.string.settings_default_source),
+                    helper = stringResource(R.string.settings_default_source_helper),
+                ) {
+                    SegmentedSelector(
+                        options = RateSource.ordered(),
+                        selected = state.defaultSource,
+                        onSelect = { source -> onIntent(SettingsIntent.SelectDefaultSource(source)) },
+                        label = { source -> stringResource(source.labelRes()) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
 
                 SettingsSwitchRow(
-                    title = stringResource(R.string.settings_wifi_only),
-                    helper = stringResource(R.string.settings_wifi_only_helper),
-                    checked = state.syncOnWifiOnly,
-                    onCheckedChange = { enabled -> onIntent(SettingsIntent.SetWifiOnly(enabled)) },
+                    title = stringResource(R.string.settings_igtf_default),
+                    helper = stringResource(R.string.settings_igtf_default_helper),
+                    checked = state.igtfEnabled,
+                    onCheckedChange = { enabled -> onIntent(SettingsIntent.SetIgtfDefault(enabled)) },
                 )
+
+                SettingsCard(
+                    title = stringResource(R.string.settings_provider),
+                    helper = stringResource(R.string.settings_provider_helper),
+                ) {
+                    SegmentedSelector(
+                        options = ProviderOptions,
+                        selected = state.defaultProviderId ?: AUTOMATIC_PROVIDER_ID,
+                        onSelect = { providerId ->
+                            onIntent(
+                                SettingsIntent.SelectProvider(
+                                    providerId.takeUnless { it == AUTOMATIC_PROVIDER_ID },
+                                ),
+                            )
+                        },
+                        label = { providerId -> stringResource(providerLabelRes(providerId)) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_auto_sync),
+                    helper = stringResource(R.string.settings_auto_sync_helper),
+                    checked = state.autoSyncEnabled,
+                    onCheckedChange = { enabled -> onIntent(SettingsIntent.SetAutoSync(enabled)) },
+                )
+
+                // La frecuencia y el ajuste de red solo se ofrecen si la sincronización está
+                // encendida: un control activo que no hace nada es peor que no mostrarlo.
+                if (state.autoSyncEnabled) {
+                    SettingsCard(title = stringResource(R.string.settings_interval)) {
+                        SegmentedSelector(
+                            options = SyncIntervalOptions,
+                            selected = state.syncIntervalMinutes,
+                            onSelect = { minutes -> onIntent(SettingsIntent.SetSyncInterval(minutes)) },
+                            label = { minutes ->
+                                if (minutes % 60 == 0) {
+                                    stringResource(R.string.settings_interval_hours, minutes / 60)
+                                } else {
+                                    stringResource(R.string.settings_interval_minutes, minutes)
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+
+                    SettingsSwitchRow(
+                        title = stringResource(R.string.settings_wifi_only),
+                        helper = stringResource(R.string.settings_wifi_only_helper),
+                        checked = state.syncOnWifiOnly,
+                        onCheckedChange = { enabled -> onIntent(SettingsIntent.SetWifiOnly(enabled)) },
+                    )
+                }
+
+                ProvidersStatusCard(
+                    state = state,
+                    onCheckProviders = onCheckProviders,
+                )
+
+                AboutCard(appVersion = appVersion)
             }
-
-            ProvidersStatusCard(
-                state = state,
-                onCheckProviders = onCheckProviders,
-            )
-
-            AboutCard(appVersion = appVersion)
         }
     }
 }
