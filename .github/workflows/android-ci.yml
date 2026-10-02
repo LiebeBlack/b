@@ -252,4 +252,4 @@ jobs:
           EOF
           )" \
             "${APK_PATH}" \
-            apklite.apk#DivTrack Lite (${LITE_CHANNEL})
+          "apklite.apk#DivTrack Lite (${LITE_CHANNEL})"
