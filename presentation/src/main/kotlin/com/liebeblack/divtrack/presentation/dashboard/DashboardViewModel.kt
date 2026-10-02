@@ -54,14 +54,10 @@ class DashboardViewModel @Inject constructor(
 
     private var refreshJob: Job? = null
     private var refreshRequestedByUser = false
-    private var ratesObserved = false
 
     init {
-        val initialRefresh = refresh(isUserInitiated = false)
-        viewModelScope.launch {
-            initialRefresh.join()
-            observeRatesFromCache()
-        }
+        observeRatesFromCache()
+        refresh(isUserInitiated = false)
     }
 
     fun onIntent(intent: DashboardIntent) {
@@ -74,7 +70,6 @@ class DashboardViewModel @Inject constructor(
     private fun observeRatesFromCache() {
         viewModelScope.launch {
             observeRates().collect { rates ->
-                ratesObserved = true
                 _state.update { current -> current.withRates(rates) }
             }
         }
@@ -140,27 +135,25 @@ class DashboardViewModel @Inject constructor(
                         // la petición caduca, el usuario tiene que leer eso y no un diagnóstico
                         // equivocado de su propia red. Cuando sí es conectividad, el mensaje
                         // recuerda que los datos en pantalla siguen siendo válidos.
-                        if (refreshRequestedByUser && ratesObserved) {
-                            _effects.emit(
-                                DashboardEffect.ShowMessage(
-                                    when {
-                                        isConnectivity && hasCachedData ->
-                                            UiText.Res(R.string.msg_offline_showing_cache)
+                        _effects.emit(
+                            DashboardEffect.ShowMessage(
+                                when {
+                                    isConnectivity && hasCachedData ->
+                                        UiText.Res(R.string.msg_offline_showing_cache)
 
-                                        isConnectivity -> UiText.Res(R.string.msg_offline_no_data)
+                                    isConnectivity -> UiText.Res(R.string.msg_offline_no_data)
 
-                                        else -> error.toUiText()
-                                    },
-                                ),
+                                    else -> error.toUiText()
+                                },
                             )
-                        }
+                        )
                     }
 
                     Result.Loading -> Unit
                 }
             } finally {
                 refreshRequestedByUser = false
-                _state.update { it.copy(isLoading = !ratesObserved, isRefreshing = false) }
+                _state.update { it.copy(isLoading = false, isRefreshing = false) }
             }
         }.also { refreshJob = it }
     }
@@ -169,7 +162,6 @@ class DashboardViewModel @Inject constructor(
     private fun DashboardUiState.withRates(rates: List<ExchangeRate>): DashboardUiState {
         val spread: Spread = calculateSpread(rates)
         return copy(
-            isLoading = false,
             rates = rates.map { rate -> rate.toRateUiModel(timeProvider.nowMillis()) },
             spreadPercentText = spread.percent?.let { percent -> CurrencyFormatters.percent(percent) },
             spreadAbsoluteText = spread.absolute?.let { absolute -> CurrencyFormatters.bolivars(absolute) },
