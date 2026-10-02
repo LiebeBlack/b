@@ -2,7 +2,6 @@ package com.liebeblack.divtrack.presentation.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,31 +38,28 @@ fun SettingsSwitchRow(
         color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(
-            modifier = Modifier.padding(Spacing.lg),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.lg),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = title,
-                    modifier = Modifier.fillMaxWidth(),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(modifier = Modifier.height(Spacing.xs))
-                Text(
-                    text = helper,
-                    modifier = Modifier.fillMaxWidth(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
-            }
-
+            Text(
+                text = title,
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(Spacing.xs))
+            Text(
+                text = helper,
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(Spacing.sm))
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,

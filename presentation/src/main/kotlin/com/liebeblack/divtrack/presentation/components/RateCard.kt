@@ -140,14 +140,13 @@ fun RateCard(
                             maxWidth >= 280.dp -> 42f
                             else -> 34f
                         }
-                        val lengthAdjustment = when {
-                            valueText.length >= 16 -> 16f
-                            valueText.length >= 13 -> 10f
-                            valueText.length >= 10 -> 5f
-                            else -> 0f
+                        val widthLimitedFontSize = if (valueText.isNotEmpty()) {
+                            maxWidth.value * 0.92f / (valueText.length * 0.57f * fontScale)
+                        } else {
+                            preferredFontSize
                         }
-                        val heroFontSize = (preferredFontSize - lengthAdjustment)
-                            .coerceAtLeast(22f)
+                        val heroFontSize = minOf(preferredFontSize, widthLimitedFontSize)
+                            .coerceAtLeast(18f)
 
                         Text(
                             text = valueText,
@@ -165,7 +164,7 @@ fun RateCard(
                                 )
                             },
                             color = emphasisColor,
-                            maxLines = if (fontScale >= 1.3f || valueText.length >= 10) 2 else 1,
+                            maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth(),

@@ -3,13 +3,11 @@ package com.liebeblack.divtrack.presentation.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
@@ -108,18 +106,24 @@ fun ErrorState(
         color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
     ) {
-        Column(modifier = Modifier.padding(Spacing.lg)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(
+            modifier = Modifier.padding(Spacing.lg),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Warning,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(20.dp),
                 )
-                Spacer(modifier = Modifier.width(Spacing.sm))
+                Spacer(modifier = Modifier.height(Spacing.sm))
                 Text(
                     text = message,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,

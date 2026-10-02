@@ -284,7 +284,6 @@ fun CalculatorScreen(
             }
             TopSnackbarHost(
                 hostState = snackbarHostState,
-                topPadding = padding.calculateTopPadding(),
             )
         }
     }
@@ -322,12 +321,13 @@ private fun ResultRow(
                 maxWidth < 360.dp -> 22f
                 else -> 24f
             }
-            val longValueAdjustment = when {
-                value.length >= 18 -> 5f
-                value.length >= 14 -> 3f
-                else -> 0f
+            val widthLimitedFontSize = if (value.isNotEmpty()) {
+                maxWidth.value * 0.92f / (value.length * 0.57f * fontScale)
+            } else {
+                baseFontSize
             }
-            val resultFontSize = (baseFontSize - longValueAdjustment).coerceAtLeast(18f)
+            val resultFontSize = minOf(baseFontSize, widthLimitedFontSize)
+                .coerceAtLeast(16f)
 
             Text(
                 text = value,
@@ -339,7 +339,7 @@ private fun ResultRow(
                 ),
                 color = valueColor,
                 textAlign = TextAlign.Center,
-                maxLines = if (fontScale >= 1.3f || value.length >= 14) 2 else 1,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }

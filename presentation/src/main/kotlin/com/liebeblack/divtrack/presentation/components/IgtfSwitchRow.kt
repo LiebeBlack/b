@@ -2,7 +2,6 @@ package com.liebeblack.divtrack.presentation.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.theme.Spacing
@@ -33,24 +33,28 @@ fun IgtfSwitchRow(
         color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(
-            modifier = Modifier.padding(Spacing.lg),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.lg),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.igtf_label, igtfRateText),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(modifier = Modifier.height(Spacing.xs))
-                Text(
-                    text = stringResource(R.string.igtf_helper),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
+            Text(
+                text = stringResource(R.string.igtf_label, igtfRateText),
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(Spacing.xs))
+            Text(
+                text = stringResource(R.string.igtf_helper),
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(Spacing.sm))
             Switch(checked = checked, onCheckedChange = onCheckedChange)
         }
     }

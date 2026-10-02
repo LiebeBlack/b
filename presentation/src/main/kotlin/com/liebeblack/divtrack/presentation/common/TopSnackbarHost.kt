@@ -10,13 +10,11 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun TopSnackbarHost(
     hostState: SnackbarHostState,
-    topPadding: Dp,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -24,7 +22,7 @@ fun TopSnackbarHost(
             hostState = hostState,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = topPadding + 8.dp, start = 16.dp, end = 16.dp)
+                .padding(top = 8.dp, start = 16.dp, end = 16.dp)
                 .widthIn(max = 560.dp)
                 .fillMaxWidth(),
         )

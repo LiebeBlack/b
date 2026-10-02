@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -211,7 +212,6 @@ fun SettingsScreen(
         }
         TopSnackbarHost(
             hostState = snackbarHostState,
-            topPadding = padding.calculateTopPadding(),
         )
     }
 }
@@ -295,42 +295,50 @@ private fun ProviderStatusRow(status: ProviderStatus, modifier: Modifier = Modif
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         ) {
-            Surface(
-                modifier = Modifier.size(8.dp),
-                shape = MaterialTheme.shapes.extraSmall,
-                color = dotColor,
-            ) {}
-            Spacer(modifier = Modifier.width(Spacing.sm))
-            Column(modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Surface(
+                    modifier = Modifier.size(8.dp),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = dotColor,
+                ) {}
+                Spacer(modifier = Modifier.width(Spacing.sm))
                 Text(
                     text = status.providerId,
-                    modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
+            }
+            Text(
+                text = sourcesText,
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            if (status.isOk) {
                 Text(
-                    text = sourcesText,
+                    text = lastUpdatedText
+                        ?.let { fresh -> stringResource(R.string.provider_last_data, fresh) }
+                        ?: stringResource(R.string.provider_no_timestamp),
                     modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
-                if (status.isOk) {
-                    Text(
-                        text = lastUpdatedText
-                            ?.let { fresh -> stringResource(R.string.provider_last_data, fresh) }
-                            ?: stringResource(R.string.provider_no_timestamp),
-                        modifier = Modifier.fillMaxWidth(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-                }
             }
         }
     }

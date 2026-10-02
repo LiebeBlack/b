@@ -3,12 +3,9 @@ package com.liebeblack.divtrack.presentation.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
@@ -46,14 +43,12 @@ fun SpreadChip(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        // Contenido centrado como bloque: la brecha es el dato estrella del panel y su
-        // tarjeta comparte la geometría centrada de las tarjetas de tasa.
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Spacing.lg, vertical = Spacing.md),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         ) {
             Icon(
                 imageVector = Icons.Filled.Info,
@@ -61,26 +56,22 @@ fun SpreadChip(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp),
             )
-            Spacer(modifier = Modifier.width(Spacing.sm))
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = stringResource(R.string.spread_title),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    text = if (percent != null && absolute != null) {
-                        stringResource(R.string.spread_value, percent, absolute)
-                    } else {
-                        stringResource(R.string.spread_unavailable)
-                    },
-                    style = MaterialTheme.typography.titleMedium.tabular(),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                )
-            }
+            Text(
+                text = stringResource(R.string.spread_title),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = if (percent != null && absolute != null) {
+                    stringResource(R.string.spread_value, percent, absolute)
+                } else {
+                    stringResource(R.string.spread_unavailable)
+                },
+                style = MaterialTheme.typography.titleMedium.tabular(),
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }

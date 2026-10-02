@@ -2,14 +2,12 @@ package com.liebeblack.divtrack.presentation.dashboard
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -271,7 +269,6 @@ fun DashboardScreen(
             }
             TopSnackbarHost(
                 hostState = snackbarHostState,
-                topPadding = padding.calculateTopPadding(),
             )
         }
     }
@@ -285,9 +282,12 @@ private fun OfflineBanner(message: String, modifier: Modifier = Modifier) {
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             Icon(
                 imageVector = Icons.Filled.Warning,
@@ -295,10 +295,9 @@ private fun OfflineBanner(message: String, modifier: Modifier = Modifier) {
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(16.dp),
             )
-            Spacer(modifier = Modifier.width(Spacing.sm))
             Text(
                 text = message,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
