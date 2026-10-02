@@ -241,6 +241,8 @@ fun RateCard(
                             colors.parallelMuted
                         },
                         textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }

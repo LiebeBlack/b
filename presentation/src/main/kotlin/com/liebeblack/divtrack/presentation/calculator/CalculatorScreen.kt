@@ -3,6 +3,7 @@ package com.liebeblack.divtrack.presentation.calculator
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,10 +38,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.liebeblack.divtrack.domain.model.RateSource
@@ -295,7 +299,7 @@ private fun ResultRow(
     valueColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     val valueStyle = if (emphasize) {
-        MaterialTheme.typography.headlineSmall.tabular()
+        MaterialTheme.typography.headlineMedium.tabular()
     } else {
         MaterialTheme.typography.titleMedium.tabular()
     }
@@ -306,18 +310,38 @@ private fun ResultRow(
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.fillMaxWidth(),
+            style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        Text(
-            text = value,
-            modifier = Modifier.fillMaxWidth(),
-            style = valueStyle,
-            color = valueColor,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val fontScale = LocalDensity.current.fontScale
+            val baseFontSize = when {
+                maxWidth < 280.dp -> 20f
+                maxWidth < 360.dp -> 22f
+                else -> 24f
+            }
+            val longValueAdjustment = when {
+                value.length >= 18 -> 5f
+                value.length >= 14 -> 3f
+                else -> 0f
+            }
+            val resultFontSize = (baseFontSize - longValueAdjustment).coerceAtLeast(18f)
+
+            Text(
+                text = value,
+                modifier = Modifier.fillMaxWidth(),
+                style = valueStyle.copy(
+                    fontSize = resultFontSize.sp,
+                    lineHeight = (resultFontSize + 6f).sp,
+                    fontWeight = if (emphasize) FontWeight.Black else valueStyle.fontWeight,
+                ),
+                color = valueColor,
+                textAlign = TextAlign.Center,
+                maxLines = if (fontScale >= 1.3f || value.length >= 14) 2 else 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
