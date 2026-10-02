@@ -22,7 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -73,7 +73,7 @@ fun WelcomeScreen(
                 shape = CircleShape,
             ) {
                 Icon(
-                    imageVector = Icons.Filled.TrendingUp,
+                    imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                     contentDescription = null,
                     tint = colors.officialAccent,
                     modifier = Modifier.padding(Spacing.lg).size(32.dp),
@@ -97,7 +97,7 @@ fun WelcomeScreen(
             Spacer(modifier = Modifier.height(Spacing.xs))
 
             WelcomeFeature(
-                icon = Icons.Filled.TrendingUp,
+                icon = Icons.AutoMirrored.Filled.TrendingUp,
                 title = stringResource(R.string.welcome_rates_title),
                 description = stringResource(R.string.welcome_rates_body),
                 accent = colors.officialAccent,

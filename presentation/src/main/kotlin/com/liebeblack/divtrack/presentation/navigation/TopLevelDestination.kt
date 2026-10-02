@@ -4,7 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation3.runtime.NavKey
 import com.liebeblack.divtrack.presentation.R
@@ -41,7 +41,7 @@ enum class TopLevelDestination(
     @StringRes val labelRes: Int,
     val icon: ImageVector,
 ) {
-    DASHBOARD(DashboardKey, R.string.nav_dashboard, Icons.Filled.TrendingUp),
+    DASHBOARD(DashboardKey, R.string.nav_dashboard, Icons.AutoMirrored.Filled.TrendingUp),
     CALCULATOR(CalculatorKey, R.string.nav_calculator, Icons.Filled.Calculate),
     SETTINGS(SettingsKey, R.string.nav_settings, Icons.Filled.Settings);
 
