@@ -59,6 +59,8 @@ fun WelcomeScreen(
             .padding(WindowInsets.safeDrawing.asPaddingValues()),
         contentAlignment = Alignment.TopCenter,
     ) {
+        val viewportHeight = maxHeight
+
         Column(
             modifier = Modifier
                 .widthIn(max = 520.dp)
@@ -68,7 +70,7 @@ fun WelcomeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = maxHeight),
+                    .heightIn(min = viewportHeight),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(
