@@ -2,13 +2,14 @@ package com.liebeblack.divtrack.presentation.calculator
 
 import android.content.Context
 import com.liebeblack.divtrack.domain.model.ConversionDirection
+import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.presentation.R
 
 /**
  * Construye el texto que se copia al portapapeles.
  *
- * Formato del spec (una línea resumen + detalle):
- * `DivTrack · Monto: $10,00 | Tasa Oficial: 36,50 Bs | IGTF: Sí | Total: 375,95 Bs`
+ * El reporte multilínea separa dirección, entrada, tasa, desglose e importe final para
+ * que se lea bien tanto pegado en un chat como en una nota.
  *
  * Se hace en la capa de UI y no en el ViewModel para poder usar recursos localizados
  * (es-VE / en) sin que el ViewModel toque `Context`.
@@ -16,37 +17,35 @@ import com.liebeblack.divtrack.presentation.R
 internal fun buildBreakdownText(context: Context, summary: BreakdownSummary): String {
     val sourceLabel = context.getString(
         when (summary.source) {
-            com.liebeblack.divtrack.domain.model.RateSource.OFICIAL -> R.string.source_oficial_long
-            com.liebeblack.divtrack.domain.model.RateSource.PARALELO -> R.string.source_paralelo_long
+            RateSource.OFICIAL -> R.string.source_oficial_long
+            RateSource.PARALELO -> R.string.source_paralelo_long
         },
     )
-    val igtfLabel = context.getString(
-        if (summary.igtfEnabled) R.string.copy_igtf_yes else R.string.copy_igtf_no,
-    )
-    val amountPrefix = if (summary.direction == ConversionDirection.USD_TO_BS) "$" else ""
+    val amount = when (summary.direction) {
+        ConversionDirection.USD_TO_BS ->
+            context.getString(R.string.copy_amount_usd, summary.amountText)
 
-    val header = context.getString(
-        R.string.copy_summary,
-        "$amountPrefix${summary.amountText}",
-        sourceLabel,
-        summary.rateText,
-        igtfLabel,
-        summary.totalBsText,
-    )
-
-    val detail = context.getString(
-        R.string.copy_detail,
-        sourceLabel,
-        summary.netUsdText,
-        summary.igtfText,
-        summary.totalUsdText,
-    )
-
-    return buildString {
-        append(header)
-        append('\n')
-        append(detail)
-        append('\n')
-        append(context.getString(R.string.copy_signature))
+        ConversionDirection.BS_TO_USD ->
+            context.getString(R.string.copy_amount_bs, summary.amountText)
     }
+    val direction = when (summary.direction) {
+        ConversionDirection.USD_TO_BS -> R.string.copy_direction_usd_to_bs
+        ConversionDirection.BS_TO_USD -> R.string.copy_direction_bs_to_usd
+    }
+    val taxLine = if (summary.igtfEnabled) {
+        context.getString(R.string.copy_igtf_applied, summary.igtfText)
+    } else {
+        context.getString(R.string.copy_igtf_not_applied)
+    }
+
+    return listOf(
+        context.getString(R.string.copy_title),
+        context.getString(direction),
+        amount,
+        context.getString(R.string.copy_rate, sourceLabel, summary.rateText),
+        context.getString(R.string.copy_net, summary.netUsdText, summary.netBsText),
+        taxLine,
+        context.getString(R.string.copy_total, summary.totalUsdText, summary.totalBsText),
+        context.getString(R.string.copy_signature),
+    ).joinToString(separator = "\n")
 }

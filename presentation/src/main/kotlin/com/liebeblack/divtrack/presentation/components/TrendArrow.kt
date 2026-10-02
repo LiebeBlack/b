@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -29,13 +30,15 @@ fun TrendArrow(
     direction: TrendDirection,
     modifier: Modifier = Modifier,
     arrowSize: Dp = 12.dp,
+    tint: Color? = null,
 ) {
     val colors = DivTrackThemeTokens.colors
-    val color = when (direction) {
+    val semanticColor = when (direction) {
         TrendDirection.UP -> colors.trendUp
         TrendDirection.DOWN -> colors.trendDown
         TrendDirection.FLAT -> colors.trendFlat
     }
+    val color = tint ?: semanticColor
     val description = stringResource(direction.contentDescriptionRes())
 
     Canvas(

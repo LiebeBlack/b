@@ -43,10 +43,49 @@ private fun RateCardOfficialLightPreview() {
     }
 }
 
+@Preview(name = "Tasa oficial héroe · oscuro", widthDp = 380, showBackground = true)
+@Composable
+private fun RateCardOfficialDarkPreview() {
+    DivTrackTheme(themeMode = ThemeMode.DARK) {
+        Surface {
+            RateCard(
+                title = "Dólar Oficial (BCV)",
+                valueText = "859,06 Bs.",
+                trend = TrendDirection.UP,
+                deltaText = "+0,12 %",
+                providerText = "Fuente: DolarAPI",
+                updatedAtText = "Actualizado 30 sep · 21:01",
+                accentColor = DivTrackThemeTokens.colors.officialAccent,
+                modifier = Modifier.padding(Spacing.lg),
+                isHero = true,
+            )
+        }
+    }
+}
+
 @Preview(name = "Tasa paralelo · oscuro", widthDp = 380, showBackground = true)
 @Composable
 private fun RateCardParallelDarkPreview() {
     DivTrackTheme(themeMode = ThemeMode.DARK) {
+        Surface {
+            RateCard(
+                title = "Dólar Paralelo (mercado)",
+                valueText = "954,55 Bs.",
+                trend = TrendDirection.DOWN,
+                deltaText = "-0,57 %",
+                providerText = "Fuente: Yadio",
+                updatedAtText = "Actualizado 30 sep · 21:04",
+                accentColor = DivTrackThemeTokens.colors.parallelAccent,
+                modifier = Modifier.padding(Spacing.lg),
+            )
+        }
+    }
+}
+
+@Preview(name = "Tasa paralelo · claro", widthDp = 380, showBackground = true)
+@Composable
+private fun RateCardParallelLightPreview() {
+    DivTrackTheme(themeMode = ThemeMode.LIGHT) {
         Surface {
             RateCard(
                 title = "Dólar Paralelo (mercado)",

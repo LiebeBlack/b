@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -21,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -66,12 +69,24 @@ fun RateCard(
         TrendDirection.DOWN -> colors.trendDown
         TrendDirection.FLAT -> colors.trendFlat
     }
+    val emphasisColor = if (isHero) accentColor else colors.parallelMuted
 
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        color = if (isHero) {
+            colors.officialAccent.copy(alpha = 0.08f)
+        } else {
+            MaterialTheme.colorScheme.surfaceContainer
+        },
+        border = BorderStroke(
+            width = if (isHero) 1.5.dp else 1.dp,
+            color = if (isHero) {
+                colors.officialAccent.copy(alpha = 0.55f)
+            } else {
+                MaterialTheme.colorScheme.outlineVariant
+            },
+        ),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -82,39 +97,69 @@ fun RateCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(4.dp)
-                    .background(accentColor),
+                    .height(if (isHero) 5.dp else 3.dp)
+                    .background(if (isHero) emphasisColor else colors.parallelMuted.copy(alpha = 0.55f)),
             )
 
             Column(
-                modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                modifier = Modifier.padding(
+                    horizontal = Spacing.lg,
+                    vertical = if (isHero) Spacing.lg else Spacing.md,
+                ),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                ) {
+                    Text(
+                        text = title,
+                        modifier = Modifier.weight(1f),
+                        style = if (isHero) {
+                            MaterialTheme.typography.titleMedium
+                        } else {
+                            MaterialTheme.typography.titleSmall
+                        },
+                        color = emphasisColor,
+                        maxLines = if (LocalDensity.current.fontScale >= 1.3f) 2 else 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
 
-                Spacer(modifier = Modifier.height(Spacing.xs))
-
-                if (deltaText != null) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        TrendArrow(direction = trend, arrowSize = 11.dp)
-                        Spacer(modifier = Modifier.width(Spacing.xs))
-                        Text(
-                            text = deltaText,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = trendColor,
-                        )
+                    if (isHero) {
+                        Surface(
+                            color = colors.officialAccent.copy(alpha = 0.12f),
+                            shape = MaterialTheme.shapes.small,
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(
+                                    horizontal = Spacing.sm,
+                                    vertical = Spacing.xs,
+                                ),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .background(
+                                            color = colors.officialAccent,
+                                            shape = MaterialTheme.shapes.small,
+                                        ),
+                                )
+                                Text(
+                                    text = stringResource(R.string.rate_primary_badge),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = emphasisColor,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                )
+                            }
+                        }
                     }
-
-                    Spacer(modifier = Modifier.height(Spacing.xs))
                 }
+
+                Spacer(modifier = Modifier.height(Spacing.md))
 
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                     val fontScale = LocalDensity.current.fontScale
@@ -125,48 +170,82 @@ fun RateCard(
                         } else {
                             MaterialTheme.typography.displaySmall.tabular()
                         },
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = emphasisColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
+                        textAlign = TextAlign.Start,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
 
                 Spacer(modifier = Modifier.height(Spacing.sm))
 
-                // Pie apilado y centrado: cada dato en su línea. Envuelve en pantallas
-                // angostas en lugar de competir por el ancho y quedar cortado.
-                Text(
-                    text = providerText,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                ) {
+                    if (deltaText != null) {
+                        Surface(
+                            color = (if (isHero) trendColor else colors.parallelMuted)
+                                .copy(alpha = 0.12f),
+                            shape = MaterialTheme.shapes.small,
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(
+                                    horizontal = Spacing.sm,
+                                    vertical = Spacing.xs,
+                                ),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                            ) {
+                                TrendArrow(
+                                    direction = trend,
+                                    arrowSize = 10.dp,
+                                    tint = if (isHero) trendColor else colors.parallelMuted,
+                                )
+                                Text(
+                                    text = deltaText,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (isHero) trendColor else colors.parallelMuted,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            }
+                        }
+                    }
 
-                if (updatedAtText != null) {
-                    Spacer(modifier = Modifier.height(Spacing.xs))
                     Text(
-                        text = updatedAtText,
+                        text = providerText,
+                        modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isStale) {
-                            // La edad del dato es la información: el cierre de ayer se
-                            // lee distinto cuando el banco lleva un día sin publicar.
-                            MaterialTheme.colorScheme.tertiary
-                        } else {
+                        color = if (isHero) {
                             MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            colors.parallelMuted
                         },
-                        textAlign = TextAlign.Center,
+                        textAlign = TextAlign.End,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
 
-                if (isStale) {
-                    Spacer(modifier = Modifier.height(Spacing.xs))
+                if (updatedAtText != null || isStale) {
+                    Spacer(modifier = Modifier.height(Spacing.sm))
                     Text(
-                        text = stringResource(R.string.rate_stale_warning),
+                        text = listOfNotNull(
+                            updatedAtText,
+                            if (isStale) stringResource(R.string.rate_stale_warning) else null,
+                        ).joinToString(separator = " · "),
+                        modifier = Modifier.fillMaxWidth(),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.tertiary,
-                        textAlign = TextAlign.Center,
+                        color = if (isStale) {
+                            MaterialTheme.colorScheme.tertiary
+                        } else if (isHero) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            colors.parallelMuted
+                        },
+                        textAlign = TextAlign.Start,
                     )
                 }
             }

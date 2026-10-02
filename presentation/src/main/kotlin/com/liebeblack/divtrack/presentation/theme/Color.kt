@@ -29,6 +29,8 @@ val MintContrast = Color(0xFF007A4D)
 val Sky = Color(0xFF4C8DFF)
 val SkyDeep = Color(0xFF1F5FD0)
 val Amber = Color(0xFFFFB020)
+val ParallelMutedDark = Color(0xFFAAA092)
+val ParallelMutedLight = Color(0xFF746A5D)
 
 /** Texto principal sobre oscuro: más blanco que [CloudWhite] para máximo contraste. */
 val Frost = Color(0xFFF5F8FB)
@@ -45,7 +47,7 @@ val TrendFlatDeep = Color(0xFF5A6575)
 
 /** Ámbar legible sobre blanco: el [Amber] brillante solo sirve de acento, no de texto. */
 val AmberDeep = Color(0xFFB45309)
-val OfficialAccent = Sky
+val OfficialAccent = Mint
 val ParallelAccent = Amber
 
 // Nota de legibilidad: las franjas de acento de las tarjetas (Sky/Amber) y los tokens

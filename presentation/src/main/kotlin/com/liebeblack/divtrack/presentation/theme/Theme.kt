@@ -24,6 +24,7 @@ data class DivTrackColors(
     val trendFlat: Color,
     val officialAccent: Color,
     val parallelAccent: Color,
+    val parallelMuted: Color,
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -94,6 +95,7 @@ private val DarkExtraColors = DivTrackColors(
     trendFlat = TrendFlat,
     officialAccent = OfficialAccent,
     parallelAccent = ParallelAccent,
+    parallelMuted = ParallelMutedDark,
 )
 
 private val LightExtraColors = DivTrackColors(
@@ -102,13 +104,13 @@ private val LightExtraColors = DivTrackColors(
     trendUp = TrendUpDeep,
     trendDown = TrendDownDeep,
     trendFlat = TrendFlatDeep,
-    officialAccent = SkyDeep,
+    officialAccent = MintContrast,
     parallelAccent = Amber,
+    parallelMuted = ParallelMutedLight,
 )
 
-// Nota: LightExtraColors mantiene el ámbar brillante en `parallelAccent` porque solo
-// usa como FRANJA de color de la tarjeta (fondo sólido), nunca como texto: el texto de
-// avisos sale del `tertiary` del esquema, que en modo claro es [AmberDeep].
+// El paralelo conserva su acento ámbar en selectores, pero las tarjetas usan un tono
+// topo de bajo contraste para que la tasa oficial mantenga el foco en el dashboard.
 
 val LocalDivTrackColors = staticCompositionLocalOf { DarkExtraColors }
 

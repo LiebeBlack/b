@@ -133,6 +133,9 @@ XxxScreen.kt      XxxRoute (única función que toca el ViewModel) + XxxScreen (
   amplias. Los selectores fluyen a varias filas en lugar de comprimir sus opciones; los
   resultados de la calculadora cambian a disposición vertical en pantallas estrechas o con
   escala de texto grande. La tipografía sigue respetando el tamaño de fuente del sistema.
+- En las tarjetas de tasas, el oficial es el foco visual con acento verde, superficie
+  ligeramente teñida y distintivo de referencia; el paralelo usa tonos topo discretos.
+  Las tendencias se muestran en cápsulas de color y sin sombras ni animaciones costosas.
 
 ---
 
