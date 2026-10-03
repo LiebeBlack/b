@@ -3,269 +3,595 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DivTrack — tasas oficial y paralelo de Venezuela, en tiempo real</title>
-<meta name="description" content="DivTrack es una app Android nativa para seguir el dólar oficial (BCV) y el paralelo y calcular conversiones bidireccionales con IGTF. Kotlin, Compose, Clean Architecture.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#06130E" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F7F1E5" media="(prefers-color-scheme: light)">
+<title>DivTrack — dólar oficial y paralelo de Venezuela, con conversión y IGTF</title>
+<meta name="description" content="App Android nativa (Kotlin + Compose) que sigue el dólar oficial (BCV) y el paralelo, resuelve la tasa por frescura entre tres proveedores y convierte en ambos sentidos con IGTF. Room como única fuente de verdad: abre con datos y funciona sin conexión.">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9IiMwNjEzMEUiLz48cGF0aCBkPSJNMTQgNDNMMzAgMjVMNDQgMzVMNTAgMjAiIHN0cm9rZT0iIzM5RjBBNSIgc3Ryb2tlLXdpZHRoPSI2IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=">
 <!--
-  Página autocontenida: sin JavaScript, sin CDN, sin fuentes externas, sin peticiones de red.
-  Se puede abrir desde el disco, imprimir o publicar como está. Los colores y los radios son
-  los mismos de la app (presentation/theme/Color.kt) para que la web y el producto se lean
-  como la misma cosa.
+  Página autocontenida: sin JavaScript, sin CDN, sin fuentes externas, sin imágenes externas,
+  sin una sola petición de red (el favicon viaja como data URI). Se puede abrir desde el disco,
+  imprimir o publicar tal cual.
+
+  Los tokens de color son 1:1 con la app (presentation/theme/Color.kt y Theme.kt): Obsidian,
+  ObsidianElevated/Border/Muted, Mint/MintDeep/MintContrast, Amber, CloudCanvas/CloudSurface/
+  CloudBorder/CloudShade, SlateText, Frost y los verdes/rojos *Deep* del tema claro. Los radios
+  son los de DivTrackShapes (8/12/16/22/28).
+
+  La tipografía es la pila del sistema a propósito: empaquetar Manrope (la fuente de la app)
+  obligaría a incrustar el .ttf en el HTML o a pedirlo a un CDN, y esta página tiene que
+  funcionar abriéndola con doble clic desde el repositorio.
 -->
 <style>
+  /* ============================== Tokens ============================== */
   :root {
-    --obsidian: #0A0E13;
-    --elevated: #131A22;
-    --elevated-2: #1A232E;
-    --border: #223040;
-    --muted: #98A2B3;
-    --text: #F2F5F9;
-    --mint: #19E39B;
-    --mint-deep: #00A86B;
-    --sky: #4C8DFF;
-    --amber: #FFB020;
-    --up: #16C784;
-    --down: #EA3943;
-    --radius-s: 12px;
-    --radius-m: 16px;
-    --radius-l: 22px;
-    --radius-xl: 28px;
-    --max: 1080px;
+    /* Superficies y texto (tema oscuro = el que trae la app por defecto) */
+    --bg: #06130E;              /* Obsidian */
+    --surface: #0D2118;         /* ObsidianElevated */
+    --surface-2: #123024;       /* superficie de bloque secundario */
+    --border: #1C3D2C;          /* ObsidianBorder */
+    --border-strong: #397653;   /* outline del esquema oscuro */
+    --muted: #B0C0B6;           /* ObsidianMuted = onSurfaceVariant */
+    --text: #F5F8FB;            /* Frost = onSurface */
+    --on-accent: #06130E;       /* onPrimary del tema oscuro */
+    --container-low: #06130E;   /* surfaceContainerLow = Obsidian (banner, brecha) */
+    --chip-on: #124A34;         /* secondaryContainer: relleno del chip elegido */
+    --chip-on-text: #FFFCF4;    /* onSecondaryContainer */
+
+    /* Marca */
+    --mint: #39F0A5;            /* Mint */
+    --mint-deep: #008F5B;       /* MintDeep */
+    --mint-ink: #006B46;        /* MintContrast */
+    --amber: #FFB020;           /* Amber = tertiary, el aviso de dato rancio */
+
+    /* Tarjetas de tasa (DivTrackColors) */
+    --official-surface: #0D2D20; /* officialSurface: fondo de la tarjeta héroe */
+    --parallel-muted: #AAA092;   /* ParallelMutedDark: la tarjeta del paralelo va en topo */
+
+    /* Semánticos de mercado */
+    --up: #16C784;              /* TrendUp */
+    --down: #EA3943;            /* TrendDown */
+    --flat: #8A94A6;            /* TrendFlat */
+
+    /* Radios = DivTrackShapes */
+    --r-xs: 8px;
+    --r-s: 12px;
+    --r-m: 16px;
+    --r-l: 22px;
+    --r-xl: 28px;
+
+    /* Ritmo */
+    --max: 1120px;
+    --gap: 16px;
+    --sec: clamp(56px, 8vw, 88px);
+    --shadow: 0 1px 0 rgba(255, 255, 255, 0.02), 0 18px 40px -28px rgba(0, 0, 0, 0.75);
+
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   }
 
   @media (prefers-color-scheme: light) {
     :root {
-      --obsidian: #EDF1F6;
-      --elevated: #FFFFFF;
-      --elevated-2: #F0F3F8;
-      --border: #D8DEE7;
-      --muted: #5A6575;
-      --text: #0A0E13;
-      --mint: #00A86B;
-      --sky: #1F5FD0;
-      --amber: #C97E00;
+      --bg: #F7F1E5;            /* CloudCanvas */
+      --surface: #FFFDF8;       /* CloudSurface */
+      --surface-2: #F1E8D5;     /* CloudShade */
+      --border: #E4D9C3;        /* CloudBorder */
+      --border-strong: #D8C9AC;
+      --muted: #454E46;         /* SlateText */
+      --text: #06130E;
+      --on-accent: #FFFFFF;     /* onPrimary del tema claro */
+      --container-low: #F1E8D5; /* CloudShade */
+      --chip-on: #B8E8D3;
+      --chip-on-text: #06130E;
+
+      --mint: #006B46;          /* MintContrast: el acento legible sobre crema */
+      --mint-deep: #008F5B;
+      --mint-ink: #006B46;
+      --amber: #B45309;         /* AmberDeep: ámbar legible como texto */
+
+      --official-surface: #EAF4E8; /* officialSurface del tema claro */
+      --parallel-muted: #746A5D;   /* ParallelMutedLight */
+
+      --up: #0E7C50;            /* TrendUpDeep */
+      --down: #B3261E;          /* TrendDownDeep */
+      --flat: #5A6575;          /* TrendFlatDeep */
+
+      --shadow: 0 1px 0 rgba(6, 19, 14, 0.02), 0 18px 36px -30px rgba(6, 19, 14, 0.35);
     }
   }
 
+  /* ============================== Base ============================== */
   * { box-sizing: border-box; }
 
-  html { scroll-behavior: smooth; }
+  html {
+    scroll-behavior: smooth;
+    /* La barra de navegación es sticky: los anclajes no deben quedar debajo. */
+    scroll-padding-top: 84px;
+  }
 
   body {
     margin: 0;
-    background: var(--obsidian);
+    background: var(--bg);
     color: var(--text);
     font-family: var(--font);
     font-size: 16px;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
+  /* Cifras alineadas: el mismo motivo que las tabulares de Manrope en la app. */
   .num { font-variant-numeric: tabular-nums; }
+
+  h1, h2, h3 { margin: 0; line-height: 1.12; letter-spacing: -0.022em; }
+  h1 { font-size: clamp(2.1rem, 5.4vw, 3.5rem); font-weight: 750; }
+  h2 { font-size: clamp(1.45rem, 3.2vw, 2.05rem); font-weight: 700; }
+  h3 { font-size: 1.02rem; font-weight: 650; }
+  p { margin: 0 0 12px; }
+  p:last-child { margin-bottom: 0; }
 
   a { color: var(--mint); text-decoration: none; }
   a:hover { text-decoration: underline; }
+  a:focus-visible, button:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--mint);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
 
-  h1, h2, h3 { line-height: 1.15; letter-spacing: -0.02em; margin: 0; }
-  h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 700; }
-  h2 { font-size: clamp(1.5rem, 3.5vw, 2rem); font-weight: 650; margin-bottom: 8px; }
-  h3 { font-size: 1.05rem; font-weight: 650; }
-  p { margin: 0 0 12px; }
+  code {
+    font-family: var(--mono);
+    font-size: 0.87em;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xs);
+    padding: 1px 6px;
+  }
+  pre code { background: none; border: 0; padding: 0; }
 
-  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 clamp(16px, 4vw, 28px); }
 
-  /* ---------- Navegación ---------- */
+  .skip {
+    position: absolute; left: -9999px; top: 0;
+    background: var(--mint); color: var(--on-accent); padding: 10px 16px;
+    border-radius: 0 0 var(--r-s) 0; font-weight: 700; z-index: 30;
+  }
+  .skip:focus { left: 0; }
+
+  /* ============================== Navegación ============================== */
   nav {
-    position: sticky; top: 0; z-index: 10;
-    backdrop-filter: blur(12px);
-    background: color-mix(in srgb, var(--obsidian) 88%, transparent);
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter: blur(14px) saturate(1.2);
     border-bottom: 1px solid var(--border);
   }
-  nav .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
-  nav .brand { font-weight: 700; letter-spacing: -0.02em; }
-  nav .brand span { color: var(--mint); }
-  nav .links { display: flex; gap: 20px; margin-left: auto; overflow-x: auto; }
-  nav .links a { color: var(--muted); font-size: 0.9rem; white-space: nowrap; }
+  nav .wrap {
+    display: flex; align-items: center; gap: 18px;
+    min-height: 62px; padding-top: 8px; padding-bottom: 8px;
+  }
+  nav .brand {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-weight: 750; letter-spacing: -0.02em; font-size: 1.02rem; color: var(--text);
+  }
+  nav .brand:hover { text-decoration: none; }
+  nav .brand .mark {
+    width: 26px; height: 26px; border-radius: 8px; flex: none;
+    background: linear-gradient(140deg, var(--mint), var(--mint-deep));
+    display: grid; place-items: center; color: var(--on-accent);
+    font-size: 0.82rem; font-weight: 800;
+  }
+  nav .brand b { color: var(--mint); font-weight: 750; }
+  nav .links {
+    display: flex; gap: 18px; margin-left: auto;
+    overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  nav .links::-webkit-scrollbar { display: none; }
+  nav .links a { color: var(--muted); font-size: 0.88rem; white-space: nowrap; }
   nav .links a:hover { color: var(--text); text-decoration: none; }
+  nav .cta {
+    flex: none; font-size: 0.84rem; font-weight: 700;
+    background: var(--mint); color: var(--on-accent);
+    padding: 8px 14px; border-radius: 999px;
+  }
+  nav .cta:hover { text-decoration: none; filter: brightness(1.06); }
+  @media (max-width: 720px) {
+    nav .cta { display: none; }
+  }
 
-  /* ---------- Hero ---------- */
+  /* ============================== Hero ============================== */
   header.hero {
-    position: relative;
-    padding: 72px 0 56px;
+    position: relative; overflow: hidden;
+    padding: clamp(44px, 7vw, 84px) 0 var(--sec);
     border-bottom: 1px solid var(--border);
-    overflow: hidden;
   }
   header.hero::before {
-    content: "";
-    position: absolute; inset: -40% 30% auto -20%;
-    height: 420px;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--mint) 22%, transparent), transparent);
-    filter: blur(20px);
-    pointer-events: none;
+    content: ""; position: absolute; inset: -30% 40% auto -20%; height: 560px;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--mint) 18%, transparent), transparent);
+    filter: blur(24px); pointer-events: none;
   }
-  .hero .eyebrow {
+  header.hero::after {
+    content: ""; position: absolute; right: -10%; top: 30%; width: 420px; height: 420px;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--amber) 10%, transparent), transparent);
+    filter: blur(30px); pointer-events: none;
+  }
+
+  .hero-grid {
+    position: relative;
+    display: grid; gap: clamp(24px, 4vw, 44px);
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .eyebrow {
     display: inline-flex; align-items: center; gap: 8px;
-    font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase;
+    font-size: 0.76rem; letter-spacing: 0.09em; text-transform: uppercase;
     color: var(--muted); margin-bottom: 16px;
   }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); }
+  .eyebrow .dot {
+    width: 8px; height: 8px; border-radius: 50%; flex: none;
+    background: var(--mint); box-shadow: 0 0 0 4px color-mix(in srgb, var(--mint) 18%, transparent);
+  }
+  .lede { font-size: clamp(1rem, 1.9vw, 1.12rem); color: var(--muted); max-width: 60ch; margin-top: 16px; }
+  .lede strong { color: var(--text); font-weight: 650; }
 
-  .lede { font-size: clamp(1rem, 2.2vw, 1.15rem); color: var(--muted); max-width: 62ch; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+  .button {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 0.92rem; font-weight: 700; padding: 11px 18px;
+    border-radius: 999px; border: 1px solid transparent;
+  }
+  .button.primary { background: var(--mint); color: var(--on-accent); }
+  .button.primary:hover { text-decoration: none; filter: brightness(1.07); }
+  .button.ghost {
+    background: var(--surface); border-color: var(--border); color: var(--text);
+  }
+  .button.ghost:hover { text-decoration: none; border-color: var(--border-strong); }
 
-  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
   .badge {
-    font-size: 0.78rem; padding: 5px 11px; border-radius: 999px;
-    border: 1px solid var(--border); background: var(--elevated); color: var(--muted);
-    font-variant-numeric: tabular-nums;
+    font-size: 0.76rem; padding: 5px 11px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--muted);
   }
+  .badge b { color: var(--text); font-weight: 650; }
 
-  /* ---------- Tarjetas de tasa (espejo del RateCard de la app) ---------- */
-  .rates { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top: 36px; }
+  .facts {
+    display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 30px;
+  }
+  @media (max-width: 560px) { .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .fact {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-m); padding: 12px 14px;
+  }
+  .fact .k { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.02em; }
+  .fact .v { font-size: 1.18rem; font-weight: 700; letter-spacing: -0.02em; }
+
+  /* ============================== Tarjetas de tasa (espejo de RateCard) ============================== */
+  .rates { display: grid; gap: var(--gap); }
   .rate {
-    position: relative; background: var(--elevated);
-    border: 1px solid var(--border); border-radius: var(--radius-l);
-    padding: 18px 20px 14px 24px; overflow: hidden;
+    position: relative; overflow: hidden; text-align: center;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-l); box-shadow: var(--shadow);
   }
-  .rate::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
-  .rate.official { --accent: var(--sky); }
-  .rate.parallel { --accent: var(--amber); }
-  .rate .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .rate .label { font-size: 0.82rem; color: var(--muted); font-weight: 600; letter-spacing: 0.02em; }
-  .rate .value { font-size: clamp(2rem, 7vw, 2.6rem); font-weight: 700; letter-spacing: -0.03em; margin: 6px 0 2px; }
-  .rate .value small { font-size: 0.9rem; font-weight: 600; color: var(--muted); letter-spacing: 0; }
-  .rate .foot { display: flex; justify-content: space-between; gap: 12px; font-size: 0.74rem; color: var(--muted); margin-top: 10px; }
-  .delta { font-size: 0.78rem; font-weight: 650; font-variant-numeric: tabular-nums; }
-  .delta.up { color: var(--up); }
-  .delta.down { color: var(--down); }
-  .arrow { display: inline-block; }
+  .rate::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--accent); }
+  .rate.official {
+    --accent: var(--mint);
+    border-color: var(--mint);
+    border-width: 1.5px;
+    background: var(--official-surface);
+  }
+  .rate.official::before { height: 8px; }
+  /* El paralelo no compite con la oficial: en la app su tarjeta usa ParallelMuted de arriba
+     abajo (franja, cifra, variación y pie). El ámbar queda para los selectores. */
+  .rate.parallel { --accent: color-mix(in srgb, var(--parallel-muted) 55%, transparent); }
+  .rate .body { padding: 26px 20px 18px; }
+  .rate .label { font-size: 0.82rem; font-weight: 650; color: var(--muted); }
+  .rate.official .label { color: var(--mint); font-size: 0.95rem; }
+  .rate .value { font-weight: 750; letter-spacing: -0.035em; margin: 10px 0 4px; }
+  .rate.official .value { font-size: clamp(2.4rem, 6vw, 3.1rem); color: var(--mint); }
+  .rate.parallel .value { font-size: clamp(1.6rem, 4vw, 1.95rem); color: var(--parallel-muted); }
+  .rate.parallel .label { color: var(--parallel-muted); }
+  .rate .value small { font-size: 0.4em; font-weight: 650; letter-spacing: 0; color: var(--muted); }
+  .rate .foot { font-size: 0.73rem; color: var(--muted); margin-top: 12px; }
 
+  .delta {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.76rem; font-weight: 700; font-variant-numeric: tabular-nums;
+    padding: 3px 9px; border-radius: 999px;
+    background: color-mix(in srgb, var(--tone) 14%, transparent);
+    color: var(--tone);
+  }
+  .delta.up { --tone: var(--up); }
+  .delta.down { --tone: var(--down); }
+  .delta.flat { --tone: var(--flat); }
+  .delta.quiet { --tone: var(--parallel-muted); }
+
+  /* SpreadChip: icono ℹ + título + «% por encima del oficial (Bs.)» */
   .spread {
-    margin-top: 16px; display: flex; align-items: center; gap: 12px;
-    background: var(--elevated-2); border: 1px solid var(--border);
-    border-radius: var(--radius-m); padding: 14px 18px;
+    display: flex; align-items: center; justify-content: center; gap: 12px; text-align: left;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--r-m); padding: 14px 18px; margin-top: var(--gap);
   }
-  .spread .k { font-size: 0.76rem; color: var(--muted); }
-  .spread .v { font-size: 1.05rem; font-weight: 650; }
+  .spread .info {
+    flex: none; width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center;
+    border: 1px solid var(--border-strong); color: var(--muted); font-size: 0.78rem;
+  }
+  .spread .k { color: var(--muted); font-size: 0.76rem; display: block; }
+  .spread .v { font-weight: 700; font-size: 0.98rem; }
 
-  /* ---------- Secciones ---------- */
-  section { padding: 64px 0; border-bottom: 1px solid var(--border); }
-  section > .wrap > .hint { color: var(--muted); max-width: 70ch; margin-bottom: 24px; }
+  /* ============================== Secciones ============================== */
+  section { padding: var(--sec) 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: 0; }
+  .section-head { max-width: 72ch; margin-bottom: clamp(24px, 4vw, 40px); }
+  .section-head h2 { margin-bottom: 10px; }
+  .hint { color: var(--muted); }
+  .kicker {
+    display: inline-block; font-size: 0.74rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--mint);
+    margin-bottom: 10px;
+  }
 
-  .grid { display: grid; gap: 16px; }
-  .cols-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-  .cols-4 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .grid { display: grid; gap: var(--gap); }
+  .cols-2 { grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
+  .cols-3 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .cols-4 { grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); }
 
   .card {
-    background: var(--elevated); border: 1px solid var(--border);
-    border-radius: var(--radius-m); padding: 20px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-m); padding: 20px;
+    transition: border-color 160ms ease, transform 160ms ease;
   }
   .card h3 { margin-bottom: 8px; }
-  .card p { color: var(--muted); font-size: 0.92rem; margin: 0; }
+  .card p { color: var(--muted); font-size: 0.9rem; }
+  .card p code { font-size: 0.84em; }
+  @media (hover: hover) {
+    .card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+  }
 
-  /* ---------- Maquetas de pantalla ---------- */
-  .screens { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(238px, 1fr)); }
+  /* ============================== Maquetas de pantalla ============================== */
+  .screens { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
   .phone {
-    background: var(--elevated); border: 1px solid var(--border);
-    border-radius: var(--radius-xl); padding: 12px;
+    margin: 0; /* el <figure> trae 1em 40px del navegador y encogía la maqueta */
+    display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-xl); padding: 11px; box-shadow: var(--shadow);
   }
   .screen {
-    background: var(--obsidian); border: 1px solid var(--border);
-    border-radius: var(--radius-l); padding: 12px; min-height: 320px;
-    display: flex; flex-direction: column; gap: 10px;
+    /* flex: 1 = las cuatro pantallas terminan a la misma altura, sin franja muerta */
+    flex: 1; min-height: 348px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--r-l); padding: 12px;
+    display: flex; flex-direction: column; gap: 9px;
   }
-  .statusbar { display: flex; justify-content: space-between; font-size: 0.62rem; color: var(--muted); padding: 0 2px; }
-  .appbar { display: flex; align-items: center; justify-content: space-between; font-size: 0.86rem; font-weight: 650; }
-  .appbar .ico { color: var(--muted); font-size: 0.8rem; }
+  .statusbar { display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--muted); padding: 0 2px; }
+  /* CenterAlignedTopAppBar: el título va centrado y las acciones se anclan a la derecha. */
+  .appbar { position: relative; display: flex; align-items: center; justify-content: center; font-size: 0.84rem; font-weight: 700; margin-bottom: 2px; }
+  .appbar .ico { position: absolute; right: 0; color: var(--muted); font-size: 0.78rem; font-weight: 400; }
   .mini {
-    background: var(--elevated); border: 1px solid var(--border);
-    border-radius: var(--radius-s); padding: 10px 12px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-s); padding: 9px 11px;
   }
-  .mini .t { font-size: 0.66rem; color: var(--muted); }
-  .mini .n { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
-  .mini.accent-official { border-left: 3px solid var(--sky); }
-  .mini.accent-parallel { border-left: 3px solid var(--amber); }
+  /* SectionTitle de la app: los títulos van centrados también en las tarjetas. */
+  /* Ojo: las maquetas de .mini y .navbar copian componentes de la app: si algo cambia aquí,
+     el cambio real vive en Compose (RateCard, SegmentedSelector, SpreadChip, NavigationBar). */
+  .mini .t { font-size: 0.64rem; color: var(--muted); text-align: center; }
+  .mini .n { font-size: 1.1rem; font-weight: 750; letter-spacing: -0.02em; }
+  .mini.hero-official {
+    border-top: 3px solid var(--mint); border-color: var(--mint);
+    background: var(--official-surface); text-align: center;
+  }
+  .mini.hero-official .t { color: var(--mint); font-weight: 650; }
+  .mini.hero-official .n { font-size: 1.5rem; color: var(--mint); }
+  .mini.accent-parallel {
+    border-top: 3px solid color-mix(in srgb, var(--parallel-muted) 55%, transparent);
+  }
+  .mini.accent-parallel .t,
+  .mini.accent-parallel .n { color: var(--parallel-muted); }
+  /* OfflineBanner: surfaceContainerLow, borde outlineVariant y ⚠ en colorScheme.error.
+     El borde rojo de verdad es del ErrorState (cuando no hay ni datos guardados). */
+  .mini.banner,
+  .mini.spread { background: var(--container-low); }
+  .mini.banner { display: flex; gap: 7px; align-items: flex-start; }
+  .mini.banner .warnico { color: var(--down); font-size: 0.62rem; line-height: 1.5; flex: none; }
+  .mini.banner .t { text-align: left; }
+  .mini.spread { display: flex; gap: 8px; align-items: center; }
+  .mini.spread .info {
+    flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+    border: 1px solid var(--border-strong); color: var(--muted); font-size: 0.6rem;
+  }
+  .mini.spread .t { display: block; font-size: 0.6rem; }
+  .mini.spread .n { font-size: 0.78rem; }
+  /* rate_stale_warning en colorScheme.tertiary (ámbar). */
+  .stale { display: block; font-size: 0.58rem; color: var(--amber); margin-top: 3px; }
+
+  /* NavigationBar de Material 3: indicador de la pestaña activa + etiqueta. */
+  .navbar {
+    display: flex; gap: 4px; margin-top: auto;
+    border-top: 1px solid var(--border); padding-top: 9px;
+  }
+  .navbar .tab {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    font-size: 0.56rem; font-weight: 650; color: var(--muted);
+  }
+  .navbar .tab.on { color: var(--mint); }
+  .navbar .ico {
+    display: grid; place-items: center; width: 40px; height: 21px; border-radius: 999px;
+  }
+  .navbar .tab.on .ico { background: color-mix(in srgb, var(--mint) 16%, transparent); }
+  .navbar svg {
+    display: block; fill: none; stroke: currentColor;
+    stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round;
+  }
+  /* Superficie de resultados de la calculadora: borde con el acento al 28 %. */
+  .mini.result {
+    display: grid; gap: 10px;
+    border-color: color-mix(in srgb, var(--mint) 28%, transparent);
+  }
+  /* ResultRow: etiqueta encima y cifra debajo, todo centrado. */
+  .resrow { display: grid; gap: 1px; text-align: center; }
+  .resrow .lab { font-size: 0.58rem; color: var(--muted); }
+  .resrow .n { font-size: 1.02rem; font-weight: 750; letter-spacing: -0.02em; color: var(--mint); }
+  .resrow.soft .n { font-size: 0.82rem; font-weight: 650; color: var(--text); }
+
+  /* AmountField: OutlinedTextField con la etiqueta dentro del borde. */
   .field {
-    border: 1px solid var(--mint); border-radius: var(--radius-s);
-    padding: 10px 12px; font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em;
+    border: 1px solid var(--mint); border-radius: var(--r-l);
+    padding: 7px 12px 10px; background: var(--surface);
+    display: grid; gap: 1px; justify-items: center;
   }
-  .field .prefix { color: var(--muted); font-weight: 600; }
-  .row { display: flex; align-items: center; justify-content: space-between; font-size: 0.74rem; }
+  .field .lab { font-size: 0.56rem; color: var(--muted); }
+  .field .val { font-size: 1.25rem; font-weight: 750; letter-spacing: -0.02em; }
+
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.72rem; }
   .row .lab { color: var(--muted); }
   .row .val { font-weight: 650; }
-  .seg { display: flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
-  .seg span { flex: 1; text-align: center; font-size: 0.72rem; padding: 7px 4px; color: var(--muted); }
-  .seg span.on { background: var(--elevated-2); color: var(--text); font-weight: 650; }
-  .switchrow { display: flex; align-items: center; gap: 10px; font-size: 0.74rem; }
-  .switchrow .track { margin-left: auto; width: 34px; height: 18px; border-radius: 999px; background: var(--mint); position: relative; }
-  .switchrow .track::after { content: ""; position: absolute; right: 2px; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--obsidian); }
-  .switchrow.off .track { background: var(--border); }
-  .switchrow.off .track::after { right: auto; left: 2px; }
-  .btn { background: var(--mint); color: #04120C; text-align: center; font-weight: 700; font-size: 0.8rem; border-radius: var(--radius-s); padding: 10px; }
-  .legal { font-size: 0.62rem; color: var(--muted); }
-  .screen caption, .cap { font-size: 0.72rem; color: var(--muted); text-align: center; margin-top: 10px; display: block; }
-  .legend { display: flex; gap: 14px; font-size: 0.66rem; color: var(--muted); }
-  .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; }
 
-  /* ---------- Flujo ---------- */
+  /* SegmentedSelector = FilterChips en FlowRow: se envuelven, no son una barra. */
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
+  .chip {
+    border: 1px solid var(--border); border-radius: var(--r-s);
+    padding: 3px 9px; font-size: 0.63rem; font-weight: 650; color: var(--muted);
+  }
+  .chip.on { background: var(--chip-on); border-color: var(--mint); color: var(--chip-on-text); }
+
+  /* TextButton (p. ej. «Invertir dirección») */
+  .textbtn { text-align: center; font-size: 0.66rem; font-weight: 700; color: var(--mint); }
+  .switchrow { display: flex; align-items: center; gap: 10px; font-size: 0.72rem; }
+  .switchrow .track { margin-left: auto; width: 34px; height: 18px; border-radius: 999px; background: var(--mint); position: relative; flex: none; }
+  .switchrow .track::after { content: ""; position: absolute; right: 2px; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--bg); }
+  .switchrow.off .track { background: var(--surface-2); border: 1px solid var(--border); }
+  .switchrow.off .track::after { right: auto; left: 2px; background: var(--muted); }
+  .btn {
+    background: var(--mint); color: var(--on-accent); text-align: center;
+    font-weight: 700; font-size: 0.78rem; border-radius: var(--r-s); padding: 9px;
+  }
+  .btn.ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+  .btn .ic {
+    width: 12px; height: 12px; margin-right: 5px; vertical-align: -2px;
+    fill: none; stroke: currentColor; stroke-width: 2.4;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+  .legal { font-size: 0.6rem; color: var(--muted); line-height: 1.45; }
+  .cap { font-size: 0.72rem; color: var(--muted); text-align: center; margin-top: 10px; display: block; }
+
+  /* ============================== Flujo ============================== */
   ol.flow { counter-reset: step; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
   ol.flow li {
     counter-increment: step; position: relative;
-    background: var(--elevated); border: 1px solid var(--border);
-    border-radius: var(--radius-m); padding: 16px 18px 16px 58px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-m); padding: 16px 18px 16px 60px;
   }
   ol.flow li::before {
     content: counter(step); position: absolute; left: 16px; top: 15px;
-    width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
-    background: var(--elevated-2); border: 1px solid var(--border);
-    color: var(--mint); font-size: 0.78rem; font-weight: 700;
+    width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--mint); font-size: 0.8rem; font-weight: 750;
   }
   ol.flow li strong { display: block; margin-bottom: 2px; }
-  ol.flow li span { color: var(--muted); font-size: 0.92rem; }
+  ol.flow li span { color: var(--muted); font-size: 0.9rem; }
 
-  /* ---------- Diagrama de módulos ---------- */
+  /* ============================== Proveedores ============================== */
+  .providers { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-top: 24px; }
+  .provider {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-m); padding: 16px 18px;
+  }
+  .provider .name { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.95rem; }
+  .provider .prio {
+    font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
+  }
+  .provider .what { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-size: 0.68rem; padding: 3px 9px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--muted);
+  }
+  .tag.oficial { color: var(--mint); border-color: color-mix(in srgb, var(--mint) 45%, var(--border)); }
+  .tag.paralelo { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, var(--border)); }
+  .provider .host { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); margin-top: 10px; }
+
+  /* ============================== Diagrama de módulos ============================== */
   .modules { display: grid; gap: 10px; justify-items: center; }
   .mod {
-    width: min(100%, 520px); background: var(--elevated); border: 1px solid var(--border);
-    border-radius: var(--radius-s); padding: 12px 16px; font-size: 0.88rem;
+    width: min(100%, 560px); background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-s); padding: 12px 16px; font-size: 0.86rem;
   }
-  .mod b { font-family: var(--mono); font-size: 0.86rem; }
-  .mod em { color: var(--muted); font-style: normal; font-size: 0.8rem; display: block; }
+  .mod b { font-family: var(--mono); font-size: 0.85rem; }
+  .mod em { color: var(--muted); font-style: normal; font-size: 0.78rem; display: block; margin-top: 2px; }
   .mod.pure { border-color: color-mix(in srgb, var(--mint) 45%, var(--border)); }
-  .dialine { color: var(--muted); font-size: 1.1rem; line-height: 1; }
-  .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; width: min(100%, 520px); }
+  .dialine { color: var(--muted); font-size: 1rem; line-height: 1; }
+  .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; width: min(100%, 560px); }
 
-  /* ---------- Tablas ---------- */
-  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  th { color: var(--muted); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 650; }
-  td code, td .v { font-family: var(--mono); font-size: 0.84rem; }
-  tr:last-child td { border-bottom: none; }
-  .tablewrap { border: 1px solid var(--border); border-radius: var(--radius-m); overflow: hidden; background: var(--elevated); }
+  /* ============================== Tablas ============================== */
+  .tablewrap {
+    border: 1px solid var(--border); border-radius: var(--r-m);
+    overflow: hidden; background: var(--surface);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th {
+    color: var(--muted); font-size: 0.72rem; text-transform: uppercase;
+    letter-spacing: 0.07em; font-weight: 700; background: var(--surface-2);
+  }
+  td .v { font-family: var(--mono); font-size: 0.83rem; }
+  tr:last-child td { border-bottom: 0; }
+  .scroll-x { overflow-x: auto; }
+  table td:first-child { white-space: nowrap; }
 
-  /* ---------- Código ---------- */
+  /* ============================== Código ============================== */
   pre {
-    background: var(--elevated); border: 1px solid var(--border);
-    border-radius: var(--radius-s); padding: 14px 16px; overflow-x: auto;
-    font-family: var(--mono); font-size: 0.82rem; line-height: 1.5; margin: 0 0 12px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-s); padding: 14px 16px; overflow-x: auto;
+    font-family: var(--mono); font-size: 0.81rem; line-height: 1.55; margin: 0 0 14px;
   }
   pre .c { color: var(--muted); }
-  code { font-family: var(--mono); font-size: 0.88em; }
-  p code, li code, td code { background: var(--elevated-2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 5px; }
 
-  .pill { font-size: 0.72rem; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+  /* ============================== Pills ============================== */
+  .pill {
+    display: inline-block; font-size: 0.7rem; font-weight: 700;
+    padding: 3px 9px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--muted); white-space: nowrap;
+  }
   .pill.ok { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--border)); }
   .pill.warn { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, var(--border)); }
 
-  footer { padding: 40px 0 64px; color: var(--muted); font-size: 0.86rem; }
-  footer .wrap { display: grid; gap: 8px; }
+  /* ============================== Footer ============================== */
+  footer { padding: 44px 0 68px; color: var(--muted); font-size: 0.85rem; }
+  footer .cols { display: grid; gap: 24px; grid-template-columns: minmax(0, 1.4fr) repeat(auto-fit, minmax(160px, 1fr)); }
+  footer h4 { margin: 0 0 8px; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); }
+  footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  footer .foot-note { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border); display: grid; gap: 6px; }
+
+  /* ============================== Impresión ============================== */
+  @media print {
+    :root { --sec: 28px; }
+    nav, .actions { display: none; }
+    body { background: #fff; color: #000; font-size: 11.5pt; }
+    section, header.hero { border-color: #ccc; page-break-inside: avoid; }
+    .card, .rate, .phone, .mini, pre, .tablewrap { border-color: #bbb; box-shadow: none; }
+    a { color: #000; }
+  }
+
+  /* ============================== Movimiento reducido ============================== */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .card { transition: none; }
+    .card:hover { transform: none; }
+  }
 </style>
 </head>
 <body>
 
-<nav>
+<a class="skip" href="#contenido">Saltar al contenido</a>
+
+<nav aria-label="Secciones de la página">
   <div class="wrap">
-    <div class="brand">Div<span>Track</span></div>
+    <a class="brand" href="#top"><span class="mark" aria-hidden="true">↗</span>Div<b>Track</b></a>
     <div class="links">
       <a href="#pantallas">Pantallas</a>
       <a href="#funciona">Cómo funciona</a>
@@ -273,213 +599,339 @@
       <a href="#stack">Stack</a>
       <a href="#compilar">Compilar</a>
       <a href="#calidad">Calidad</a>
+      <a href="#decisiones">Decisiones</a>
+      <a href="#lite">Lite</a>
     </div>
+    <a class="cta" href="#descarga">Descargar</a>
   </div>
 </nav>
 
-<header class="hero">
-  <div class="wrap">
-    <div class="eyebrow"><span class="dot"></span> App Android · Kotlin · Jetpack Compose</div>
-    <h1>Dos tasas. Una respuesta clara.<br>Sin adornos.</h1>
-    <p class="lede">
-      DivTrack sigue en tiempo real el <strong>dólar oficial (BCV)</strong> y el
-      <strong>dólar paralelo</strong>, calcula conversiones en ambos sentidos con el
-      IGTF (3 %) opcional. Room es la única fuente de verdad para la pantalla: la app abre
-      con datos, funciona sin conexión y nunca pierde lo que ya tenía por un fallo de red.
-    </p>
+<header class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>App Android · Kotlin 100 % · Jetpack Compose</p>
+      <h1>Dos tasas. Una respuesta clara.<br>Sin adornos.</h1>
+      <p class="lede">
+        DivTrack sigue el <strong>dólar oficial (BCV)</strong> y el <strong>dólar paralelo</strong>,
+        resuelve cada tasa <strong>por frescura entre tres proveedores</strong> y convierte en ambos
+        sentidos con el IGTF (3 %) opcional. Room es la única fuente de verdad para la pantalla:
+        la app abre con datos, funciona sin conexión y nunca pierde lo que ya tenía por un fallo
+        de red.
+      </p>
 
-    <div class="badges">
-      <span class="badge">Kotlin 2.4.20</span>
-      <span class="badge">Compose · Material 3</span>
-      <span class="badge">AGP 9.4 · Gradle 9.6</span>
-      <span class="badge">Navigation 3</span>
-      <span class="badge">Hilt · Room · Retrofit</span>
-      <span class="badge">8 módulos · Clean Architecture</span>
-      <span class="badge">55 tests JVM</span>
-      <span class="badge">minSdk 26 · target 37</span>
+      <div class="actions">
+        <a class="button primary" href="#descarga">Descargar el APK</a>
+        <a class="button ghost" href="#pantallas">Ver las pantallas</a>
+      </div>
+
+      <div class="badges">
+        <span class="badge"><b>Kotlin</b> 2.4.20</span>
+        <span class="badge"><b>Compose</b> · Material 3</span>
+        <span class="badge"><b>AGP</b> 9.4 · Gradle 9.6</span>
+        <span class="badge"><b>Navigation 3</b></span>
+        <span class="badge"><b>Hilt</b> · Room · Retrofit</span>
+        <span class="badge"><b>8 módulos</b> · Clean Architecture</span>
+        <span class="badge"><b>82 tests</b> JVM</span>
+        <span class="badge"><b>minSdk</b> 26 → target 37</span>
+      </div>
+
+      <div class="facts">
+        <div class="fact"><div class="k">APK release con R8</div><div class="v num">2,37 MB</div></div>
+        <div class="fact"><div class="k">Petición completa, con techo</div><div class="v num">20 s</div></div>
+        <div class="fact"><div class="k">Permisos declarados</div><div class="v num">2</div></div>
+      </div>
     </div>
 
-    <div class="rates">
-      <article class="rate official">
-        <div class="top">
-          <div class="label">Dólar Oficial (BCV)</div>
-          <div class="delta up"><span class="arrow">▲</span> +0,12 %</div>
-        </div>
-        <div class="value num">859,06 <small>Bs.</small></div>
-        <div class="foot"><span>Fuente: DolarAPI</span><span class="num">Actualizado 30 sep · 21:01</span></div>
-      </article>
+    <div>
+      <div class="rates">
+        <article class="rate official">
+          <div class="body">
+            <div class="label">Dólar Oficial (BCV)</div>
+            <div class="value num">860,18 <small>Bs.</small></div>
+            <div><span class="delta up"><span aria-hidden="true">▲</span> +0,12 %</span></div>
+            <div class="foot">
+              Fuente: DolarAPI · <span class="num">Actualizado 1 oct · 09:14</span>
+            </div>
+          </div>
+        </article>
 
-      <article class="rate parallel">
-        <div class="top">
-          <div class="label">Dólar Paralelo (mercado)</div>
-          <div class="delta down"><span class="arrow">▼</span> −0,57 %</div>
-        </div>
-        <div class="value num">954,55 <small>Bs.</small></div>
-        <div class="foot"><span>Fuente: DolarAPI · Yadio</span><span class="num">Actualizado 30 sep · 21:04</span></div>
-      </article>
-    </div>
+        <article class="rate parallel">
+          <div class="body">
+            <div class="label">Dólar Paralelo (mercado)</div>
+            <div class="value num">955,71 <small>Bs.</small></div>
+            <div><span class="delta quiet"><span aria-hidden="true">▼</span> −0,57 %</span></div>
+            <div class="foot">
+              Fuente: DolarAPI · Yadio · <span class="num">Actualizado 1 oct · 09:20</span>
+            </div>
+          </div>
+        </article>
+      </div>
 
-    <div class="spread">
-      <div>
-        <div class="k">Brecha paralelo / oficial</div>
-        <div class="v num">+11,12 % por encima del oficial (95,49 Bs.)</div>
+      <div class="spread">
+        <span class="info" aria-hidden="true">i</span>
+        <span>
+          <span class="k">Brecha paralelo / oficial</span>
+          <span class="v num">+11,11 % por encima del oficial (95,53 Bs.)</span>
+        </span>
       </div>
     </div>
   </div>
 </header>
 
+<main id="contenido">
+
+<!-- Iconos de la barra inferior y del botón de copiar: SVG incrustado, sin CDN ni webfont. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="ic-tasas" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
+  <symbol id="ic-calc" viewBox="0 0 24 24"><rect x="4.5" y="3" width="15" height="18" rx="3"/><path d="M8.5 8.5h3M10 7v3M15.5 8.5h.01M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 17h.01M12 17h.01M15.5 17h.01"/></symbol>
+  <symbol id="ic-ajustes" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4L18 18M18 6l-1.6 1.6M7.6 16.4L6 18"/></symbol>
+  <symbol id="ic-copiar" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M8 7l4-4 4 4"/><path d="M5 14v6h14v-6"/></symbol>
+</svg>
+
 <section id="pantallas">
   <div class="wrap">
-    <h2>Tres pantallas, sin jerarquía</h2>
-    <p class="hint">
-      Barra inferior con tres pestañas planas. El back stack se mantiene acotado a
-      <code>[raíz, pestaña]</code>, así que “atrás” vuelve al panel de tasas y desde ahí sale
-      de la app, que es lo que Android espera de una barra de navegación.
-    </p>
+    <div class="section-head">
+      <span class="kicker">Producto</span>
+      <h2>Tres pantallas, sin jerarquía</h2>
+      <p class="hint">
+        Barra inferior con tres pestañas planas. El back stack se mantiene acotado a
+        <code>[raíz, pestaña]</code>, así que “atrás” vuelve al panel de tasas y desde ahí sale de
+        la app, que es lo que Android espera de una barra de navegación. Al salir de una pestaña,
+        su ViewModel se limpia.
+      </p>
+    </div>
 
     <div class="screens">
-      <div class="phone">
+      <figure class="phone">
         <div class="screen">
-          <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
-          <div class="appbar"><span>Tasas</span><span class="ico">⟳</span></div>
-          <div class="mini accent-official">
-            <div class="t">Dólar Oficial</div>
-            <div class="n num">859,06 Bs.</div>
-            <div class="row"><span class="lab">Fuente: DolarAPI</span><span class="delta up num">+0,12 %</span></div>
+          <div class="statusbar" aria-hidden="true"><span>9:41</span><span>▮▮▮</span></div>
+          <div class="appbar"><span>DivTrack</span><span class="ico">⟳</span></div>
+          <div class="mini hero-official">
+            <div class="t">Dólar Oficial (BCV)</div>
+            <div class="n num">860,18 Bs.</div>
+            <div class="row" style="justify-content:center;margin-top:4px">
+              <span class="delta up num"><span aria-hidden="true">▲</span> +0,12 %</span>
+            </div>
+            <div class="row" style="justify-content:center;margin-top:6px">
+              <span class="lab">Fuente: DolarAPI</span>
+            </div>
+            <div class="row" style="justify-content:center">
+              <span class="lab num">Actualizado 1 oct · 09:14</span>
+            </div>
           </div>
           <div class="mini accent-parallel">
-            <div class="t">Dólar Paralelo</div>
-            <div class="n num">954,55 Bs.</div>
-            <div class="row"><span class="lab">Fuente: DolarAPI</span><span class="delta down num">−0,57 %</span></div>
-          </div>
-          <div class="mini">
-            <div class="t">Brecha paralelo / oficial</div>
-            <div class="num" style="font-weight:650">+11,12 % (95,49 Bs.)</div>
-          </div>
-          <div class="legal">Tasas informativas, sin valor oficial.</div>
-        </div>
-        <span class="cap">Panel de tasas</span>
-      </div>
-
-      <div class="phone">
-        <div class="screen">
-          <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
-          <div class="appbar"><span>Calculadora</span><span class="ico">✕</span></div>
-          <div class="seg"><span class="on">Oficial</span><span>Paralelo</span></div>
-          <div class="field num"><span class="prefix">$</span> 10</div>
-          <div class="mini">
-            <div class="row"><span class="lab">Total en bolívares</span><span class="val num" style="font-size:1.05rem">375,95</span></div>
-            <div class="row" style="margin-top:6px"><span class="lab">Neto en Bs.</span><span class="val num">365,00</span></div>
-            <div class="row" style="margin-top:6px"><span class="lab">IGTF (3 %)</span><span class="val num">10,95</span></div>
-          </div>
-          <div class="switchrow">IGTF (3 %)<span class="track"></span></div>
-          <div class="btn">Copiar desglose</div>
-          <div class="legal">Se calcula al teclear: no hay botón “Calcular”.</div>
-        </div>
-        <span class="cap">Calculadora bidireccional</span>
-      </div>
-
-      <div class="phone">
-        <div class="screen">
-          <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
-          <div class="appbar"><span>DivTrack</span><span class="ico">⟳</span></div>
-          <div class="mini">
-            <div class="t">Sin conexión a internet</div>
-            <div class="legal" style="padding:0">Revisa tus datos o tu wifi. Los valores de abajo son la última actualización guardada.</div>
-          </div>
-          <div class="mini">
-            <div class="t">Dólar Oficial (BCV)</div>
-            <div class="val num" style="font-size:1.5rem">860,18</div>
-            <div class="row"><span class="lab">Fuente: DolarAPI</span><span class="delta up num">+0,13 %</span></div>
-          </div>
-          <div class="mini">
             <div class="t">Dólar Paralelo (mercado)</div>
-            <div class="val num" style="font-size:1.5rem">955,35</div>
-            <div class="row"><span class="lab">Fuente: DolarAPI</span><span class="delta up num">+0,08 %</span></div>
+            <div class="n num">955,71 Bs.</div>
+            <div class="row"><span class="lab">Fuente: DolarAPI</span><span class="delta quiet num"><span aria-hidden="true">▾</span> −0,57 %</span></div>
           </div>
-          <div class="btn">Reintentar</div>
-          <div class="legal">Y, cuando el fallo es de red, un atajo a los ajustes del sistema.</div>
+          <div class="mini spread">
+            <span class="info" aria-hidden="true">i</span>
+            <span>
+              <span class="t">Brecha paralelo / oficial</span>
+              <span class="n num">+11,11 % por encima del oficial (95,53 Bs.)</span>
+            </span>
+          </div>
+          <div class="legal">Cotizaciones informativas de fuentes públicas; DivTrack no es una entidad oficial. Verifica los valores antes de operar.</div>
+          <div class="navbar" aria-hidden="true">
+            <span class="tab on"><span class="ico"><svg width="15" height="15"><use href="#ic-tasas"/></svg></span>Tasas</span>
+            <span class="tab"><span class="ico"><svg width="15" height="15"><use href="#ic-calc"/></svg></span>Calculadora</span>
+            <span class="tab"><span class="ico"><svg width="15" height="15"><use href="#ic-ajustes"/></svg></span>Ajustes</span>
+          </div>
         </div>
-        <span class="cap">Sin conexión: la causa real, con datos a la vista</span>
-      </div>
+        <figcaption class="cap">Panel de tasas: la oficial manda, el paralelo y la brecha van debajo.</figcaption>
+      </figure>
 
-      <div class="phone">
+      <figure class="phone">
         <div class="screen">
-          <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
-          <div class="appbar"><span>Ajustes</span><span class="ico">·</span></div>
+          <div class="statusbar" aria-hidden="true"><span>9:41</span><span>▮▮▮</span></div>
+          <div class="appbar"><span>Calculadora</span><span class="ico">⟳ ✕</span></div>
+          <div class="chips"><span class="chip on">Oficial</span><span class="chip">Paralelo</span></div>
+          <div class="row" style="justify-content:center">
+            <span class="lab">Tasa aplicada: <span class="num">860,18</span> Bs por USD · Actualizado 1 oct</span>
+          </div>
+          <div class="field">
+            <span class="lab">$ · Monto en dólares</span>
+            <span class="val num">10</span>
+          </div>
+          <div class="textbtn">Invertir dirección (Bs. / USD)</div>
+          <div class="mini result">
+            <div class="resrow"><span class="lab">Total en bolívares</span><span class="n num">8.859,85</span></div>
+            <div class="resrow"><span class="lab">Total en USD</span><span class="n num">10,30</span></div>
+            <div class="resrow soft"><span class="lab">IGTF 3 % · estimado en Bs.</span><span class="n num">258,05</span></div>
+          </div>
+          <div class="switchrow">IGTF (3 %)<span class="track" aria-hidden="true"></span></div>
+          <div class="btn"><svg class="ic" width="12" height="12"><use href="#ic-copiar"/></svg>Copiar desglose</div>
+          <div class="navbar" aria-hidden="true">
+            <span class="tab"><span class="ico"><svg width="15" height="15"><use href="#ic-tasas"/></svg></span>Tasas</span>
+            <span class="tab on"><span class="ico"><svg width="15" height="15"><use href="#ic-calc"/></svg></span>Calculadora</span>
+            <span class="tab"><span class="ico"><svg width="15" height="15"><use href="#ic-ajustes"/></svg></span>Ajustes</span>
+          </div>
+        </div>
+        <figcaption class="cap">Calculadora: se calcula al teclear, sin botón «Calcular».</figcaption>
+      </figure>
+
+      <figure class="phone">
+        <div class="screen">
+          <div class="statusbar" aria-hidden="true"><span>9:41</span><span>▮▮▮</span></div>
+          <div class="appbar"><span>DivTrack</span><span class="ico">⟳</span></div>
+          <div class="mini banner">
+            <span class="warnico" aria-hidden="true">⚠</span>
+            <span class="t">Sin conexión. Mostrando última actualización</span>
+          </div>
+          <div class="mini hero-official">
+            <div class="t">Dólar Oficial (BCV)</div>
+            <div class="n num">860,18 Bs.</div>
+            <div class="row" style="justify-content:center;margin-top:6px">
+              <span class="lab">Fuente: DolarAPI</span>
+            </div>
+            <div class="row" style="justify-content:center">
+              <span class="lab num">Actualizado 1 oct · 09:14</span>
+            </div>
+          </div>
+          <div class="mini accent-parallel">
+            <div class="t">Dólar Paralelo (mercado)</div>
+            <div class="n num">955,71 Bs.</div>
+            <div class="row"><span class="lab">Fuente: DolarAPI</span></div>
+            <span class="stale">Actualizado 1 oct · 09:20 · La fuente no publica datos nuevos</span>
+          </div>
+          <div class="navbar" aria-hidden="true">
+            <span class="tab on"><span class="ico"><svg width="15" height="15"><use href="#ic-tasas"/></svg></span>Tasas</span>
+            <span class="tab"><span class="ico"><svg width="15" height="15"><use href="#ic-calc"/></svg></span>Calculadora</span>
+            <span class="tab"><span class="ico"><svg width="15" height="15"><use href="#ic-ajustes"/></svg></span>Ajustes</span>
+          </div>
+        </div>
+        <figcaption class="cap">Sin conexión: el aviso nombra la causa y las tasas guardadas siguen ahí.</figcaption>
+      </figure>
+
+      <figure class="phone">
+        <div class="screen">
+          <div class="statusbar" aria-hidden="true"><span>9:41</span><span>▮▮▮</span></div>
+          <div class="appbar"><span>Ajustes</span></div>
           <div class="mini">
             <div class="t">Tema</div>
-            <div class="seg" style="margin-top:6px"><span class="on">Sistema</span><span>Claro</span><span>Oscuro</span></div>
+            <div class="chips" style="margin-top:6px"><span class="chip on">Sistema</span><span class="chip">Claro</span><span class="chip">Oscuro</span></div>
           </div>
           <div class="mini">
             <div class="t">Tasa por defecto</div>
-            <div class="seg" style="margin-top:6px"><span class="on">Oficial</span><span>Paralelo</span></div>
+            <div class="chips" style="margin-top:6px"><span class="chip on">Oficial</span><span class="chip">Paralelo</span></div>
           </div>
-          <div class="switchrow">Sincronización en segundo plano<span class="track"></span></div>
+          <div class="switchrow">Mostrar tasa paralela<span class="track" aria-hidden="true"></span></div>
+          <div class="switchrow">IGTF activado por defecto<span class="track" aria-hidden="true"></span></div>
+          <div class="mini">
+            <div class="t">Fuente de datos preferida</div>
+            <div class="chips" style="margin-top:6px"><span class="chip on">Auto</span><span class="chip">DolarAPI</span><span class="chip">Yadio</span><span class="chip">ER-API</span></div>
+          </div>
+          <div class="switchrow">Sincronización en segundo plano<span class="track" aria-hidden="true"></span></div>
           <div class="mini">
             <div class="t">Frecuencia</div>
-            <div class="seg" style="margin-top:6px"><span>15 min</span><span class="on">30 min</span><span>60 min</span><span>120 min</span></div>
+            <div class="chips" style="margin-top:6px"><span class="chip">15 min</span><span class="chip">30 min</span><span class="chip">1 h</span><span class="chip">2 h</span><span class="chip on">4 h</span></div>
           </div>
-          <div class="legal">Versión 4.7 estable · dolarapi.com · yadio.io · open.er-api.com</div>
+          <div class="switchrow off">Solo por wifi<span class="track" aria-hidden="true"></span></div>
+          <div class="mini">
+            <div class="t">Estado de las fuentes</div>
+            <div class="btn" style="margin-top:6px">Comprobar fuentes ahora</div>
+          </div>
+          <div class="mini">
+            <div class="t">Acerca de</div>
+            <div class="row" style="justify-content:center"><span class="val num">Versión 4.7</span></div>
+          </div>
+          <div class="navbar" aria-hidden="true">
+            <span class="tab"><span class="ico"><svg width="15" height="15"><use href="#ic-tasas"/></svg></span>Tasas</span>
+            <span class="tab"><span class="ico"><svg width="15" height="15"><use href="#ic-calc"/></svg></span>Calculadora</span>
+            <span class="tab on"><span class="ico"><svg width="15" height="15"><use href="#ic-ajustes"/></svg></span>Ajustes</span>
+          </div>
         </div>
-        <span class="cap">Ajustes</span>
-      </div>
+        <figcaption class="cap">Ajustes en el orden real: tema, tasa por defecto, fuente preferida, frecuencia y diagnóstico.</figcaption>
+      </figure>
     </div>
   </div>
 </section>
 
 <section id="funciona">
   <div class="wrap">
-    <h2>Cómo funciona: Online-First de verdad</h2>
-    <p class="hint">
-      La red <strong>nunca</strong> alimenta la pantalla directamente. Escribe en Room, y Room
-      empuja el cambio a la UI. Eso es lo que hace que la app se sienta instantánea y que no
-      haya pantallas vacías cuando la conexión va mal.
-    </p>
+    <div class="section-head">
+      <span class="kicker">Comportamiento</span>
+      <h2>Online-First de verdad</h2>
+      <p class="hint">
+        La red <strong>nunca</strong> alimenta la pantalla directamente: escribe en Room y Room
+        empuja el cambio a la UI. Eso es lo que hace que la app se sienta instantánea y que no haya
+        pantallas vacías cuando la conexión va mal.
+      </p>
+    </div>
 
     <ol class="flow">
       <li>
         <strong>Se abre la app</strong>
-        <span>La pantalla pinta al instante lo último guardado y, en paralelo, se lanza la sincronización. Nunca hay un “cargando” que sustituya datos existentes.</span>
+        <span>La pantalla pinta al instante lo último guardado y, en paralelo, se lanza la sincronización. Nunca hay un “cargando” que borre datos existentes.</span>
       </li>
       <li>
-        <strong>Se consultan los proveedores</strong>
-        <span>DolarAPI Venezuela (oficial y paralelo), Yadio como respaldo del paralelo y ExchangeRate-API (open.er-api.com) como respaldo independiente del oficial. Los proveedores se descubren por inyección, se ordenan por prioridad y el usuario puede elegir cuál se consulta primero en Ajustes. Entre pasadas rige un circuit breaker: el que falla descansa 10 minutos y se reintenta solo. Si el banco deja de publicar (la fuente responde 200 con el cierre de ayer), gana el dato más fresco entre fuentes y la app lo avisa.</span>
+        <strong>Se consultan los tres proveedores en orden</strong>
+        <span>DolarAPI (oficial y paralelo) → Yadio (paralelo, su fuente upstream) → ExchangeRate-API (oficial, independiente de los dos anteriores). El usuario puede elegir cuál va primero en Ajustes; el resto actúa de respaldo.</span>
       </li>
       <li>
-        <strong>La resolución es por tasa, no por proveedor</strong>
-        <span>Se guarda la primera versión de <em>cada tasa</em> que aparezca. Si DolarAPI cae, el paralelo sigue llegando por Yadio y solo se degrada el oficial: la sincronización se marca como parcial y se avisa con un mensaje suave.</span>
+        <strong>Gana el dato más fresco, no el de mejor prioridad</strong>
+        <span>Si el banco deja de publicar, DolarAPI responde 200 con el cierre de ayer. La marca de tiempo del propio dato es la única señal: una tasa resuelta se reemplaza si un proveedor de cola publica algo más reciente, y la pasada no se corta hasta que las dos tasas están <em>frescas</em> (oficial 24 h, paralelo 12 h).</span>
+      </li>
+      <li>
+        <strong>El proveedor que falla descansa 10 minutos</strong>
+        <span>Circuit breaker en memoria con auto-recuperación: el caído se salta las siguientes pasadas y se reintenta solo al cumplir el periodo. Si <em>todos</em> estuvieran abiertos, se reintenta el orden completo: el breaker nunca deja la app sin pasada.</span>
       </li>
       <li>
         <strong>Room emite y las tres pantallas se repintan solas</strong>
-        <span>Una sola escritura. Ni polling, ni eventos manuales, ni código de refresco por pantalla.</span>
+        <span>Una sola escritura atómica (tasa vigente + cierre diario del día). Ni polling, ni eventos manuales, ni código de refresco por pantalla.</span>
       </li>
       <li>
         <strong>Si falla, no se toca nada</strong>
-        <span>Se devuelve un error tipado (<code>Result.Error</code> + <code>DataError</code>), los datos locales quedan intactos y aparece un aviso <strong>con la causa real</strong>: sin conexión, timeout o el código HTTP del proveedor. “Sin conexión” solo se dice cuando de verdad es la conexión.</span>
+        <span>Se devuelve un error tipado (<code>Result.Error</code> + <code>DataError</code>), los datos locales quedan intactos y el aviso dice la causa real: sin conexión, timeout, HTTP 503, 404 o respuesta ilegible. “Sin conexión” solo se dice cuando de verdad es la conexión.</span>
       </li>
       <li>
-        <strong>Sin red, ni se intenta</strong>
-        <span>El observador de conectividad se consulta antes de la petición: el aviso sale al instante en lugar de esperar al timeout, y el móvil no gasta radio en algo que ya sabía. Y solo bloquea cuando <em>de verdad</em> no hay ninguna red activa: si hay cualquier duda, se intenta igual, porque un falso “no hay internet” es peor que 200 ms de espera.</span>
+        <strong>Sin red, ni se intenta (pero con cuidado)</strong>
+        <span>El observador de conectividad se consulta antes de la petición: el aviso sale al instante en lugar de esperar al timeout. Solo bloquea cuando no hay <em>ninguna</em> red activa; ante cualquier duda se intenta igual, porque un falso “no hay internet” es peor que 200 ms de espera.</span>
       </li>
     </ol>
 
-    <div class="grid cols-2" style="margin-top:24px">
+    <div class="providers">
+      <div class="provider">
+        <div class="name">DolarAPI <span class="prio">prioridad 0</span></div>
+        <div class="what"><span class="tag oficial">oficial</span><span class="tag paralelo">paralelo</span></div>
+        <div class="host">ve.dolarapi.com/v1/dolares</div>
+      </div>
+      <div class="provider">
+        <div class="name">Yadio <span class="prio">prioridad 10</span></div>
+        <div class="what"><span class="tag paralelo">paralelo</span></div>
+        <div class="host">api.yadio.io/exrates/USD</div>
+      </div>
+      <div class="provider">
+        <div class="name">ExchangeRate-API <span class="prio">prioridad 20</span></div>
+        <div class="what"><span class="tag oficial">oficial</span></div>
+        <div class="host">open.er-api.com/v6/latest/USD</div>
+      </div>
+    </div>
+
+    <div class="grid cols-3" style="margin-top:24px">
       <div class="card">
         <h3>Sincronización silenciosa</h3>
         <p>
           WorkManager con restricción de red y backoff exponencial. El intervalo lo decide el
-          usuario (15 / 30 / 60 / 120 min) y hay un techo global de 20 s por petición
-          (<code>callTimeout</code>), para que ningún reintento pueda dejar la pantalla
-          girando más de la cuenta.
+          usuario (15 / 30 / 60 / 120 / 240 min) y hay un techo de 20 s por petición completa
+          (<code>callTimeout</code>). El worker solo reintenta fallos transitorios: un 404 o una
+          respuesta ilegible no mejoran por esperar.
         </p>
       </div>
       <div class="card">
         <h3>Una sola pasada a la vez</h3>
         <p>
-          Un <code>Mutex</code> en el repositorio serializa las sincronizaciones: el arranque,
-          el pull-to-refresh y el trabajo de fondo no lanzan tres peticiones simultáneas contra
-          las mismas APIs.
+          Un <code>Mutex</code> en el repositorio serializa las sincronizaciones: el arranque, el
+          pull-to-refresh, la calculadora y el trabajo de fondo no lanzan tres peticiones
+          simultáneas contra las mismas APIs.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Avisos que no mienten</h3>
+        <p>
+          Dato rancio del banco y dato sin conexión son avisos distintos. Cuando la tasa lleva
+          demasiado tiempo sin publicarse, la tarjeta lo dice en vez de disfrazar el cierre de ayer
+          como si fuera de hoy.
         </p>
       </div>
     </div>
@@ -488,20 +940,23 @@
 
 <section id="arquitectura">
   <div class="wrap">
-    <h2>Arquitectura: las reglas las impone Gradle</h2>
-    <p class="hint">
-      Ocho módulos. <code>:domain</code> y <code>:core:common</code> son Kotlin/JVM puros, así
-      que una violación de Clean Architecture no es un comentario en una revisión: es un error
-      de compilación.
-    </p>
+    <div class="section-head">
+      <span class="kicker">Ingeniería</span>
+      <h2>Arquitectura: las reglas las impone Gradle</h2>
+      <p class="hint">
+        Ocho módulos. <code>:domain</code> y <code>:core:common</code> son Kotlin/JVM puros, así que
+        una violación de Clean Architecture no es un comentario en una revisión: es un error de
+        compilación.
+      </p>
+    </div>
 
     <div class="modules" style="margin-bottom:28px">
       <div class="mod"><b>:app</b><em>Application (Hilt + WorkManager), MainActivity, recursos, R8</em></div>
-      <div class="dialine">▼</div>
+      <div class="dialine" aria-hidden="true">▼</div>
       <div class="mod"><b>:presentation</b><em>Compose · MVI por pantalla · tema M3 · Navigation 3</em></div>
-      <div class="dialine">▼</div>
+      <div class="dialine" aria-hidden="true">▼</div>
       <div class="mod pure"><b>:domain</b><em>Kotlin/JVM puro · modelos, contratos y 8 casos de uso — no ve Android, ni Compose, ni Retrofit, ni Room</em></div>
-      <div class="dialine">▲</div>
+      <div class="dialine" aria-hidden="true">▲</div>
       <div class="split">
         <div class="mod"><b>:data</b><em>Repositorios, orquestación multi-proveedor, WorkManager</em></div>
         <div class="mod pure"><b>:core:common</b><em>Result, DataError, formateo es-VE, parser de importes, reloj</em></div>
@@ -526,25 +981,25 @@
       <div class="card">
         <h3>Los ViewModel no conocen <code>Context</code></h3>
         <p>
-          Los textos viajan como <code>UiText.Res(id)</code> y se resuelven en Compose. Por eso
-          los ViewModel se prueban en JVM pura: sin emulador y sin Robolectric.
+          Los textos viajan como <code>UiText.Res(id)</code> y se resuelven en Compose. Por eso los
+          ViewModel se prueban en JVM pura: sin emulador y sin Robolectric.
         </p>
       </div>
       <div class="card">
         <h3>Errores con nombre y apellido</h3>
         <p>
           <code>NetworkErrorMapper</code> es el único sitio que conoce <code>HttpException</code>,
-          <code>SerializationException</code> y compañía. De ahí hacia arriba todo el código
-          habla <code>Result&lt;T&gt;</code> + <code>DataError</code>.
+          <code>SerializationException</code> y compañía. De ahí hacia arriba todo el código habla
+          <code>Result&lt;T&gt;</code> + <code>DataError</code>.
         </p>
       </div>
       <div class="card">
         <h3>Pensado para gama baja</h3>
         <p>
           Superficies planas con borde de 1 dp en lugar de elevación, esqueleto de carga sin
-          shimmer, flechas dibujadas con <code>Path</code>, formateadores reutilizados en lugar
-          de crear un <code>DecimalFormat</code> por cifra, el grafo de navegación dentro de un
-          <code>remember</code> y ViewModels que se limpian al salir de una pestaña.
+          shimmer, flechas dibujadas con <code>Path</code>, formateadores reutilizados en lugar de
+          crear un <code>DecimalFormat</code> por cifra, el grafo de navegación dentro de un
+          <code>remember</code> y LeakCanary apagado por defecto.
         </p>
       </div>
     </div>
@@ -553,12 +1008,15 @@
 
 <section id="stack">
   <div class="wrap">
-    <h2>Stack</h2>
-    <p class="hint">
-      Todo fijado por catálogo de versiones y verificado contra Google Maven / Maven Central
-      antes de escribirse: ningún número de versión es una suposición.
-    </p>
-    <div class="tablewrap">
+    <div class="section-head">
+      <span class="kicker">Toolchain</span>
+      <h2>Stack</h2>
+      <p class="hint">
+        Todo fijado por catálogo de versiones y verificado contra Google Maven / Maven Central antes
+        de escribirse: ningún número de versión es una suposición.
+      </p>
+    </div>
+    <div class="tablewrap scroll-x">
       <table>
         <thead>
           <tr><th>Pieza</th><th>Versión</th><th>Nota</th></tr>
@@ -583,34 +1041,35 @@
 
 <section id="compilar">
   <div class="wrap">
-    <h2>Compilar y probar</h2>
-    <p class="hint">
-      Ninguna URL está escrita en el código Kotlin: se leen de <code>local.properties</code> y se
-      inyectan como campos de <code>BuildConfig</code>. Si el archivo no existe, se usan los
-      endpoints públicos, así que un clon limpio compila sin secretos.
-    </p>
+    <div class="section-head">
+      <span class="kicker">Reproducir</span>
+      <h2>Compilar y probar</h2>
+      <p class="hint">
+        Ninguna URL está escrita en el código Kotlin: se leen de <code>local.properties</code> y se
+        inyectan como campos de <code>BuildConfig</code>. Si el archivo no existe, se usan los
+        endpoints públicos, así que un clon limpio compila sin secretos.
+      </p>
+    </div>
 
     <pre><span class="c"># APK de depuración</span>
 ./gradlew :app:assembleDebug
 
-<span class="c"># 55 tests JVM (sin emulador)</span>
+<span class="c"># 82 tests JVM (sin emulador)</span>
 ./gradlew testDebugUnitTest :domain:test :core:common:test
 
 <span class="c"># Release con R8 + métricas del compilador de Compose</span>
-./gradlew :app:assembleRelease -PcomposeMetrics=true</pre>
+./gradlew :app:assembleRelease -PcomposeMetrics=true
 
-    <p class="hint" style="margin-top:16px">
-      El repositorio no incluye <code>local.properties</code> (está en <code>.gitignore</code>);
-      hay una plantilla en <code>local.properties.example</code> con las dos claves que se pueden
-      personalizar.
-    </p>
+<span class="c"># DivTrack Lite: subproyecto aparte, con su propio settings.gradle.kts</span>
+./gradlew -p lite :app:assembleRelease</pre>
 
-    <div class="grid cols-2">
+    <div class="grid cols-2" style="margin-bottom:var(--gap)">
       <div class="card">
         <h3>CI en GitHub Actions</h3>
         <p>
-          Compila debug, ejecuta los tests, compila release con R8 y publica APK, reportes y
-          métricas de Compose como artefactos. JDK 21, SDK 37 y la caché de Gradle.
+          Compila debug, ejecuta los tests, compila release con R8, compila DivTrack Lite, pasa el
+          lint y publica APKs, reportes y métricas de Compose como artefactos. JDK 21, SDK 37 y la
+          caché de Gradle.
         </p>
       </div>
       <div class="card">
@@ -622,33 +1081,55 @@
         </p>
       </div>
     </div>
+
+    <div class="card" id="descarga">
+      <h3>Descarga e instalación</h3>
+      <p style="margin-bottom:10px">
+        El APK se publica en <strong>Releases</strong> de este repositorio, en la etiqueta rodante
+        <code>latest</code>, que se reemplaza en cada push a <code>main</code> una vez compilado y
+        con los tests en verde:
+      </p>
+      <ul style="margin:0 0 12px; padding-left:20px; color:var(--muted); font-size:0.9rem">
+        <li><code>DivTrack-release.apk</code> — release firmado, canal estable (<code>com.liebeblack.divtrack</code>).</li>
+        <li><code>DivTrack-debug.apk</code> — respaldo si no hay secretos de firma configurados (<code>…divtrack.debug</code>).</li>
+        <li><code>apklite.apk</code> — DivTrack Lite (<code>…divtrack.lite</code>), la versión ultraligera.</li>
+      </ul>
+      <p class="hint" style="font-size:0.85rem">
+        Al instalar un APK fuera de Google Play hay que permitir “orígenes desconocidos”. Las
+        versiones release deben firmarse siempre con la misma clave para actualizarse encima de la
+        anterior; el canal debug usa una clave temporal del runner.
+      </p>
+    </div>
   </div>
 </section>
 
 <section id="calidad">
   <div class="wrap">
-    <h2>Qué está comprobado y qué no</h2>
-    <p class="hint">
-      Lo que sigue se verificó <strong>ejecutando cosas</strong>, no asumiendo. Y lo que no se
-      pudo verificar se dice en voz alta.
-    </p>
+    <div class="section-head">
+      <span class="kicker">Honestidad</span>
+      <h2>Qué está comprobado y qué no</h2>
+      <p class="hint">
+        Lo que sigue se verificó <strong>ejecutando cosas</strong>, no asumiendo. Y lo que no se pudo
+        verificar se dice en voz alta.
+      </p>
+    </div>
 
     <div class="tablewrap" style="margin-bottom:24px">
       <table>
         <thead><tr><th>Comprobación</th><th>Resultado</th></tr></thead>
         <tbody>
-          <tr><td>APIs de tasas, probadas en vivo</td><td><span class="pill ok">OK</span> DolarAPI VE (oficial 860,18 · paralelo 955,71), Yadio y ExchangeRate-API (<code>rates["VES"]</code> 860,18) responden 200</td></tr>
-          <tr><td>Fuentes descartadas por evidencia</td><td><span class="pill ok">OK</span> <code>pydolarve.org</code> no resuelve por DNS · <code>api.dolarvzla.com</code> responde 401 · <code>criptoya.com/api/USD/VES</code> responde 422</td></tr>
-          <tr><td>Recursos de texto</td><td><span class="pill ok">OK</span> 116 claves definidas en es-VE y otras 116 en inglés, con el mismo juego en los dos archivos · 0 claves huérfanas tras retirar las del estado vacío</td></tr>
+          <tr><td>APIs de tasas, en vivo</td><td><span class="pill ok">OK</span> DolarAPI VE (oficial 860,18 · paralelo 955,71), Yadio y ExchangeRate-API (<code>rates["VES"]</code> 860,18) responden 200</td></tr>
+          <tr><td>Fuentes descartadas</td><td><span class="pill ok">OK</span> <code>pydolarve.org</code> no resuelve por DNS · <code>api.dolarvzla.com</code> responde 401 · <code>criptoya.com/api/USD/VES</code> responde 422</td></tr>
+          <tr><td>Recursos de texto</td><td><span class="pill ok">OK</span> 116 claves definidas en es-VE y otras 116 en inglés, con el mismo juego en los dos archivos · 0 claves huérfanas</td></tr>
           <tr><td>Estructura del código</td><td><span class="pill ok">OK</span> todos los archivos con <code>package</code> = ruta, llaves balanceadas, 0 imports sin uso</td></tr>
-          <tr><td>Grafo de inyección</td><td><span class="pill ok">OK</span> 25 clases con <code>@Inject constructor</code> más un campo <code>@Inject</code>: toda dependencia tiene proveedor</td></tr>
+          <tr><td>Grafo de inyección</td><td><span class="pill ok">OK</span> toda clase con <code>@Inject constructor</code> tiene su <code>@Provides</code>, <code>@Binds</code> o <code>@IntoSet</code></td></tr>
           <tr><td>Interfaz completa</td><td><span class="pill ok">OK</span> cada botón, selector, interruptor y gesto está cableado a una intención · 0 <code>onClick</code> vacíos, 0 <code>TODO</code></td></tr>
           <tr><td>Referencias colgantes</td><td><span class="pill ok">OK</span> 0 tras eliminar el código muerto</td></tr>
           <tr><td>Tests</td><td><span class="pill ok">OK</span> 82 casos JVM declarados en el repo (49 en la última corrida verificada), incluida la aritmética del IGTF y la resolución por tasa</td></tr>
           <tr><td>Compilación real</td><td><span class="pill ok">OK</span> <code>:app:assembleDebug</code> (22,8 MB) y <code>:app:assembleRelease</code> con R8 (2,37 MB), sobre un toolchain local real (JDK 21 + plataforma android-37.0)</td></tr>
-          <tr><td>DivTrack Lite</td><td><span class="pill warn">SIN VERIFICAR AQUÍ</span> subproyecto aparte (<code>lite/</code>): Java + XML, API 14+, una sola pantalla y respaldos identificados; CI lo compila y publica con el APK principal (ADR 27)</td></tr>
+          <tr><td>DivTrack Lite</td><td><span class="pill warn">SIN VERIFICAR AQUÍ</span> subproyecto aparte (<code>lite/</code>): Java + XML, API 14+, una sola pantalla y respaldos identificados; CI lo compila y publica junto al APK principal (ADR 27)</td></tr>
           <tr><td>Última pasada de cambios</td><td><span class="pill warn">SIN RE-COMPILAR</span> eliminar el Histórico y arreglar conexión, permisos, rendimiento y el leak se hizo después de esa verificación, a petición explícita de no compilar</td></tr>
-          <tr><td>Revisión estricta posterior</td><td><span class="pill warn">SIN RE-COMPILAR</span> una pasada leyendo el código (cero comandos) corrigió el selector que volvía a ofrecer tasas inexistentes, el worker que reintentaba fallos deterministas y varias piezas de código muerto (<code>EmptyState</code> con sus claves, <code>ConnectivityObserver.observe()</code>, <code>lastSyncAt</code>, <code>Sky</code>/<code>SkyDeep</code>, <code>Spacing.xxl</code>, los subtotales netos del estado) más una declaración que vivía en el archivo equivocado</td></tr>
+          <tr><td>Revisión estricta posterior</td><td><span class="pill warn">SIN RE-COMPILAR</span> una pasada leyendo el código (cero comandos) corrigió el selector que volvía a ofrecer tasas inexistentes, el worker que reintentaba fallos deterministas y varias piezas de código muerto, además de poner al día esta misma web</td></tr>
         </tbody>
       </table>
     </div>
@@ -657,23 +1138,20 @@
       <div class="card">
         <h3>Los tests cubren lo que falla en silencio</h3>
         <p>
-          El parser de importes es-VE (<code>1.234,56</code> y <code>1,234.56</code>),
-          la aritmética del IGTF en ambos sentidos, que la red no destruya la caché, que la
-          resolución sea por tasa, que el cierre diario alimente la tendencia, el cálculo
-          automático al teclear y la reprogramación del trabajo periódico cuando cambian los
-          ajustes.
+          El parser de importes es-VE (<code>1.234,56</code> y <code>1,234.56</code>), la aritmética
+          del IGTF en ambos sentidos, que la red no destruya la caché, que la resolución sea por
+          tasa y por frescura, que el cierre diario alimente la tendencia, el cálculo automático al
+          teclear y la reprogramación del trabajo periódico cuando cambian los ajustes.
         </p>
       </div>
       <div class="card">
-        <h3>Bugs y defectos corregidos en varias pasadas</h3>
+        <h3>Bugs corregidos en varias pasadas</h3>
         <p>
-          Una revisión del código encontró que la calculadora ofrecía una tasa que no existía
-          todavía. Otra siguió el recorrido del usuario y aparcó <strong>dos errores de
-          compilación</strong> que el proyecto arrastraba. La última quitó la sección de
-          Histórico (con su gráfico, sus rangos y su descarga diaria), hizo que un fallo de red
-          se cuente por su causa real en lugar de siempre “sin conexión”, cerró los permisos
-          del APK a los dos que la app usa y apagó el vigilante de memoria que estaba pesando
-          sobre el build de uso diario.
+          La calculadora ofrecía una tasa que no existía todavía; un gráfico se quedaba con los
+          colores del tema anterior; <strong>dos errores de compilación</strong> llevaban tiempo en
+          el repo; un fallo de red se contaba siempre como “sin conexión”; el worker reintentaba
+          fallos que no podían mejorar. Cada corrección está documentada con su porqué, no solo con
+          su “qué”.
         </p>
       </div>
     </div>
@@ -682,14 +1160,17 @@
 
 <section id="decisiones">
   <div class="wrap">
-    <h2>Decisiones escritas, no implícitas</h2>
-    <p class="hint">
-      Cada elección discutible está documentada con su alternativa descartada y su coste:
-      AGP 9 con Kotlin integrado, Navigation 3 frente a Navigation Compose, Room como única
-      fuente de verdad, resolución de tasas por proveedor, la semántica exacta del IGTF,
-      <code>minSdk 26</code> para evitar el desugaring, la hora de Venezuela inyectada en lugar
-      de la del dispositivo y el esquema de Room exportado sin migración destructiva.
-    </p>
+    <div class="section-head">
+      <span class="kicker">Criterio</span>
+      <h2>Decisiones escritas, no implícitas</h2>
+      <p class="hint">
+        Cada elección discutible está documentada con su alternativa descartada y su coste: AGP 9
+        con Kotlin integrado, Navigation 3 frente a Navigation Compose, Room como única fuente de
+        verdad, resolución de tasas por tasa y por frescura, la semántica exacta del IGTF,
+        <code>minSdk 26</code> para evitar el desugaring, la hora de Venezuela inyectada y el
+        esquema de Room exportado sin migración destructiva.
+      </p>
+    </div>
     <div class="grid cols-4">
       <div class="card"><h3>27 ADR</h3><p>En <code>docs/DECISIONS.md</code>, cada uno con su coste.</p></div>
       <div class="card"><h3>8 módulos</h3><p>Con la dirección de dependencias impuesta por Gradle.</p></div>
@@ -699,16 +1180,84 @@
   </div>
 </section>
 
+<section id="lite">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="kicker">Segundo producto</span>
+      <h2>DivTrack Lite: para equipos antiguos</h2>
+      <p class="hint">
+        No es un <em>flavor</em> de esta app: es un subproyecto Gradle independiente, con su propio
+        <code>settings.gradle.kts</code>, sin Compose ni librerías de terceros. Existe para
+        teléfonos donde el stack moderno no es una opción.
+      </p>
+    </div>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>Qué hace</h3>
+        <p>
+          Una sola pantalla con la tasa USD/VES del BCV. Si el BCV no responde, intenta DolarAPI y
+          luego ER-API, <strong>diciendo siempre qué fuente entregó la cifra</strong> y sin
+          etiquetar un respaldo como publicación del banco central. Guarda el último valor, su
+          proveedor y la fecha en <code>SharedPreferences</code>, y sin red conserva lo guardado
+          explicando que no pudo actualizar.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Cómo se distingue del principal</h3>
+        <p>
+          Java + XML, <code>minSdk 14</code>, HTTPS obligatorio, cero permisos más allá de
+          <code>INTERNET</code> y sin sincronización periódica. CI la compila
+          (<code>./gradlew -p lite :app:assembleRelease</code>) y publica su APK junto al de
+          DivTrack, verificando firma y <code>applicationId</code> antes de subirlo.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
 <footer>
   <div class="wrap">
-    <div><strong>DivTrack</strong> — app Android de tasas oficial y paralelo.</div>
-    <div>
-      Tasas informativas, sin valor oficial. DivTrack no es una casa de cambio ni un ente
-      público y no se responsabiliza de decisiones tomadas con estos valores.
+    <div class="cols">
+      <div>
+        <div class="brand" style="font-weight:750;letter-spacing:-0.02em">Div<b style="color:var(--mint)">Track</b></div>
+        <p style="margin-top:8px;max-width:44ch">
+          App Android de tasas oficial y paralelo, con calculadora bidireccional e IGTF. Kotlin,
+          Compose, Clean Architecture modular y MVI por pantalla.
+        </p>
+      </div>
+      <div>
+        <h4>Documentación</h4>
+        <ul>
+          <li><a href="ARCHITECTURE.md">Arquitectura</a></li>
+          <li><a href="DECISIONS.md">Decisiones (ADR)</a></li>
+          <li><a href="../README.md">README del proyecto</a></li>
+          <li><a href="../lite/README.md">README de Lite</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Secciones</h4>
+        <ul>
+          <li><a href="#pantallas">Pantallas</a></li>
+          <li><a href="#funciona">Cómo funciona</a></li>
+          <li><a href="#compilar">Compilar</a></li>
+          <li><a href="#lite">DivTrack Lite</a></li>
+        </ul>
+      </div>
     </div>
-    <div>
-      Tipografía Manrope bajo SIL Open Font License 1.1. El código del proyecto todavía no
-      declara licencia.
+
+    <div class="foot-note">
+      <div>
+        Tasas informativas, sin valor oficial. DivTrack no es una casa de cambio ni un ente público
+        y no se responsabiliza de decisiones tomadas con estos valores.
+      </div>
+      <div>
+        La app usa la tipografía Manrope bajo SIL Open Font License 1.1; esta página usa la pila del
+        sistema para no depender de ninguna descarga. El código del proyecto todavía no declara
+        licencia.
+      </div>
     </div>
   </div>
 </footer>
