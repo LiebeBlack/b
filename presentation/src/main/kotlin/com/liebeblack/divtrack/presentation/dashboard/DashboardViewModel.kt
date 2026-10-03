@@ -7,6 +7,7 @@ import com.liebeblack.divtrack.core.common.result.Result
 import com.liebeblack.divtrack.core.common.time.TimeProvider
 import com.liebeblack.divtrack.core.common.utils.CurrencyFormatters
 import com.liebeblack.divtrack.domain.model.ExchangeRate
+import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.domain.model.Spread
 import com.liebeblack.divtrack.domain.usecase.CalculateSpreadUseCase
 import com.liebeblack.divtrack.domain.usecase.ObserveRatesUseCase
@@ -67,7 +68,24 @@ class DashboardViewModel @Inject constructor(
         when (intent) {
             DashboardIntent.Refresh -> refresh(isUserInitiated = true)
             DashboardIntent.Retry -> refresh(isUserInitiated = true)
+            DashboardIntent.OnResumed -> refreshIfStale()
         }
+    }
+
+    /**
+     * Refresco silencioso al volver a la pantalla.
+     *
+     * El ViewModel del panel vive mientras la pestaña siga en el back stack, así que su
+     * `init` no se repite: sin esto, volver a la app después de horas mostraba la tasa de la
+     * última pasada hasta que el usuario tirara de pull-to-refresh (o hasta que WorkManager
+     * despertara). Solo se consulta si el dato en pantalla superó la ventana de frescura: es
+     * un refresco con criterio, no un latido de red en cada regreso.
+     */
+    private fun refreshIfStale() {
+        val now = timeProvider.nowMillis()
+        val official = _state.value.rates.firstOrNull { rate -> rate.source == RateSource.OFICIAL }
+        val isOld = official == null || now - official.fetchedAtMillis >= RESUME_REFRESH_AFTER_MILLIS
+        if (isOld) refresh(isUserInitiated = false)
     }
 
     private fun observeRatesFromCache() {
@@ -177,5 +195,16 @@ class DashboardViewModel @Inject constructor(
             spreadPercentText = spread.percent?.let { percent -> CurrencyFormatters.percent(percent) },
             spreadAbsoluteText = spread.absolute?.let { absolute -> CurrencyFormatters.bolivars(absolute) },
         )
+    }
+
+    private companion object {
+        /**
+         * Antigüedad a partir de la cual volver a la pantalla dispara una pasada sola.
+         *
+         * Quince minutos alinea el panel con el intervalo mínimo que admite WorkManager y
+         * con la frecuencia con la que la gente abre la app: dentro de esa ventana, lo que
+         * se ve ya es una comprobación de hace un momento.
+         */
+        const val RESUME_REFRESH_AFTER_MILLIS = 15L * 60L * 1000L
     }
 }

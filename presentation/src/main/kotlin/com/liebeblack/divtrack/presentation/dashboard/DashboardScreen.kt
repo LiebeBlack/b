@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -34,6 +35,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.liebeblack.divtrack.domain.model.RateSource
 import com.liebeblack.divtrack.domain.model.TrendDirection
@@ -63,6 +66,14 @@ fun DashboardRoute(viewModel: DashboardViewModel = hiltViewModel()) {
     // recomposición, y eso basta para que Compose considere "distinto" el parámetro y no
     // pueda saltarse el trabajo de las pantallas que lo reciben.
     val onIntent = remember(viewModel) { viewModel::onIntent }
+
+    // Volver a la app (o a esta pestaña) no deja la tasa vieja en pantalla: el ViewModel mira
+    // la edad real del dato y no toca la red si lo que se muestra es reciente. Hacen falta las
+    // dos señales porque una pestaña no se recompone al volver del segundo plano: `ON_START`
+    // cubre el regreso con el panel delante y `LaunchedEffect` el caso de volver a la pestaña
+    // (el panel es la raíz de la pila, así que su composición se recrea al entrar en ella).
+    LaunchedEffect(Unit) { onIntent(DashboardIntent.OnResumed) }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { onIntent(DashboardIntent.OnResumed) }
 
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {

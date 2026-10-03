@@ -696,8 +696,10 @@
       <p class="hint">
         Barra inferior con tres pestañas planas. El back stack se mantiene acotado a
         <code>[raíz, pestaña]</code>, así que “atrás” vuelve al panel de tasas y desde ahí sale de
-        la app, que es lo que Android espera de una barra de navegación. Al salir de una pestaña,
-        su ViewModel se limpia.
+        la app, que es lo que Android espera de una barra de navegación. La pestaña que sale de la
+        pila se limpia; el panel, que es la raíz, conserva su ViewModel y por eso se refresca solo
+        al volver cuando la última comprobación ya pasó los 15 minutos (ADR 29). En las maquetas el
+        paralelo y la brecha aparecen activados: son opcionales y se encienden en Ajustes.
       </p>
     </div>
 
@@ -1118,18 +1120,17 @@
       <table>
         <thead><tr><th>Comprobación</th><th>Resultado</th></tr></thead>
         <tbody>
-          <tr><td>APIs de tasas, en vivo</td><td><span class="pill ok">OK</span> DolarAPI VE (oficial 860,18 · paralelo 955,71), Yadio y ExchangeRate-API (<code>rates["VES"]</code> 860,18) responden 200</td></tr>
+          <tr><td>APIs de tasas, en vivo</td><td><span class="pill ok">OK</span> (2026-10-03) DolarAPI VE responde 200 con el oficial del <strong>2 oct</strong> (más de 24 h: la app lo marca rancio) y el paralelo del día (974,34); Yadio 972,52; ExchangeRate-API trae el oficial vigente <strong>871,37</strong> y gana por frescura — la regla del ADR 26, vista con datos reales</td></tr>
           <tr><td>Fuentes descartadas</td><td><span class="pill ok">OK</span> <code>pydolarve.org</code> no resuelve por DNS · <code>api.dolarvzla.com</code> responde 401 · <code>criptoya.com/api/USD/VES</code> responde 422</td></tr>
           <tr><td>Recursos de texto</td><td><span class="pill ok">OK</span> 116 claves definidas en es-VE y otras 116 en inglés, con el mismo juego en los dos archivos · 0 claves huérfanas</td></tr>
           <tr><td>Estructura del código</td><td><span class="pill ok">OK</span> todos los archivos con <code>package</code> = ruta, llaves balanceadas, 0 imports sin uso</td></tr>
           <tr><td>Grafo de inyección</td><td><span class="pill ok">OK</span> toda clase con <code>@Inject constructor</code> tiene su <code>@Provides</code>, <code>@Binds</code> o <code>@IntoSet</code></td></tr>
           <tr><td>Interfaz completa</td><td><span class="pill ok">OK</span> cada botón, selector, interruptor y gesto está cableado a una intención · 0 <code>onClick</code> vacíos, 0 <code>TODO</code></td></tr>
           <tr><td>Referencias colgantes</td><td><span class="pill ok">OK</span> 0 tras eliminar el código muerto</td></tr>
-          <tr><td>Tests</td><td><span class="pill ok">OK</span> 82 casos JVM declarados en el repo (49 en la última corrida verificada), incluida la aritmética del IGTF y la resolución por tasa</td></tr>
-          <tr><td>Compilación real</td><td><span class="pill ok">OK</span> <code>:app:assembleDebug</code> (22,8 MB) y <code>:app:assembleRelease</code> con R8 (2,37 MB), sobre un toolchain local real (JDK 21 + plataforma android-37.0)</td></tr>
-          <tr><td>DivTrack Lite</td><td><span class="pill warn">SIN VERIFICAR AQUÍ</span> subproyecto aparte (<code>lite/</code>): Java + XML, API 14+, una sola pantalla y respaldos identificados; CI lo compila y publica junto al APK principal (ADR 27)</td></tr>
-          <tr><td>Última pasada de cambios</td><td><span class="pill warn">SIN RE-COMPILAR</span> eliminar el Histórico y arreglar conexión, permisos, rendimiento y el leak se hizo después de esa verificación, a petición explícita de no compilar</td></tr>
-          <tr><td>Revisión estricta posterior</td><td><span class="pill warn">SIN RE-COMPILAR</span> una pasada leyendo el código (cero comandos) corrigió el selector que volvía a ofrecer tasas inexistentes, el worker que reintentaba fallos deterministas y varias piezas de código muerto, además de poner al día esta misma web</td></tr>
+          <tr><td>Tests</td><td><span class="pill ok">OK</span> 88 casos JVM en el repo, <strong>0 fallos</strong> en la corrida del 2026-10-03, incluida la aritmética del IGTF, la resolución por tasa y los 6 casos nuevos del refresco al volver y de las fechas ISO</td></tr>
+          <tr><td>Compilación real</td><td><span class="pill ok">OK</span> (2026-10-03) <code>:app:assembleDebug</code> (21,9 MB) y <code>:app:assembleRelease</code> con R8 (2,40 MB) sobre un toolchain local real (JDK 21 + plataforma android-37.0), más el APK de DivTrack Lite</td></tr>
+          <tr><td>DivTrack Lite</td><td><span class="pill ok">OK</span> subproyecto aparte (<code>lite/</code>): Java + XML, API 14+, una sola pantalla y respaldos identificados. Verificado aquí: compila (release con R8, 47,8 KB) y su lógica de respaldo pasó un arnés JVM; ya no muestra ningún mensaje de error por la fuente que no respondió (ADR 27 y 28)</td></tr>
+          <tr><td>Pasadas anteriores</td><td><span class="pill ok">OK</span> eliminar el Histórico, arreglar conexión, permisos, rendimiento y el leak, y la revisión estricta posterior <strong>se recompilaron y se pasaron por tests</strong> en esta corrida: nada queda «sin re-verificar»</td></tr>
         </tbody>
       </table>
     </div>
@@ -1172,7 +1173,7 @@
       </p>
     </div>
     <div class="grid cols-4">
-      <div class="card"><h3>27 ADR</h3><p>En <code>docs/DECISIONS.md</code>, cada uno con su coste.</p></div>
+      <div class="card"><h3>29 ADR</h3><p>En <code>docs/DECISIONS.md</code>, cada uno con su coste.</p></div>
       <div class="card"><h3>8 módulos</h3><p>Con la dirección de dependencias impuesta por Gradle.</p></div>
       <div class="card"><h3>2 idiomas</h3><p>Español de Venezuela por defecto e inglés completo.</p></div>
       <div class="card"><h3>0 APIs hardcodeadas</h3><p>Las URLs entran por <code>BuildConfig</code>.</p></div>
@@ -1198,8 +1199,11 @@
         <p>
           Una sola pantalla con la tasa USD/VES del BCV. Si el BCV no responde, intenta DolarAPI y
           luego ER-API, <strong>diciendo siempre qué fuente entregó la cifra</strong> y sin
-          etiquetar un respaldo como publicación del banco central. Guarda el último valor, su
-          proveedor y la fecha en <code>SharedPreferences</code>, y sin red conserva lo guardado
+          etiquetar un respaldo como publicación del banco central. Tampoco acusa a la que no
+          respondió: muestra el nombre del respaldo junto a la fecha del dato, la fecha del dato
+          aparte de la última comprobación, y la fuente que falla queda apartada 10 minutos para no
+          repetir su espera. Guarda el último valor, su proveedor, la fecha del dato y el momento
+          de la comprobación en <code>SharedPreferences</code>, y sin red conserva lo guardado
           explicando que no pudo actualizar.
         </p>
       </div>
@@ -1207,7 +1211,8 @@
         <h3>Cómo se distingue del principal</h3>
         <p>
           Java + XML, <code>minSdk 14</code>, HTTPS obligatorio, cero permisos más allá de
-          <code>INTERNET</code> y sin sincronización periódica. CI la compila
+          <code>INTERNET</code> y sin trabajo en segundo plano (solo comprueba con la pantalla
+          visible, y no gasta red si el dato se comprobó hace menos de 10 minutos). CI la compila
           (<code>./gradlew -p lite :app:assembleRelease</code>) y publica su APK junto al de
           DivTrack, verificando firma y <code>applicationId</code> antes de subirlo.
         </p>

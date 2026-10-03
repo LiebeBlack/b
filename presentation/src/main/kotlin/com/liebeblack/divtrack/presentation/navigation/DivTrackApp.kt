@@ -142,8 +142,10 @@ private fun DivTrackNavigation(appVersion: String) {
             entryDecorators = listOf(
                 // Estado de scroll y de campos guardados por entrada...
                 rememberSaveableStateHolderNavEntryDecorator(),
-                // ...y un ViewModelStoreOwner propio por entrada: al salir de una pestaña,
-                // sus ViewModels se limpian (nada de vistas vivas durante toda la sesión).
+                // ...y un ViewModelStoreOwner propio por entrada: la pestaña que sale del back
+                // stack se limpia (nada de vistas vivas de pantallas que ya no están). El panel
+                // es la raíz de la pila y conserva su ViewModel mientras la app viva, así que él
+                // mismo decide cuándo refrescar al volver a la pantalla (ver ADR 29).
                 rememberViewModelStoreNavEntryDecorator(),
             ),
             entryProvider = entryProvider,

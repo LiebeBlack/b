@@ -8,4 +8,5 @@
     <color name="lite_green">#49E6A1</color>
     <color name="lite_button_text">#07140F</color>
     <color name="lite_error">#FFB4AB</color>
+    <color name="lite_warn">#FFB020</color>
 </resources>

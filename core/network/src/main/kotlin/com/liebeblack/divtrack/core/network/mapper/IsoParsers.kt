@@ -1,9 +1,10 @@
 package com.liebeblack.divtrack.core.network.mapper
 
+import com.liebeblack.divtrack.core.common.utils.AppConstants
+import java.time.Instant
 import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
-import java.time.Instant
+import java.time.ZoneId
 
 /**
  * Parseo defensivo de timestamps y fechas ISO-8601.
@@ -14,6 +15,9 @@ import java.time.Instant
  */
 internal object IsoParsers {
 
+    /** Hora legal de Venezuela: la misma zona con la que la app pinta las fechas. */
+    private val venezuelaZone: ZoneId = ZoneId.of(AppConstants.TIME_ZONE_ID)
+
     fun instantMillisOrNull(raw: String?): Long? {
         val value = raw?.trim().orEmpty()
         if (value.isEmpty()) return null
@@ -21,10 +25,12 @@ internal object IsoParsers {
         return runCatching { OffsetDateTime.parse(value).toInstant().toEpochMilli() }
             .recoverCatching { Instant.parse(value).toEpochMilli() }
             .recoverCatching {
-                // Solo fecha: se interpreta como medianoche UTC, el valor se usa para mostrar.
+                // Solo fecha, sin hora ni zona: es una fecha local del proveedor, así que se
+                // lee como medianoche de Venezuela. Con UTC, "2026-09-30" se pintaría en la
+                // app como 29 sep (la UI muestra en hora local): un día antes del publicado.
                 LocalDate.parse(value)
-                    .atStartOfDay()
-                    .toInstant(ZoneOffset.UTC)
+                    .atStartOfDay(venezuelaZone)
+                    .toInstant()
                     .toEpochMilli()
             }
             .getOrNull()

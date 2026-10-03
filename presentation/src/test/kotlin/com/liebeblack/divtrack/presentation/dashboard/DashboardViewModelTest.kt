@@ -128,12 +128,62 @@ class DashboardViewModelTest {
         )
     }
 
-    private fun TestScope.createViewModel() = DashboardViewModel(
+    @Test
+    fun `volver a la pantalla no gasta red si la tasa es reciente`() = runTest {
+        val timeProvider = FakeTimeProvider(nowMillis = NOW_MILLIS)
+        rateRepository.rates.value = listOf(
+            rate(
+                RateSource.OFICIAL,
+                859.06,
+                previousClose = null,
+                fetchedAtMillis = NOW_MILLIS - 5 * MINUTE_MILLIS,
+            ),
+        )
+
+        val viewModel = createViewModel(timeProvider)
+        advanceUntilIdle()
+        val callsAfterOpen = rateRepository.refreshCalls
+
+        viewModel.onIntent(DashboardIntent.OnResumed)
+        advanceUntilIdle()
+
+        assertEquals(callsAfterOpen, rateRepository.refreshCalls)
+    }
+
+    @Test
+    fun `volver a la pantalla refresca sola la tasa vieja sin avisar`() = runTest {
+        val timeProvider = FakeTimeProvider(nowMillis = NOW_MILLIS)
+        rateRepository.rates.value = listOf(
+            rate(
+                RateSource.OFICIAL,
+                859.06,
+                previousClose = null,
+                fetchedAtMillis = NOW_MILLIS - 40 * MINUTE_MILLIS,
+            ),
+        )
+
+        val viewModel = createViewModel(timeProvider)
+        val effects = mutableListOf<DashboardEffect>()
+        collectEffects(viewModel, effects)
+        advanceUntilIdle()
+        val callsAfterOpen = rateRepository.refreshCalls
+        effects.clear()
+
+        viewModel.onIntent(DashboardIntent.OnResumed)
+        advanceUntilIdle()
+
+        assertEquals(callsAfterOpen + 1, rateRepository.refreshCalls)
+        assertTrue("un refresco automático no debe mostrar snackbar", effects.isEmpty())
+    }
+
+    private fun TestScope.createViewModel(
+        timeProvider: FakeTimeProvider = FakeTimeProvider(),
+    ) = DashboardViewModel(
         observeRates = ObserveRatesUseCase(rateRepository),
         observeSettings = ObserveSettingsUseCase(settingsRepository),
         syncRates = SyncRatesUseCase(rateRepository),
         calculateSpread = CalculateSpreadUseCase(),
-        timeProvider = FakeTimeProvider(),
+        timeProvider = timeProvider,
     )
 
     /**
@@ -153,12 +203,23 @@ class DashboardViewModelTest {
         }
     }
 
-    private fun rate(source: RateSource, value: Double, previousClose: Double?) = ExchangeRate(
+    private fun rate(
+        source: RateSource,
+        value: Double,
+        previousClose: Double?,
+        fetchedAtMillis: Long = 0L,
+    ) = ExchangeRate(
         source = source,
         value = value,
         previousClose = previousClose,
         providerId = "DolarAPI",
         updatedAtMillis = null,
-        fetchedAtMillis = 0L,
+        fetchedAtMillis = fetchedAtMillis,
     )
+
+    private companion object {
+        /** Reloj fijo de los tests; cualquier marca anterior simula un dato con edad. */
+        const val NOW_MILLIS = 1_800_000_000_000L
+        const val MINUTE_MILLIS = 60_000L
+    }
 }

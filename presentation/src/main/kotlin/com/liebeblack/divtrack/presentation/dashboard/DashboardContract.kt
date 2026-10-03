@@ -12,6 +12,16 @@ sealed interface DashboardIntent {
 
     /** Reintento desde el estado de error (dato vacío + sin conexión). */
     data object Retry : DashboardIntent
+
+    /**
+     * La pantalla volvió al primer plano (arranque o regreso desde segundo plano).
+     *
+     * No es un refresco a ciegas: el ViewModel mira la edad real del dato que se está
+     * mostrando y solo sale a la red si ya merece la pena. Volver a la app después de horas
+     * no puede dejar la tasa vieja en pantalla, y volver a los dos minutos no debe gastar
+     * radio para nada.
+     */
+    data object OnResumed : DashboardIntent
 }
 
 /** Eventos de un solo uso (nunca estado persistente). */

@@ -18,27 +18,26 @@ Lo que sigue se comprobó **ejecutando** cosas, no asumiendo:
 
 | Comprobación | Resultado |
 |---|---|
-| `GET https://ve.dolarapi.com/v1/dolares` | 200 · `oficial` **860,18** Bs · `paralelo` **955,71** Bs (reverificado 2026-10-01) |
-| `GET https://api.yadio.io/exrates/USD` | 200 · `USD["VES"]` presente (fuente upstream del paralelo) |
-| `GET https://open.er-api.com/v6/latest/USD` | 200 · `rates["VES"]` **860,18** (tercera fuente, independiente; reverificado 2026-10-01) |
+| `GET https://ve.dolarapi.com/v1/dolares` | 200 · `oficial` **866,56** Bs (dato del **2 oct**, >24 h: la app lo marca rancio y sigue preguntando) · `paralelo` **974,34** Bs (reverificado 2026-10-03) |
+| `GET https://api.yadio.io/exrates/USD` | 200 · `USD["VES"]` **972,52** (fuente upstream del paralelo) |
+| `GET https://open.er-api.com/v6/latest/USD` | 200 · `rates["VES"]` **871,37** (el valor vigente del BCV: el registro se lo queda por ser el más fresco; reverificado 2026-10-03) |
 | `pydolarve.org` | **descartada**: el dominio no resuelve (DNS) |
 | `api.dolarvzla.com` | **descartada**: responde 401, requiere clave privada |
 | `criptoya.com/api/USD/VES` | **descartada**: responde 422 en las variantes probadas |
-| `:app:assembleDebug` | **BUILD SUCCESSFUL** · APK de depuración de 22,8 MB |
-| `:app:assembleRelease` | **BUILD SUCCESSFUL** con R8 y `shrinkResources` · APK de 2,37 MB |
-| Tests JVM de los 4 módulos | **49 casos, 0 fallos** en la última corrida verificada; el repo ya declara **82** (ver «Esta pasada») |
+| `:app:assembleDebug` | **BUILD SUCCESSFUL** · APK de depuración de **21,9 MB** |
+| `:app:assembleRelease` | **BUILD SUCCESSFUL** con R8, `shrinkResources` y `lintVitalRelease` · APK de **2,40 MB** |
+| Tests JVM de los 4 módulos | **88 casos, 0 fallos** (`testDebugUnitTest :domain:test :core:common:test`, 2026-10-03) |
 | `:app:lintDebug` | 1 error pendiente: ruta de Windows sin escapar en `local.properties` (archivo local, fuera de git) |
 
 > Toolchain real montado y usado para compilar: JDK 21 (Temurin), `cmdline-tools` de 2026 con
 > el CLI nuevo, **plataforma `android-37.0`** (ojo: `platforms;android-37` no existe) y
 > `build-tools 37.0.0`.
 >
-> **Alcance de esta cifra.** La compilación y los 49 tests se ejecutaron **antes** de las dos
-> últimas pasadas de cambios (la que elimina el Histórico y arregla conexión, permisos,
-> rendimiento y el leak, y la revisión estricta documentada en «Esta pasada»). Las dos se
-> hicieron a petición explícita **sin volver a compilar ni ejecutar tests**, así que los números
-> de arriba describen el estado previo; lo que hay hoy en el repo es lo que declaran las tablas
-> de esta pasada.
+> **Alcance de esta cifra.** Todo lo de la tabla se midió el **2026-10-03** sobre el código que
+> hay hoy en el repo: APK de depuración, APK release con R8 y la corrida completa de tests
+> (88 casos, 0 fallos). Las pasadas anteriores se hicieron sin compilar, a petición explícita;
+> esta las recompiló y las pasó por tests. Lo único que sigue sin re-ejecutarse aquí es
+> `:app:lintDebug`, que en CI corre con `continue-on-error`.
 
 ---
 
@@ -142,6 +141,12 @@ Valor en Bs. de cada tasa con acento de color por fuente, flecha de tendencia (v
 comparada con el cierre anterior y pie con la procedencia del dato. Debajo, la **brecha**
 paralelo/oficial en porcentaje y valor absoluto. Pull-to-refresh y botón de refresco.
 
+La **tasa paralela (y con ella la brecha) es opcional**: se enciende en Ajustes y, mientras
+esté apagada, el panel se concentra en el oficial sin mostrar un dato que el usuario no pidió.
+Al volver a la app, si la última comprobación tiene más de 15 minutos, el panel **se refresca
+solo y en silencio** (sin snackbar), y no toca la red si lo que hay en pantalla es reciente
+(ADR 29).
+
 ### Calculadora bidireccional
 Se escribe el monto y el resultado aparece **en cada tecla**: no hay botón "Calcular".
 Selector segmentado Oficial/Paralelo, interruptor de IGTF (3 %) y botón para copiar el
@@ -197,6 +202,27 @@ romperse en silencio:
 | `:domain` | IGTF bidireccional (ejemplo del pliego: $10 a 36,5 → **375,95 Bs**) y brecha |
 | `:data` | Online-First: la red escribe y no destruye caché, resolución **por tasa** entre proveedores, fallo inmediato sin conectividad, cierre diario para la tendencia |
 | `:presentation` | Cálculo automático al teclear, saneado al pegar, cambio de tasa/dirección, brecha del panel, eventos one-shot, reprogramación de WorkManager |
+
+---
+
+## Esta pasada (2026-10-03): el panel no se queda atrás y las fechas no pierden días
+
+Pasada de corrección **con compilación y tests de verdad** (esta vez sí: 88 casos, 0 fallos).
+
+| Hallazgo | Corrección |
+|---|---|
+| **El panel se quedaba atrás**: el ViewModel vive en la raíz del back stack, así que su `init` no se repite; con la app en segundo plano durante horas (o la pestaña Tasas abierta toda la tarde) la tasa en pantalla era la de la última pasada hasta que el usuario tirara de pull-to-refresh o despertara WorkManager (240 min). | `LifecycleEventEffect(ON_START)` → `DashboardIntent.OnResumed`: el ViewModel mira la edad **real de la comprobación** (`fetchedAtMillis`, dato nuevo en el modelo de UI) y solo sincroniza si supera los 15 minutos, en modo silencioso. Dos tests nuevos fijan los dos lados: 5 minutos de antigüedad no gastan red; 40 minutos disparan una pasada sin snackbar. |
+| **Una fecha sin hora se leía como UTC**: `IsoParsers` interpretaba `"2026-09-30"` como medianoche UTC y, como la UI pinta en hora de Venezuela, esa fecha se mostraba como **29 sep**. Hoy ningún proveedor publica solo la fecha, pero el camino era incorrecto y silencioso. | Se lee como medianoche de Venezuela (la misma zona con la que la app pinta). Cuatro tests nuevos, incluido el caso del día perdido. |
+| El comentario del grafo de navegación afirmaba que «al salir de una pestaña, sus ViewModels se limpian»: cierto para las pestañas que salen de la pila, **falso para el panel**, que es la raíz y conserva el suyo (y por eso hacía falta el refresco al volver). | Comentario corregido y encadenado con el refresco; la web decía lo mismo en su sección de pantallas y también se corrigió. |
+
+Lo verificado en esta pasada, ejecutando:
+
+| Comprobación | Resultado |
+|---|---|
+| Tests JVM de los módulos | **88 casos, 0 fallos** (eran 82; +6 de esta pasada) |
+| `:app:assembleDebug` y `:app:assembleRelease` | **BUILD SUCCESSFUL** · 21,9 MB y 2,40 MB con R8 y `lintVitalRelease` |
+| APIs en vivo (2026-10-03) | DolarAPI responde 200 con el oficial del **2 oct** (más de 24 h) y el paralelo del día; ER-API trae el oficial vigente (**871,37**) y el registro **se lo queda por frescura**: la regla del ADR 26 vista funcionando con datos reales |
+| `:app:lintDebug` | no re-ejecutado en esta pasada (CI lo corre con `continue-on-error`) |
 
 ---
 

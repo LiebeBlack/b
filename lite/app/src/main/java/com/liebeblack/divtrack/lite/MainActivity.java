@@ -1,8 +1,12 @@
 package com.liebeblack.divtrack.lite;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -24,14 +28,45 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 public final class MainActivity extends Activity {
+    private static final String LOG_TAG = "DivTrackLite";
     private static final String PREFERENCES = "lite_rate_cache";
     private static final String KEY_RATE = "official_rate";
-    private static final String KEY_CHECKED_AT = "checked_at";
     private static final String KEY_SOURCE = "rate_source";
+    /** Fecha que la fuente dio al dato (en el BCV, su "Fecha Valor"). */
+    private static final String KEY_DATA_AT = "checked_at";
+    /** Momento de la última comprobación correcta hecha por la aplicación. */
+    private static final String KEY_VERIFIED_AT = "verified_at";
+
+    private static final int STORE_EMPTY = 0;
+    private static final int STORE_OK = 1;
+    private static final int STORE_INVALID = 2;
+
+    /** Con la tasa comprobada hace menos de esto no se gasta red al abrir la pantalla. */
+    private static final long FRESH_CACHE_MS = 10L * 60L * 1000L;
+    /** Cadencia de comprobación mientras la pantalla está visible. */
+    private static final long VISIBLE_CHECK_INTERVAL_MS = 30L * 60L * 1000L;
+    /** La publicación oficial es diaria: pasado un día, el dato se señala como viejo. */
+    private static final long STALE_DATA_MS = 24L * 60L * 60L * 1000L;
 
     private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Runnable visibleCheck = new Runnable() {
+        @Override
+        public void run() {
+            if (activityDestroyed) {
+                return;
+            }
+            if (!isCacheFresh()) {
+                refreshRate();
+            }
+            mainHandler.postDelayed(this, VISIBLE_CHECK_INTERVAL_MS);
+        }
+    };
+
+    private Context appContext;
     private TextView rateValue;
     private TextView checkedAt;
+    private TextView lastCheck;
     private TextView status;
     private Button refreshButton;
     private boolean isRefreshing;
@@ -41,79 +76,63 @@ public final class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        appContext = getApplicationContext();
         setContentView(R.layout.activity_main);
 
         rateValue = findViewById(R.id.rate_value);
         checkedAt = findViewById(R.id.checked_at);
+        lastCheck = findViewById(R.id.last_check);
         status = findViewById(R.id.status);
         refreshButton = findViewById(R.id.refresh_button);
 
-        showCachedRate();
-        fitRateTextToWidth();
+        int stored = renderStoredRate();
+        if (stored == STORE_OK) {
+            showStatus(getString(R.string.status_cached_checked, formatAge(storedVerifiedAt())),
+                    isStoredDataStale());
+        } else if (stored == STORE_INVALID) {
+            showStatus(getString(R.string.status_cache_invalid), false);
+        } else {
+            showStatus(getString(R.string.status_no_cache), false);
+        }
+
         refreshButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 refreshRate();
             }
         });
-        refreshRate();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        startVisibleChecks();
+        if (!isCacheFresh()) {
+            refreshRate();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        stopVisibleChecks();
+        super.onStop();
     }
 
     @Override
     protected void onDestroy() {
         activityDestroyed = true;
+        stopVisibleChecks();
         networkExecutor.shutdownNow();
         super.onDestroy();
     }
 
-    private void showCachedRate() {
-        String cachedRate = getSharedPreferences(PREFERENCES, MODE_PRIVATE).getString(KEY_RATE, null);
-        long checkedAtMillis = getSharedPreferences(PREFERENCES, MODE_PRIVATE)
-                .getLong(KEY_CHECKED_AT, 0L);
+    private void startVisibleChecks() {
+        mainHandler.removeCallbacks(visibleCheck);
+        mainHandler.postDelayed(visibleCheck, VISIBLE_CHECK_INTERVAL_MS);
+    }
 
-        if (cachedRate == null) {
-            checkedAt.setText("");
-            status.setText(R.string.status_no_cache);
-            return;
-        }
-
-        BigDecimal parsedRate;
-        try {
-            parsedRate = new BigDecimal(cachedRate);
-        } catch (NumberFormatException exception) {
-            getSharedPreferences(PREFERENCES, MODE_PRIVATE)
-                    .edit()
-                    .remove(KEY_RATE)
-                    .remove(KEY_SOURCE)
-                    .remove(KEY_CHECKED_AT)
-                    .apply();
-            checkedAt.setText("");
-            status.setText(R.string.status_cache_invalid);
-            return;
-        }
-        if (parsedRate.signum() <= 0) {
-            getSharedPreferences(PREFERENCES, MODE_PRIVATE)
-                    .edit()
-                    .remove(KEY_RATE)
-                    .remove(KEY_SOURCE)
-                    .remove(KEY_CHECKED_AT)
-                    .apply();
-            checkedAt.setText("");
-            status.setText(R.string.status_cache_invalid);
-            return;
-        }
-
-        String source = getSharedPreferences(PREFERENCES, MODE_PRIVATE)
-                .getString(KEY_SOURCE, getString(R.string.source_bcv));
-        rateValue.setText(formatRate(parsedRate));
-        fitRateTextToWidth();
-        if (checkedAtMillis > 0L) {
-            checkedAt.setText(getString(
-                    R.string.checked_at,
-                    source,
-                    formatTimestamp(checkedAtMillis)));
-        }
-        status.setText(R.string.status_cached);
+    private void stopVisibleChecks() {
+        mainHandler.removeCallbacks(visibleCheck);
     }
 
     private void refreshRate() {
@@ -124,10 +143,8 @@ public final class MainActivity extends Activity {
         isRefreshing = true;
         refreshButton.setEnabled(false);
         refreshButton.setText(R.string.refreshing);
-        status.setText(getSharedPreferences(PREFERENCES, MODE_PRIVATE).contains(KEY_RATE)
-                ? R.string.status_cached
-                : R.string.status_starting);
-        status.setTextColor(getResources().getColor(R.color.lite_muted));
+        showStatus(getString(hasStoredRate() ? R.string.status_cached : R.string.status_starting),
+                false);
 
         networkExecutor.execute(new Runnable() {
             @Override
@@ -136,7 +153,7 @@ public final class MainActivity extends Activity {
                 try {
                     quote = BcvRateClient.fetchOfficialUsdRate();
                 } catch (Exception exception) {
-                    Log.w("DivTrackLite", "No se pudo actualizar la tasa BCV.", exception);
+                    Log.w(LOG_TAG, "No se pudo actualizar la tasa.", exception);
                     final int messageResource = getRefreshErrorMessage(exception);
                     runOnUiThread(new Runnable() {
                         @Override
@@ -149,29 +166,23 @@ public final class MainActivity extends Activity {
                     return;
                 }
 
+                // Guardar antes de tocar la interfaz: si la actividad se recrea (rotación,
+                // pantalla apagada) mientras llega la respuesta, el dato no se pierde.
+                final boolean keptFresher = saveQuote(quote);
+
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         if (activityDestroyed) {
                             return;
                         }
-                        getSharedPreferences(PREFERENCES, MODE_PRIVATE)
-                                .edit()
-                                .putString(KEY_RATE, quote.rate.toPlainString())
-                                .putString(KEY_SOURCE, quote.source)
-                                .putLong(KEY_CHECKED_AT, quote.updatedAtMillis)
-                                .apply();
-                        rateValue.setText(formatRate(quote.rate));
-                        checkedAt.setText(getString(
-                                R.string.checked_at,
-                                quote.source,
-                                formatTimestamp(quote.updatedAtMillis)));
-                        if (quote.usedFallback) {
-                            status.setText(getString(R.string.status_fallback_used, quote.source));
-                        } else {
-                            status.setText(R.string.status_updated);
+                        if (renderStoredRate() == STORE_OK) {
+                            showStatus(getString(
+                                            keptFresher
+                                                    ? R.string.status_kept_fresher
+                                                    : R.string.status_updated),
+                                    isStoredDataStale());
                         }
-                        fitRateTextToWidth();
                         finishRefresh();
                     }
                 });
@@ -179,22 +190,100 @@ public final class MainActivity extends Activity {
         });
     }
 
+    /**
+     * Guarda la cotización (seguro desde cualquier hilo) y devuelve true si se conservó la
+     * anterior porque su fecha de dato era más reciente: la cifra nunca retrocede.
+     */
+    private boolean saveQuote(BcvRateClient.RateQuote quote) {
+        long storedDataAt = storedDataAt();
+        if (hasStoredRate() && storedDataAt > quote.updatedAtMillis) {
+            preferences().edit()
+                    .putLong(KEY_VERIFIED_AT, System.currentTimeMillis())
+                    .apply();
+            return true;
+        }
+        preferences().edit()
+                .putString(KEY_RATE, quote.rate.toPlainString())
+                .putString(KEY_SOURCE, quote.source)
+                .putLong(KEY_DATA_AT, quote.updatedAtMillis)
+                .putLong(KEY_VERIFIED_AT, System.currentTimeMillis())
+                .apply();
+        return false;
+    }
+
+    /** Pinta lo guardado. Devuelve STORE_OK, STORE_EMPTY o STORE_INVALID. */
+    private int renderStoredRate() {
+        String cachedRate = preferences().getString(KEY_RATE, null);
+        if (cachedRate == null) {
+            clearRateViews();
+            return STORE_EMPTY;
+        }
+
+        BigDecimal parsedRate;
+        try {
+            parsedRate = new BigDecimal(cachedRate);
+        } catch (NumberFormatException exception) {
+            discardStoredRate();
+            clearRateViews();
+            return STORE_INVALID;
+        }
+        if (parsedRate.signum() <= 0) {
+            discardStoredRate();
+            clearRateViews();
+            return STORE_INVALID;
+        }
+
+        String source = preferences().getString(KEY_SOURCE, getString(R.string.source_bcv));
+        long verifiedAt = storedVerifiedAt();
+        long dataAt = storedDataAt();
+        CharSequence dataDate = dataAt > 0L
+                ? formatTimestamp(dataAt)
+                : getString(R.string.rate_placeholder);
+        rateValue.setText(formatRate(parsedRate));
+        checkedAt.setText(getString(R.string.checked_at, source, dataDate));
+        lastCheck.setText(verifiedAt > 0L
+                ? getString(R.string.last_check, formatTimestamp(verifiedAt))
+                : "");
+        fitRateTextToWidth();
+        return STORE_OK;
+    }
+
+    private void clearRateViews() {
+        rateValue.setText(R.string.rate_placeholder);
+        checkedAt.setText("");
+        lastCheck.setText("");
+        fitRateTextToWidth();
+    }
+
+    private void discardStoredRate() {
+        preferences().edit()
+                .remove(KEY_RATE)
+                .remove(KEY_SOURCE)
+                .remove(KEY_DATA_AT)
+                .remove(KEY_VERIFIED_AT)
+                .apply();
+    }
+
+    /** Traduce el fallo a un texto útil mirando toda la cadena de causas, no solo la última. */
     private int getRefreshErrorMessage(Exception exception) {
         Throwable cause = exception;
-        while (cause.getCause() != null && cause.getCause() != cause) {
-            cause = cause.getCause();
-        }
-        if (cause instanceof javax.net.ssl.SSLException) {
-            return R.string.status_secure_connection_failed;
-        }
-        if (cause instanceof java.net.UnknownHostException) {
-            return R.string.status_host_unavailable;
-        }
-        if (cause instanceof java.net.SocketTimeoutException) {
-            return R.string.status_connection_timeout;
-        }
-        if (cause instanceof BcvRateClient.BcvResponseException) {
-            return R.string.status_invalid_response;
+        while (cause != null) {
+            if (cause instanceof javax.net.ssl.SSLException) {
+                return R.string.status_secure_connection_failed;
+            }
+            if (cause instanceof java.net.UnknownHostException) {
+                return R.string.status_host_unavailable;
+            }
+            if (cause instanceof java.net.SocketTimeoutException) {
+                return R.string.status_connection_timeout;
+            }
+            if (cause instanceof BcvRateClient.BcvResponseException
+                    || cause instanceof org.json.JSONException
+                    || cause instanceof java.text.ParseException) {
+                return R.string.status_invalid_response;
+            }
+            Throwable next = cause.getCause();
+            cause = next == cause ? null : next;
         }
         return R.string.status_connection_failed;
     }
@@ -203,10 +292,8 @@ public final class MainActivity extends Activity {
         if (isFinishing()) {
             return;
         }
-        boolean hasCachedRate = getSharedPreferences(PREFERENCES, MODE_PRIVATE)
-                .contains(KEY_RATE);
         status.setText(messageResource);
-        if (hasCachedRate) {
+        if (hasStoredRate()) {
             status.append("\n");
             status.append(getString(R.string.status_cache_preserved));
         }
@@ -218,7 +305,58 @@ public final class MainActivity extends Activity {
         isRefreshing = false;
         refreshButton.setEnabled(true);
         refreshButton.setText(R.string.refresh);
-        status.setTextColor(getResources().getColor(R.color.lite_muted));
+    }
+
+    private void showStatus(CharSequence text, boolean warn) {
+        status.setText(text);
+        status.setTextColor(getResources().getColor(
+                warn ? R.color.lite_warn : R.color.lite_muted));
+    }
+
+    private SharedPreferences preferences() {
+        return appContext.getSharedPreferences(PREFERENCES, MODE_PRIVATE);
+    }
+
+    private boolean hasStoredRate() {
+        return preferences().contains(KEY_RATE);
+    }
+
+    private long storedDataAt() {
+        return preferences().getLong(KEY_DATA_AT, 0L);
+    }
+
+    private long storedVerifiedAt() {
+        return preferences().getLong(KEY_VERIFIED_AT, 0L);
+    }
+
+    private boolean isCacheFresh() {
+        long verifiedAt = storedVerifiedAt();
+        return hasStoredRate()
+                && verifiedAt > 0L
+                && System.currentTimeMillis() - verifiedAt < FRESH_CACHE_MS;
+    }
+
+    private boolean isStoredDataStale() {
+        long dataAt = storedDataAt();
+        return dataAt > 0L && System.currentTimeMillis() - dataAt > STALE_DATA_MS;
+    }
+
+    private String formatAge(long timestampMillis) {
+        if (timestampMillis <= 0L) {
+            return getString(R.string.age_unknown);
+        }
+        long minutes = Math.max(0L, (System.currentTimeMillis() - timestampMillis) / 60000L);
+        if (minutes < 1L) {
+            return getString(R.string.age_now);
+        }
+        if (minutes < 60L) {
+            return getString(R.string.age_minutes, minutes);
+        }
+        long hours = minutes / 60L;
+        if (hours < 48L) {
+            return getString(R.string.age_hours, hours);
+        }
+        return getString(R.string.age_days, hours / 24L);
     }
 
     private void fitRateTextToWidth() {
@@ -280,9 +418,17 @@ final class BcvRateClient {
     private static final String BCV_URL = "https://www.bcv.org.ve/";
     private static final String DOLAR_API_URL = "https://ve.dolarapi.com/v1/dolares";
     private static final String EXCHANGE_RATE_API_URL = "https://open.er-api.com/v6/latest/USD";
-    private static final int CONNECT_TIMEOUT_MS = 12000;
-    private static final int READ_TIMEOUT_MS = 12000;
+    private static final int CONNECT_TIMEOUT_MS = 10000;
+    private static final int READ_TIMEOUT_MS = 10000;
     private static final int MAX_RESPONSE_CHARS = 1_500_000;
+
+    private static final String BCV = "bcv";
+    private static final String DOLAR_API = "dolarapi";
+    private static final String EXCHANGE_RATE_API = "erapi";
+
+    /** BCV primero; si una fuente falla, su circuito la aparta 10 minutos. */
+    private static final ProviderPlan PROVIDER_PLAN =
+            new ProviderPlan(BCV, DOLAR_API, EXCHANGE_RATE_API);
 
     private static final Pattern DOLLAR_SECTION = Pattern.compile(
             "(?is)<[^>]+\\bid\\s*=\\s*['\"]dolar['\"][^>]*>");
@@ -297,26 +443,33 @@ final class BcvRateClient {
     }
 
     static RateQuote fetchOfficialUsdRate() throws java.io.IOException {
-        try {
+        java.io.IOException lastFailure = null;
+        long now = System.currentTimeMillis();
+        for (String provider : PROVIDER_PLAN.orderFor(now)) {
+            try {
+                RateQuote quote = fetchFrom(provider);
+                PROVIDER_PLAN.recordSuccess(provider);
+                return quote;
+            } catch (java.io.IOException exception) {
+                Log.w("DivTrackLite", "Fuente " + provider + " no respondió: "
+                        + exception.getMessage());
+                PROVIDER_PLAN.recordFailure(provider, System.currentTimeMillis());
+                lastFailure = exception;
+            }
+        }
+        throw new java.io.IOException(
+                "Ninguna fuente de tasas respondió; se conserva la última tasa guardada.",
+                lastFailure);
+    }
+
+    private static RateQuote fetchFrom(String provider) throws java.io.IOException {
+        if (BCV.equals(provider)) {
             return fetchBcvRate();
-        } catch (java.io.IOException exception) {
-            Log.w("DivTrackLite", "Falló BCV; se probará DolarAPI.", exception);
         }
-
-        try {
+        if (DOLAR_API.equals(provider)) {
             return fetchDolarApiRate();
-        } catch (java.io.IOException exception) {
-            Log.w("DivTrackLite", "Falló DolarAPI; se probará ER-API.", exception);
         }
-
-        try {
-            return fetchExchangeRateApiRate();
-        } catch (java.io.IOException exception) {
-            Log.w("DivTrackLite", "También falló ER-API.", exception);
-            throw new java.io.IOException(
-                    "Fallaron BCV, DolarAPI y ER-API; se conserva la última tasa guardada.",
-                    exception);
-        }
+        return fetchExchangeRateApiRate();
     }
 
     private static RateQuote fetchBcvRate() throws java.io.IOException {
@@ -330,7 +483,7 @@ final class BcvRateClient {
                 updatedAt = publishedAt;
             }
         }
-        return new RateQuote(rate, "BCV", updatedAt, false);
+        return new RateQuote(rate, "BCV", updatedAt);
     }
 
     private static RateQuote fetchDolarApiRate() throws java.io.IOException {
@@ -353,8 +506,7 @@ final class BcvRateClient {
                 return new RateQuote(
                         rate,
                         "DolarAPI (respaldo)",
-                        publishedAt != null ? publishedAt : System.currentTimeMillis(),
-                        true);
+                        publishedAt != null ? publishedAt : System.currentTimeMillis());
             }
             throw new BcvResponseException("DolarAPI no devolvió el dólar oficial.");
         } catch (org.json.JSONException exception) {
@@ -381,7 +533,7 @@ final class BcvRateClient {
             if (updatedAt <= 0L) {
                 updatedAt = System.currentTimeMillis();
             }
-            return new RateQuote(rate, "ER-API (respaldo)", updatedAt, true);
+            return new RateQuote(rate, "ER-API (respaldo)", updatedAt);
         } catch (org.json.JSONException exception) {
             throw new BcvResponseException("La respuesta JSON de ER-API no es válida.", exception);
         }
@@ -446,11 +598,12 @@ final class BcvRateClient {
             connection.setInstanceFollowRedirects(true);
             connection.setUseCaches(false);
             connection.setRequestProperty("Accept", accept);
-            connection.setRequestProperty("Accept-Encoding", "identity");
             connection.setRequestProperty(
                     "User-Agent",
                     "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 "
                             + "(KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36");
+            // Sin Accept-Encoding propio la plataforma pide gzip y descomprime sola:
+            // la página del BCV pasa de ~150 KB a ~30 KB.
             if (Build.VERSION.SDK_INT >= 14 && Build.VERSION.SDK_INT < 21) {
                 connection.setSSLSocketFactory(new Tls12SocketFactory(
                         (SSLSocketFactory) SSLSocketFactory.getDefault()));
@@ -495,27 +648,27 @@ final class BcvRateClient {
     private static BigDecimal parseDollarRate(String html) throws java.io.IOException {
         Matcher sectionMatcher = DOLLAR_SECTION.matcher(html);
         if (!sectionMatcher.find()) {
-            throw new java.io.IOException("No se encontró la sección USD del BCV.");
+            throw new BcvResponseException("No se encontró la sección USD del BCV.");
         }
 
         int sectionStart = sectionMatcher.end();
         String dollarSection = html.substring(sectionStart);
         Matcher usdMatcher = USD_LABEL.matcher(dollarSection);
         if (!usdMatcher.find()) {
-            throw new java.io.IOException("La sección del BCV no identifica USD.");
+            throw new BcvResponseException("La sección del BCV no identifica USD.");
         }
 
         Matcher rateMatcher = RATE_IN_STRONG.matcher(dollarSection.substring(usdMatcher.end()));
         if (!rateMatcher.find()) {
-            throw new java.io.IOException("No se encontró el valor USD publicado por el BCV.");
+            throw new BcvResponseException("No se encontró el valor USD publicado por el BCV.");
         }
         String candidate = rateMatcher.group(1).replaceAll("\\s+", "");
         if (!NUMBER.matcher(candidate).matches()) {
-            throw new java.io.IOException("El valor USD del BCV tiene un formato no válido.");
+            throw new BcvResponseException("El valor USD del BCV tiene un formato no válido.");
         }
         BigDecimal rate = parseDecimal(candidate);
         if (rate.signum() <= 0) {
-            throw new java.io.IOException("El valor USD del BCV debe ser mayor que cero.");
+            throw new BcvResponseException("El valor USD del BCV debe ser mayor que cero.");
         }
         return rate;
     }
@@ -567,7 +720,8 @@ final class BcvRateClient {
         try {
             return new BigDecimal(value);
         } catch (NumberFormatException exception) {
-            throw new java.io.IOException("El valor USD del BCV no se pudo interpretar.");
+            throw new BcvResponseException("El valor USD del BCV no se pudo interpretar.",
+                    exception);
         }
     }
 
@@ -595,13 +749,11 @@ final class BcvRateClient {
         final BigDecimal rate;
         final String source;
         final long updatedAtMillis;
-        final boolean usedFallback;
 
-        RateQuote(BigDecimal rate, String source, long updatedAtMillis, boolean usedFallback) {
+        RateQuote(BigDecimal rate, String source, long updatedAtMillis) {
             this.rate = rate;
             this.source = source;
             this.updatedAtMillis = updatedAtMillis;
-            this.usedFallback = usedFallback;
         }
     }
 

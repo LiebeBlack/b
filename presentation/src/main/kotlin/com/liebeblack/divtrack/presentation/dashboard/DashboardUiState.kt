@@ -24,6 +24,15 @@ data class RateUiModel(
     val isStale: Boolean,
     val providerText: String,
     val updatedAtText: String?,
+
+    /**
+     * Cuándo la app trajo este valor de la red.
+     *
+     * Es distinto de [updatedAtText], que cuenta cuándo lo publicó el proveedor: aquí
+     * interesa la edad de la comprobación, que es lo que decide el refresco al volver a la
+     * pantalla (el proveedor puede no publicar nada nuevo y aun así haber que comprobarlo).
+     */
+    val fetchedAtMillis: Long,
 )
 
 /** Estado completo del dashboard. Es la única fuente que consume la pantalla. */
@@ -72,4 +81,5 @@ internal fun ExchangeRate.toRateUiModel(nowMillis: Long): RateUiModel = RateUiMo
     updatedAtText = updatedAtMillis?.let { millis ->
         runCatching { CurrencyFormatters.timestamp(Instant.ofEpochMilli(millis)) }.getOrNull()
     },
+    fetchedAtMillis = fetchedAtMillis,
 )

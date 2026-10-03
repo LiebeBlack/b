@@ -554,3 +554,76 @@ subirlas a mano si se quiere ir al día.
 **Por qué no se documentó antes.** El subproyecto existía y CI lo compilaba, pero ni el README
 ni `docs/index.html` lo mencionaban; quien llegara al repositorio solo veía la app principal.
 Queda documentado aquí, en el README y en la web del proyecto.
+
+---
+
+## 28. Lite: no culpar a la fuente, frescura y circuito prestados del principal
+
+**Contexto.** El ADR 26 dejó tres lecciones para el principal: comparar frescura entre
+fuentes, apartar al proveedor caído en vez de esperar su tiempo de espera en cada pasada, y
+no alarmar al usuario. El Lite no tenía ninguna. Cada pasada repetía los *timeouts* de las
+tres fuentes (12 s de conexión + 12 s de lectura cada una: hasta ~70 s de espera con la
+pantalla quieta), el respaldo se anunciaba con un mensaje que empezaba por «No se pudo
+obtener la tasa del BCV…», y una rotación de pantalla descartaba la cotización recién
+llegada porque solo se guardaba después de comprobar que la actividad seguía viva.
+
+**Decisión.**
+
+1. La pantalla identifica la fuente junto a la fecha («Fuente: DolarAPI (respaldo) · dato:
+   …») y ya no publica un mensaje de error por la fuente que no respondió; el estado solo
+   describe la causa (sin conexión, tiempo agotado, datos no válidos).
+2. Un `ProviderPlan` con circuito por fuente aparta 10 minutos a la que falla. Si todas
+   estuvieran apartadas se reintenta el orden completo, así que el circuito nunca deja la
+   aplicación sin pasada. El estado vive en memoria a propósito, igual que en el principal.
+3. Ventana de frescura: con la tasa comprobada hace menos de 10 minutos no se toca la red al
+   abrir la pantalla; con la pantalla visible se comprueba cada 30 minutos y al volver a la
+   aplicación si el dato está viejo. No se añade ningún permiso: sigue bastando `INTERNET`.
+4. La cifra no retrocede: si la fuente trae una fecha de dato anterior a la guardada, se
+   conserva la más reciente y se dice que ya era la más reciente.
+5. El dato se guarda en el hilo de red en cuanto llega, antes de tocar la interfaz.
+6. La fecha del dato (en el BCV, su «Fecha Valor») y el momento de la comprobación son datos
+   distintos y van en líneas separadas; un dato con más de un día se señala en ámbar.
+7. Se deja de enviar `Accept-Encoding: identity` para que la plataforma negocie gzip: la
+   página del BCV pasa de ~150 KB a ~30 KB.
+
+**Coste y mitigación.** La ventana de frescura cede hasta 10 minutos de novedad a cambio de
+no gastar red al reabrir la pantalla; el botón «Actualizar» siempre fuerza la consulta, y el
+principal usa 240 minutos para su sincronización más corta. El circuito puede mantener
+apartada una fuente que ya se recuperó; el reintento completo cuando todas están apartadas
+evita que eso deje la pantalla sin consulta.
+
+**Por qué no un *race* en paralelo de las tres fuentes.** Sería más rápido en el peor caso,
+pero la cifra mostrada dependería de quién conteste primero y la fuente podría cambiar entre
+pasadas idénticas. Manteniendo el BCV primero, la preferencia se conserva y la espera del peor
+caso deja de repetirse gracias al circuito.
+
+---
+
+## 29. El panel se refresca al volver, con ventana de frescura
+
+**Contexto.** El ViewModel del panel vive mientras su pestaña siga en el back stack (el panel
+es la raíz de la pila, así que nunca sale de ella). Su `init` —el único punto donde se lanzaba
+la sincronización— no se repite: con la app en segundo plano durante horas, o con la pestaña
+Tasas abierta toda la tarde, en pantalla se quedaba la última pasada hasta que el usuario
+tirara de pull-to-refresh o hasta que WorkManager despertara (240 min por defecto). La tarjeta
+mostraba la edad del dato, pero saberlo no lo arregla.
+
+**Decisión.** La pantalla escucha el ciclo de vida (`LifecycleEventEffect(ON_START)`) y emite
+`DashboardIntent.OnResumed`. El ViewModel compara la edad real de la comprobación del oficial
+con una ventana de 15 minutos y **solo entonces** sale a la red, en modo silencioso (sin
+snackbar). El refresco automático recorre el mismo camino que el manual: mutex del repositorio
+(single-flight), circuit breaker por fuente y reintentos acotados, así que un regreso no puede
+duplicar una pasada en vuelo ni martillear a un proveedor caído.
+
+**Por qué con ventana y no en cada regreso.** Un refresco incondicional en cada `ON_START`
+gastaría radio al rotar la pantalla, al volver de un diálogo del sistema o al alternar
+pestañas, donde el dato es de hace segundos. Quince minutos es el mínimo que admite WorkManager
+y cubre de sobra una publicación diaria; el pull-to-refresh sigue estando para quien quiera
+forzarlo en el momento.
+
+**Consecuencia honesta.** La ventana deja hasta 15 minutos de antigüedad sin refrescar al
+volver al primer plano. A cambio no hay latido de red en cada regreso, y la edad del dato sigue
+escrita en la tarjeta («Actualizado …»), que es lo que el usuario necesita para decidir si
+refresca a mano. La misma regla explica por qué la fecha de comprobación (`fetchedAtMillis`) es
+un dato aparte de la fecha publicada por el proveedor: una fuente puede no publicar nada nuevo
+y aun así haber que comprobarlo.

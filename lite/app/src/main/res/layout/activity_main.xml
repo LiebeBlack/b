@@ -5,6 +5,7 @@
     android:layout_height="match_parent"
     android:background="@color/lite_background"
     android:fillViewport="true"
+    android:fitsSystemWindows="true"
     android:overScrollMode="never">
 
     <LinearLayout
@@ -76,6 +77,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
+            android:gravity="center"
+            android:textColor="@color/lite_muted"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/last_check"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:gravity="center"
             android:textColor="@color/lite_muted"
             android:textSize="13sp" />
