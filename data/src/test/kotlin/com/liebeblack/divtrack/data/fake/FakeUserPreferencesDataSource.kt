@@ -34,10 +34,6 @@ class FakeUserPreferencesDataSource(
         state.value = state.value.copy(syncIntervalMinutes = minutes)
     }
 
-    override suspend fun setLastSyncAt(millis: Long) {
-        state.value = state.value.copy(lastSyncAtMillis = millis)
-    }
-
     override suspend fun setPreferredProvider(providerId: String) {
         state.value = state.value.copy(preferredProviderId = providerId)
     }

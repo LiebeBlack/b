@@ -57,7 +57,7 @@ class ProviderRegistry @Inject constructor(
     providers: Set<@JvmSuppressWildcards RateProvider>,
     private val errorMapper: NetworkErrorMapper,
     private val logger: Logger,
-    private val timeProvider: TimeProvider = com.liebeblack.divtrack.core.common.time.SystemTimeProvider(),
+    private val timeProvider: TimeProvider,
 ) {
 
     /** Todos los proveedores registrados, ordenados por su prioridad base. */

@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.liebeblack.divtrack.core.common.error.DataError
 import com.liebeblack.divtrack.core.common.result.Result
-import com.liebeblack.divtrack.core.common.utils.CurrencyFormatters
 import com.liebeblack.divtrack.core.common.time.TimeProvider
+import com.liebeblack.divtrack.core.common.utils.CurrencyFormatters
 import com.liebeblack.divtrack.domain.model.ExchangeRate
 import com.liebeblack.divtrack.domain.model.Spread
 import com.liebeblack.divtrack.domain.usecase.CalculateSpreadUseCase

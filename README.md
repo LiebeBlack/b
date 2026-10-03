@@ -26,18 +26,19 @@ Lo que sigue se comprobó **ejecutando** cosas, no asumiendo:
 | `criptoya.com/api/USD/VES` | **descartada**: responde 422 en las variantes probadas |
 | `:app:assembleDebug` | **BUILD SUCCESSFUL** · APK de depuración de 22,8 MB |
 | `:app:assembleRelease` | **BUILD SUCCESSFUL** con R8 y `shrinkResources` · APK de 2,37 MB |
-| Tests JVM de los 4 módulos | **49 casos, 0 fallos** |
+| Tests JVM de los 4 módulos | **49 casos, 0 fallos** en la última corrida verificada; el repo ya declara **82** (ver «Esta pasada») |
 | `:app:lintDebug` | 1 error pendiente: ruta de Windows sin escapar en `local.properties` (archivo local, fuera de git) |
 
 > Toolchain real montado y usado para compilar: JDK 21 (Temurin), `cmdline-tools` de 2026 con
 > el CLI nuevo, **plataforma `android-37.0`** (ojo: `platforms;android-37` no existe) y
 > `build-tools 37.0.0`.
 >
-> **Alcance de esta cifra.** La compilación y los 49 tests se ejecutaron **antes** de la última
-> pasada de cambios (la que elimina el Histórico y arregla conexión, permisos, rendimiento y el
-> leak). Esa pasada se hizo a petición explícita **sin volver a compilar ni ejecutar tests**, así
-> que hasta el próximo `./gradlew :app:assembleDebug` los números de arriba describen el estado
-> previo.
+> **Alcance de esta cifra.** La compilación y los 49 tests se ejecutaron **antes** de las dos
+> últimas pasadas de cambios (la que elimina el Histórico y arregla conexión, permisos,
+> rendimiento y el leak, y la revisión estricta documentada en «Esta pasada»). Las dos se
+> hicieron a petición explícita **sin volver a compilar ni ejecutar tests**, así que los números
+> de arriba describen el estado previo; lo que hay hoy en el repo es lo que declaran las tablas
+> de esta pasada.
 
 ---
 
@@ -67,11 +68,16 @@ Lo que sigue se comprobó **ejecutando** cosas, no asumiendo:
 :core:network     Retrofit triple (DolarAPI + Yadio + ER-API), 4 interceptores, RateProvider + registro con circuit breaker y frescura.
 :core:database    Room: tasa vigente + cierre diario (base de la flecha de tendencia).
 :core:datastore   DataStore: tema, IGTF, fuente por defecto, frecuencia de sync.
-:domain           Kotlin/JVM puro. Modelos, contratos de repositorio y 7 casos de uso.
+:domain           Kotlin/JVM puro. Modelos, contratos de repositorio y 8 casos de uso.
 :data             Implementaciones, orquestación multi-proveedor, WorkManager.
 :presentation     Compose + MVI por pantalla + tema M3 + Nav3.
 :app              Application (Hilt + WorkManager), MainActivity, recursos, R8.
 ```
+
+Fuera de ese grafo hay un **subproyecto Gradle independiente**, con su propio
+`settings.gradle.kts`: `lite/` (DivTrack Lite), una app Java + XML de una sola pantalla que
+publica la tasa BCV sin Compose ni librerías de terceros. Se compila desde la raíz con
+`./gradlew -p lite :app:assembleRelease` y CI la publica junto al APK principal.
 
 Dirección de dependencias, **impuesta por Gradle** y no por convención:
 
@@ -101,6 +107,7 @@ cp local.properties.example local.properties   # opcional: personaliza las URLs 
 ./gradlew :app:assembleDebug                   # APK de depuración
 ./gradlew testDebugUnitTest :domain:test :core:common:test   # tests JVM
 ./gradlew :app:assembleRelease -PcomposeMetrics=true         # R8 + métricas de Compose
+./gradlew -p lite :app:assembleRelease                       # DivTrack Lite (subproyecto aparte)
 ```
 
 Sin `local.properties` **también compila**: las URLs base caen a los endpoints públicos
@@ -110,8 +117,9 @@ verificados. Ninguna URL está escrita en el código Kotlin: entran por `BuildCo
 ### CI
 
 `.github/workflows/android-ci.yml` se ejecuta en cada push y en cada PR: JDK 21, plataforma
-`android-37.0` + `build-tools 37.0.0`, compila debug, corre los tests, compila release con R8
-y publica APK, reportes y métricas del compilador de Compose como artefactos.
+`android-37.0` + `build-tools 37.0.0`, compila debug, corre los tests, compila release con R8,
+compila **DivTrack Lite** (`./gradlew -p lite :app:assembleRelease`) y publica APK, reportes,
+métricas del compilador de Compose y los dos APK (principal y Lite) como artefactos.
 
 El APK para instalar se descarga desde **Releases**, no desde el artefacto de CI:
 `app-release-unsigned.apk` no está firmado. El flujo de publicación verifica la firma y el
@@ -152,7 +160,7 @@ Aritmética del IGTF (la parte fácil de equivocar, por eso está documentada y 
 
 ### Ajustes
 Tema (Sistema / Claro / Oscuro, aplicado al instante), tasa por defecto de la calculadora,
-IGTF por defecto, sincronización en segundo plano con su frecuencia (15/30/60/120 min),
+IGTF por defecto, sincronización en segundo plano con su frecuencia (15/30/60/120/240 min),
 versión instalada y atribución de proveedores.
 
 ---
@@ -179,7 +187,9 @@ versión instalada y atribución de proveedores.
 
 ## Tests
 
-49 casos JVM (sin emulador), centrados en lo que puede romperse en silencio:
+82 casos JVM declarados en el repo (los 49 de la última corrida verificada, más los que
+llegaron después con el multi-proveedor y la frescura de datos), centrados en lo que puede
+romperse en silencio:
 
 | Módulo | Qué se prueba |
 |---|---|
@@ -228,15 +238,15 @@ Lo que esta pasada dejó **verificado**, no corregido:
 
 | Comprobación | Resultado |
 |---|---|
-| Textos | 84 claves en es-VE y en inglés con los mismos argumentos, y las 8 llamadas con formato pasan el número exacto de argumentos |
+| Textos (recuento de entonces) | 84 claves en es-VE y en inglés con los mismos argumentos, y las 8 llamadas con formato pasan el número exacto de argumentos |
 | Interactividad | Cada botón, selector, interruptor y gesto llega a una intención; 0 `onClick` vacíos, 0 `TODO`. El único `onRetry = {}` está en un `@Preview` |
-| Estados de pantalla | Panel pinta carga, vacío, error y datos; Ajustes solo datos, porque su fuente es un DataStore ya en memoria |
+| Estados de pantalla (recuento de entonces) | Panel pinta carga, aviso y error además de datos; Ajustes solo datos, porque su fuente es un DataStore ya en memoria |
 | Grafo de inyección | 25 constructores `@Inject` y un campo: toda dependencia tiene `@Provides`, `@Binds` o `@IntoSet` |
 | Estructura | 112/112 archivos con `package` = ruta, llaves y paréntesis balanceados, 0 imports sin uso, 0 declaraciones huérfanas |
 
 ---
 
-## Esta pasada: Histórico fuera, conexión, permisos, rendimiento y el leak
+## Pasada anterior: Histórico fuera, conexión, permisos, rendimiento y el leak
 
 Cinco cosas, en el orden en que molestaban:
 
@@ -248,14 +258,70 @@ Cinco cosas, en el orden en que molestaban:
 | **Permisos** | el APK de debug declaraba `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE` y `POST_NOTIFICATIONS` (venían de LeakCanary, no de la app) | exactamente `INTERNET` y `ACCESS_NETWORK_STATE`, documentados; tráfico en claro cerrado; y el aviso de conectividad ofrece "Abrir ajustes de red" (ADR 24) |
 | **Leak de `SystemJobService`** | se reportaba como fuga propia | diagnosticado como retención del framework (`ResourcesImpl.mAppContext`) y documentado en la ADR 21, con la traza y el porqué |
 
-Nada de esto se volvió a compilar ni se pasó por tests en esta pasada (fue a petición explícita).
+Nada de esto se volvió a compilar ni se pasó por tests en aquella pasada (fue a petición explícita).
 El siguiente `./gradlew :app:assembleDebug` es lo que convierte esta tabla en verificada.
+
+---
+
+## Esta pasada: revisión estricta sin compilar (correcciones y optimizaciones)
+
+Otra pasada de revisión completa, otra vez **leyendo el código y no ejecutando nada**
+(cero comandos, cero tests, cero compilación: fue la instrucción explícita). El criterio fue el
+que ya está escrito en las ADR 19, 20 y 22: nada de código muerto, el selector refleja lo que
+existe y no se reintenta lo que no puede cambiar por esperar.
+
+| Hallazgo | Corrección |
+|---|---|
+| **Bug**: `CalculatorScreen` volvía a ofrecer las dos tasas cuando Room estaba vacío (`ifEmpty { RateSource.ordered() }`), así que pulsar una opción inexistente volvía a dejar "sin tasas disponibles". Era el bug que corrigió la ADR 20, reintroducido como respaldo en la pantalla. | Las opciones salen **solo** de `state.rateOptions`; sin tasas no hay ningún chip que pulsar y el aviso explica qué hacer. |
+| **Contradicción con la ADR 22**: `RateSyncWorker` devolvía `retry()` para **cualquier** `Result.Error`, incluido un 404 o una respuesta ilegible, que dan el mismo resultado 30 s después. | El worker reintenta solo lo transitorio (red, timeout, HTTP 408/429/5xx) y marca el intento como fallido en el resto; el siguiente ciclo periódico vuelve a intentarlo. Es lo que ya describía `ARCHITECTURE.md`. |
+| `ProviderRegistry` construía su reloj por defecto con el nombre completo `com.liebeblack...SystemTimeProvider()` (la convención del proyecto prohíbe las rutas completas en el cuerpo). | El valor por defecto se elimina: Hilt inyecta el `TimeProvider` real y los tres tests que construyen el registro pasan un `FakeTimeProvider` explícito, así que **ningún test depende ya del reloj real**. |
+| `DashboardUiState.toRateUiModel(nowMillis = System.currentTimeMillis())` se permitía leer el reloj del dispositivo en la capa de presentación, teniendo `TimeProvider` inyectado. | El parámetro es obligatorio. |
+| Nombres completos en el cuerpo: `android.util.Log` (×2) en `DivTrackApplication` y `java.time.Instant` en `SettingsScreen`. | Importados y usados sin ruta. |
+| Imports fuera de orden en `SettingsViewModel` (`java.io.IOException` entre `androidx` y `com`) y en `DashboardViewModel` (`utils` antes de `time`). | Reordenados. |
+| `SyncSummary.kt` era un archivo con solo el `package`: el modelo vivía en `ProviderStatus.kt`. | La declaración se movió a su archivo. |
+| **Código muerto**: `EmptyState` y las claves `empty_rates_*` pintaban un estado inalcanzable (la app nunca queda sin datos y sin error); su única referencia era un `@Preview`. | Eliminados el composable y las dos claves en ambos idiomas. |
+| **Código muerto**: `ConnectivityObserver.observe()` y su `callbackFlow` de ~40 líneas no los consumía nadie; la app solo usa la consulta puntual `isOnline()`. | Contrato reducido a `isOnline()` (interfaz, implementación Android y fake). |
+| **Código muerto**: `lastSyncAtMillis` / `setLastSyncAt` / la clave `last_sync_at` se escribían desde ningún sitio y se leían desde ninguno. | Eliminados del modelo, del contrato, de la implementación de DataStore y del fake (la clave `last_sync_at` desaparece de las preferencias). |
+| **Código muerto**: los colores `Sky` y `SkyDeep` no se usaban (solo sobrevivían en un comentario). | Eliminados; el comentario de legibilidad habla de los acentos que existen (Mint/Amber). |
+| **Estado que no se pintaba**: `CalculatorUiState.netUsdText` y `netBsText` se calculaban y ningún composable los leía (el propio `ARCHITECTURE.md` dice que los subtotales netos no se exponen). | Eliminados del estado; los tests que los usaban ahora comprueban los **totales** que sí se ven en pantalla. |
+| **Código muerto de segundo orden**: al quitar `EmptyState`, su único consumidor, `Spacing.xxl` se quedaba sin usar. | Eliminado también, con la nota de que se añade en una línea si vuelve a hacer falta (ADR 19). |
+
+Lo que esta pasada dejó **verificado leyendo**, sin ejecutar nada:
+
+| Comprobación | Resultado |
+|---|---|
+| Textos | 116 claves en es-VE y en inglés, con el mismo juego en los dos archivos (eran 118; se retiraron las dos de estado vacío) |
+| Tests | 82 funciones `@Test` en el repo (49 en la última corrida verificada) |
+| Estructura | 124 archivos Kotlin con `package` = ruta (los de `lite/` son Java y viven en su subproyecto) |
+| Referencias colgantes | 0 tras los borrados: `observe()`, `netUsdText`, `netBsText`, `EmptyState`, `lastSyncAtMillis`, `setLastSyncAt`, `Sky`, `SkyDeep` y `Spacing.xxl` no aparecen en ningún archivo |
+| Documentación | `ARCHITECTURE.md` decía "Retrofit dual", "2 Retrofit" y "7 casos de uso" (son tres proveedores, tres Retrofit y ocho casos de uso); `docs/index.html` hablaba de 79 claves y 24 ADR; el README apuntaba a `web/index.html`, que no existe (la web es `docs/index.html`), y no mencionaba DivTrack Lite en ninguna parte |
+
+Nada de esto se compiló ni se pasó por tests: fue a petición explícita. El siguiente
+`./gradlew :app:assembleDebug` y `./gradlew testDebugUnitTest :domain:test :core:common:test`
+es lo que convierte estas tablas en verificadas.
+
+---
+
+## DivTrack Lite (subproyecto aparte)
+
+`lite/` es una app **independiente**, no un *flavor* de esta: Java + XML, `minSdk 14`, una sola
+pantalla con la tasa USD/VES del BCV y respaldos que se identifican como tales (DolarAPI →
+ER-API), caché del último valor en `SharedPreferences` y cero librerías de terceros. No comparte
+código con el grafo principal y se compila con su propio `settings.gradle.kts`:
+
+```bash
+./gradlew -p lite :app:assembleRelease
+```
+
+CI la construye y publica junto al APK principal, verificando antes la firma y el
+`applicationId` de cada uno (`com.liebeblack.divtrack` y `com.liebeblack.divtrack.lite`). El
+porqué de que sea un subproyecto y su coste están en la ADR 27 y en [lite/README.md](lite/README.md).
 
 ---
 
 ## Web del proyecto
 
-`web/index.html` es una página **autocontenida** sobre el software: sin JavaScript, sin CDN,
+`docs/index.html` es una página **autocontenida** sobre el software: sin JavaScript, sin CDN,
 una sola petición de red (ninguna). Explica el producto con maquetas CSS de las tres
 pantallas, el flujo Online-First, el diagrama de módulos, el stack con versiones, los comandos
 de compilación y una tabla honesta de **qué está comprobado y qué no**. Usa la misma paleta y
@@ -264,7 +330,7 @@ los mismos radios que `presentation/theme`, y respeta `prefers-color-scheme`.
 Se abre con doble clic (no necesita servidor) o se publica tal cual en GitHub Pages:
 
 ```bash
-# Settings → Pages → Deploy from a branch → /web
+# Settings → Pages → Deploy from a branch → /docs
 ```
 
 ---

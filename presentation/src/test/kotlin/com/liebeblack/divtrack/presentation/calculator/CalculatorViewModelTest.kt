@@ -107,8 +107,9 @@ class CalculatorViewModelTest {
 
         val state = viewModel.state.value
         assertEquals("10", state.inputText)
-        assertEquals("10,00", state.netUsdText)
-        assertEquals("365,00", state.netBsText)
+        // Sin IGTF, el total que pinta la tarjeta coincide con el neto.
+        assertEquals("10,00", state.totalUsdText)
+        assertEquals("365,00", state.totalBsText)
         assertTrue(state.canCopy)
     }
 
@@ -154,7 +155,7 @@ class CalculatorViewModelTest {
 
         val state = viewModel.state.value
         assertEquals("1234,56", state.inputText)
-        assertEquals("45.061,44", state.netBsText)
+        assertEquals("45.061,44", state.totalBsText)
     }
 
     @Test
@@ -169,7 +170,7 @@ class CalculatorViewModelTest {
         val state = viewModel.state.value
         assertEquals(RateSource.PARALELO, state.selectedSource)
         assertEquals("954,55", state.selectedRateText)
-        assertEquals("9.545,50", state.netBsText)
+        assertEquals("9.545,50", state.totalBsText)
     }
 
     @Test
@@ -184,7 +185,7 @@ class CalculatorViewModelTest {
         val state = viewModel.state.value
         assertFalse(state.hasRate)
         assertFalse(state.canCopy)
-        assertEquals("—", state.netBsText)
+        assertEquals("—", state.totalBsText)
     }
 
     @Test

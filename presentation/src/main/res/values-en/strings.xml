@@ -32,8 +32,6 @@
     <string name="spread_value">%1$s above the official rate (%2$s)</string>
     <string name="spread_unavailable">Both rates are needed to compute the gap</string>
     <string name="dashboard_disclaimer">Informational quotes from public sources; DivTrack is not an official entity. Verify values before trading.</string>
-    <string name="empty_rates_title">No rates yet</string>
-    <string name="empty_rates_message">Pull down or tap refresh to fetch the latest values.</string>
     <string name="loading_rates">Loading the latest rates…</string>
 
     <!-- ============================== Calculator ============================== -->

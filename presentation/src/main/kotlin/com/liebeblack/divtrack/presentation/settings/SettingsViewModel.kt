@@ -2,7 +2,6 @@ package com.liebeblack.divtrack.presentation.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import java.io.IOException
 import com.liebeblack.divtrack.domain.model.ProviderDiagnostics
 import com.liebeblack.divtrack.domain.usecase.DiagnoseProvidersUseCase
 import com.liebeblack.divtrack.domain.usecase.EnsureSyncScheduledUseCase
@@ -11,6 +10,7 @@ import com.liebeblack.divtrack.domain.usecase.UpdateSettingsUseCase
 import com.liebeblack.divtrack.presentation.R
 import com.liebeblack.divtrack.presentation.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.io.IOException
 import javax.inject.Inject
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow

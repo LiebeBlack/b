@@ -500,14 +500,14 @@
       <div class="dialine">▼</div>
       <div class="mod"><b>:presentation</b><em>Compose · MVI por pantalla · tema M3 · Navigation 3</em></div>
       <div class="dialine">▼</div>
-      <div class="mod pure"><b>:domain</b><em>Kotlin/JVM puro · modelos, contratos y 7 casos de uso — no ve Android, ni Compose, ni Retrofit, ni Room</em></div>
+      <div class="mod pure"><b>:domain</b><em>Kotlin/JVM puro · modelos, contratos y 8 casos de uso — no ve Android, ni Compose, ni Retrofit, ni Room</em></div>
       <div class="dialine">▲</div>
       <div class="split">
         <div class="mod"><b>:data</b><em>Repositorios, orquestación multi-proveedor, WorkManager</em></div>
         <div class="mod pure"><b>:core:common</b><em>Result, DataError, formateo es-VE, parser de importes, reloj</em></div>
       </div>
       <div class="split">
-        <div class="mod"><b>:core:network</b><em>Retrofit dual, 4 interceptores, proveedores</em></div>
+        <div class="mod"><b>:core:network</b><em>Retrofit triple, 4 interceptores, proveedores</em></div>
         <div class="mod"><b>:core:database</b><em>Room: tasa vigente + cierre diario</em></div>
         <div class="mod"><b>:core:datastore</b><em>Preferencias (tema, IGTF, sync)</em></div>
       </div>
@@ -639,14 +639,16 @@
         <tbody>
           <tr><td>APIs de tasas, probadas en vivo</td><td><span class="pill ok">OK</span> DolarAPI VE (oficial 860,18 · paralelo 955,71), Yadio y ExchangeRate-API (<code>rates["VES"]</code> 860,18) responden 200</td></tr>
           <tr><td>Fuentes descartadas por evidencia</td><td><span class="pill ok">OK</span> <code>pydolarve.org</code> no resuelve por DNS · <code>api.dolarvzla.com</code> responde 401 · <code>criptoya.com/api/USD/VES</code> responde 422</td></tr>
-          <tr><td>Recursos de texto</td><td><span class="pill ok">OK</span> 79 referenciadas = 79 definidas · es-VE e inglés con los mismos argumentos</td></tr>
+          <tr><td>Recursos de texto</td><td><span class="pill ok">OK</span> 116 claves definidas en es-VE y otras 116 en inglés, con el mismo juego en los dos archivos · 0 claves huérfanas tras retirar las del estado vacío</td></tr>
           <tr><td>Estructura del código</td><td><span class="pill ok">OK</span> todos los archivos con <code>package</code> = ruta, llaves balanceadas, 0 imports sin uso</td></tr>
           <tr><td>Grafo de inyección</td><td><span class="pill ok">OK</span> 25 clases con <code>@Inject constructor</code> más un campo <code>@Inject</code>: toda dependencia tiene proveedor</td></tr>
           <tr><td>Interfaz completa</td><td><span class="pill ok">OK</span> cada botón, selector, interruptor y gesto está cableado a una intención · 0 <code>onClick</code> vacíos, 0 <code>TODO</code></td></tr>
           <tr><td>Referencias colgantes</td><td><span class="pill ok">OK</span> 0 tras eliminar el código muerto</td></tr>
-          <tr><td>Tests</td><td><span class="pill ok">OK</span> 49 casos JVM, incluida la aritmética del IGTF y la resolución por tasa</td></tr>
+          <tr><td>Tests</td><td><span class="pill ok">OK</span> 82 casos JVM declarados en el repo (49 en la última corrida verificada), incluida la aritmética del IGTF y la resolución por tasa</td></tr>
           <tr><td>Compilación real</td><td><span class="pill ok">OK</span> <code>:app:assembleDebug</code> (22,8 MB) y <code>:app:assembleRelease</code> con R8 (2,37 MB), sobre un toolchain local real (JDK 21 + plataforma android-37.0)</td></tr>
+          <tr><td>DivTrack Lite</td><td><span class="pill warn">SIN VERIFICAR AQUÍ</span> subproyecto aparte (<code>lite/</code>): Java + XML, API 14+, una sola pantalla y respaldos identificados; CI lo compila y publica con el APK principal (ADR 27)</td></tr>
           <tr><td>Última pasada de cambios</td><td><span class="pill warn">SIN RE-COMPILAR</span> eliminar el Histórico y arreglar conexión, permisos, rendimiento y el leak se hizo después de esa verificación, a petición explícita de no compilar</td></tr>
+          <tr><td>Revisión estricta posterior</td><td><span class="pill warn">SIN RE-COMPILAR</span> una pasada leyendo el código (cero comandos) corrigió el selector que volvía a ofrecer tasas inexistentes, el worker que reintentaba fallos deterministas y varias piezas de código muerto (<code>EmptyState</code> con sus claves, <code>ConnectivityObserver.observe()</code>, <code>lastSyncAt</code>, <code>Sky</code>/<code>SkyDeep</code>, <code>Spacing.xxl</code>, los subtotales netos del estado) más una declaración que vivía en el archivo equivocado</td></tr>
         </tbody>
       </table>
     </div>
@@ -689,7 +691,7 @@
       de la del dispositivo y el esquema de Room exportado sin migración destructiva.
     </p>
     <div class="grid cols-4">
-      <div class="card"><h3>24 ADR</h3><p>En <code>docs/DECISIONS.md</code>, cada uno con su coste.</p></div>
+      <div class="card"><h3>27 ADR</h3><p>En <code>docs/DECISIONS.md</code>, cada uno con su coste.</p></div>
       <div class="card"><h3>8 módulos</h3><p>Con la dirección de dependencias impuesta por Gradle.</p></div>
       <div class="card"><h3>2 idiomas</h3><p>Español de Venezuela por defecto e inglés completo.</p></div>
       <div class="card"><h3>0 APIs hardcodeadas</h3><p>Las URLs entran por <code>BuildConfig</code>.</p></div>

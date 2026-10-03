@@ -1,14 +1,13 @@
 package com.liebeblack.divtrack.data.fake
 
 import com.liebeblack.divtrack.core.network.monitor.ConnectivityObserver
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * Conectividad simulada y conmutable: permite probar el fallo rápido sin red real.
  *
- * El estado vive en un único `MutableStateFlow` del que leen tanto [isOnline] como [observe],
- * así que conmutar la conectividad se ve igual por consulta puntual y por flujo.
+ * El estado vive en un único `MutableStateFlow` del que solo lee [isOnline], así que
+ * conmutarlo desde un test es inmediato y no depende de ninguna API de Android.
  *
  * El conmutador se llama `online` y no `isOnline` a propósito: una propiedad `var isOnline`
  * y el método `isOnline()` del contrato generarían la misma firma JVM (`isOnline()Z`) y el
@@ -28,6 +27,4 @@ class FakeConnectivityObserver(
         }
 
     override fun isOnline(): Boolean = state.value
-
-    override fun observe(): Flow<Boolean> = state
 }

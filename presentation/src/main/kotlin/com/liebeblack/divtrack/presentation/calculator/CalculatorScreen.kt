@@ -103,9 +103,11 @@ fun CalculatorScreen(
 ) {
     val colors = DivTrackThemeTokens.colors
 
+    // Solo las tasas que existen: sin el respaldo de `RateSource.ordered()` la pantalla no
+    // puede ofrecer una opción que no está en Room y acabar en "sin tasas disponibles"
+    // (el fallback reintroducía justo el bug que corrigió ADR 20).
     val sourceOptions = remember(state.rateOptions) {
         state.rateOptions.map { option -> option.source }
-            .ifEmpty { RateSource.ordered() }
     }
 
     val accentColor = if (state.selectedSource == RateSource.OFICIAL) {

@@ -276,6 +276,17 @@ proveedores cuando no hay red).
 **Motivo.** Una API pública no usada no es "por si acaso": es superficie que hay que
 mantener, documentar y migrar. Si vuelve a hacer falta, se añade en una línea.
 
+**Ampliación (revisión estricta posterior).** La regla se aplicó otra vez, leyendo el código sin
+ejecutar nada, y cayeron: `EmptyState` y las claves `empty_rates_*` (el estado que pintaban es
+inalcanzable: la app nunca queda sin datos y sin error), `ConnectivityObserver.observe()` y su
+`callbackFlow` (nadie consumía el `Flow`; la app solo consulta `isOnline()`),
+`UserPreferences.lastSyncAtMillis` / `setLastSyncAt` / la clave `last_sync_at` (no los escribía
+ni los leía nadie), los colores `Sky`/`SkyDeep` y los campos `netUsdText`/`netBsText` del estado
+de la calculadora (se calculaban y ningún composable los pintaba; el estado ahora expone
+exactamente lo que la pantalla muestra) y `Spacing.xxl` (se quedó sin consumidor al eliminar
+`EmptyState`: código muerto de segundo orden, que es la razón por la que cada borrado se verifica
+con una búsqueda en lugar de darlo por hecho).
+
 **Verificación.** Se hizo con búsquedas mecánicas (referencias colgantes = 0) y no a ojo.
 
 ---
@@ -294,6 +305,11 @@ en una disponible.
 lo ignoraba y volvía a inventarse la lista. Es el motivo por el que el estado de UI expone
 los datos "ya resueltos": si la pantalla puede recalcular una decisión, acaba
 desincronizándose.
+
+**Residuo de la misma clase.** Aun después de aquel arreglo, la pantalla conservaba un
+`ifEmpty { RateSource.ordered() }` para el caso de Room vacío: con cero tasas volvía a ofrecer
+las dos, y pulsar una dejaba el mismo "sin tasas disponibles". Se eliminó en la revisión
+estricta posterior: sin tasas no hay chips que pulsar y el texto de ayuda explica qué hacer.
 
 ---
 
@@ -373,6 +389,12 @@ con VPN y portales cautivos). Un permiso revocado o una excepción al consultar 
 10/15 s podían tener la pantalla girando casi un minuto. Además, `RetryInterceptor` ya no
 reintenta fallos deterministas: un DNS que no resuelve o un problema de TLS devuelven el mismo
 error 350 ms después, y el único resultado era esperar más y gastar más radio.
+
+**La misma regla en segundo plano.** `RateSyncWorker` devolvía `retry()` para cualquier
+`Result.Error`, así que un 404 (endpoint cambiado) o una respuesta ilegible se reintentaban con
+backoff sin posibilidad de mejorar. Ahora solo se reintenta lo transitorio (red, timeout, HTTP
+408/429/5xx); el resto marca el intento como fallido y deja que el siguiente ciclo periódico lo
+intente de nuevo. Es la frontera que ya describía `docs/ARCHITECTURE.md`.
 
 **Por qué importa el orden.** `CacheFallbackInterceptor` sirve de la caché HTTP cuando la red
 falla, pero si no hay nada cacheado ahora lanza el **error original** en lugar de un 504
@@ -507,3 +529,28 @@ cada pasada esperando su timeout una y otra vez.
 banco caído, el primero que responde es precisamente el que repite el cierre de ayer. La
 frescura comparada entre fuentes es la única regla que resuelve el caso sin que nadie
 tenga que mirar la hora en la pantalla.
+
+---
+
+## 27. DivTrack Lite: un subproyecto aparte, no un sabor del principal
+
+**Decisión.** `lite/` es un proyecto Gradle **independiente** (su propio
+`settings.gradle.kts`), con Java + XML, `minSdk 14` y una sola pantalla que publica la tasa
+USD/VES del BCV con respaldos identificados (DolarAPI y ER-API). No comparte código con el
+grafo principal y se compila con `./gradlew -p lite :app:assembleRelease` desde la raíz.
+
+**Motivo.** El objetivo de Lite es otro: equipos antiguos donde Compose, Room y las librerías
+de AndroidX modernas no son una opción. Meterlo como *flavor* del módulo `:app` habría obligado
+a que todo el proyecto principal adoptara su `minSdk` y su estilo de UI; separarlo permite que
+desaparezca sin tocar una línea del principal (y viceversa).
+
+**Consecuencia honesta.** Los dos APK se publican juntos desde el mismo CI, con nombres de
+paquete distintos (`com.liebeblack.divtrack` y `com.liebeblack.divtrack.lite`), y el flujo de
+release **verifica la firma y el `applicationId` de cada uno** antes de subirlos. La
+contrapartida es que `lite/` no participa del wrapper ni del catálogo de versiones del
+principal: sus versiones de AGP y Kotlin viven en su propio `build.gradle.kts` y hay que
+subirlas a mano si se quiere ir al día.
+
+**Por qué no se documentó antes.** El subproyecto existía y CI lo compilaba, pero ni el README
+ni `docs/index.html` lo mencionaban; quien llegara al repositorio solo veía la app principal.
+Queda documentado aquí, en el README y en la web del proyecto.

@@ -8,14 +8,19 @@ error de compilación.
 
 ```
 :core:common      (Kotlin/JVM puro)  Result<T>, DataError, formateo, parser de importes, reloj
-:core:network     (Android library)  Retrofit dual, interceptores, RateProvider + registro
+:core:network     (Android library)  Retrofit triple, interceptores, RateProvider + registro
 :core:database    (Android library)  Room: tasa vigente + cierre diario
 :core:datastore   (Android library)  DataStore: preferencias del usuario
-:domain           (Kotlin/JVM puro)  modelos, contratos, 7 casos de uso
+:domain           (Kotlin/JVM puro)  modelos, contratos, 8 casos de uso
 :data             (Android library)  repositorios, orquestación multi-proveedor, WorkManager
 :presentation     (Android library)  Compose + MVI + tema + Navigation 3
 :app              (Android app)      Application, MainActivity, recursos, R8
 ```
+
+Además, `lite/` es un **subproyecto Gradle independiente** (Java + XML, API 14+) que publica la
+tasa BCV y que CI compila con `./gradlew -p lite :app:assembleRelease`. No forma parte de estos
+ocho módulos: tiene su propio `settings.gradle.kts` y no comparte código con el grafo principal
+(ADR 27).
 
 ```
 :app ─▶ :presentation ─▶ :domain ◀─ :data ─▶ :core:network
@@ -47,7 +52,7 @@ sin depender de las clases de la plataforma y sus tests corren en JVM sin emulad
 UI ──observe──▶ Room ──emite──▶ ViewModel ──state──▶ Compose
                  ▲
         upsert   │
-Proveedores ─────┘   (DolarAPI VE, Yadio)
+Proveedores ─────┘   (DolarAPI VE, Yadio, ExchangeRate-API)
 ```
 
 Consecuencias reales:
@@ -61,11 +66,15 @@ Consecuencias reales:
 
 ### Resolución por tasa, no por proveedor
 
-`ProviderRegistry` recorre los proveedores en orden de prioridad y guarda **la primera tasa
-que aparece para cada fuente**. Después de cada proveedor comprueba si ya tiene todas y, si
-es así, para. Esto significa que:
+`ProviderRegistry` recorre los proveedores en orden de prioridad y guarda, para cada fuente,
+**el dato más fresco**: si un proveedor de cola publica una marca de tiempo posterior a la ya
+resuelta, la reemplaza. Después de cada proveedor comprueba si ya tiene las dos tasas **y
+frescas** (un dato viejo del banco que dejó de publicar no corta la pasada) y, si es así, para.
+Esto significa que:
 
 - DolarAPI caído → el paralelo sigue llegando por Yadio y solo se degrada el oficial.
+- DolarAPI "sano" pero sirviendo el cierre de ayer → ExchangeRate-API trae el del día y gana
+  el más fresco, no el de mejor prioridad (ADR 26).
 - Los fallos no se propagan: se acumulan en `ProviderFailure` y la sincronización se marca
   como *parcial*, que es un aviso suave y no un error.
 
@@ -167,7 +176,7 @@ XxxScreen.kt      XxxRoute (única función que toca el ViewModel) + XxxScreen (
 
 ## 4. Capa de red
 
-Un solo `OkHttpClient` compartido (pool de conexiones y caché de disco de 10 MB) y dos
+Un solo `OkHttpClient` compartido (pool de conexiones y caché de disco de 10 MB) y tres
 instancias de `Retrofit` que solo cambian de `baseUrl`.
 
 Orden de interceptores, de fuera hacia dentro:
@@ -243,7 +252,7 @@ Hilt en todo el proyecto. Módulos relevantes:
 
 | Módulo Hilt | Provee |
 |---|---|
-| `NetworkModule` / `NetworkBindingsModule` | `Json`, `Cache`, `OkHttpClient`, 2 `Retrofit`, servicios, `RateProvider` en `Set` (`@IntoSet`), `ConnectivityObserver`, `Logger` |
+| `NetworkModule` / `NetworkBindingsModule` | `Json`, `Cache`, `OkHttpClient`, 3 `Retrofit`, servicios, `RateProvider` en `Set` (`@IntoSet`), `ConnectivityObserver`, `Logger` |
 | `DatabaseModule` + bindings | `DivTrackDatabase`, `RateLocalDataSource` |
 | `DataStoreModule` + bindings | `DataStore<Preferences>` (una sola instancia por proceso), `UserPreferencesDataSource` |
 | `DispatchersModule` | `@IoDispatcher`, `@DefaultDispatcher` (sustituibles en tests) |

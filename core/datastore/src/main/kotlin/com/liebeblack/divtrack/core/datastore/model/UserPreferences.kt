@@ -24,9 +24,6 @@ data class UserPreferences(
 
     val syncIntervalMinutes: Int = AppConstants.SYNC_DEFAULT_INTERVAL_MINUTES,
 
-    /** Última sincronización de tasas vigentes. */
-    val lastSyncAtMillis: Long? = null,
-
     /** Proveedor que se consulta primero; vacío = orden automático por prioridad. */
     val preferredProviderId: String = "",
 

@@ -6,6 +6,7 @@ import com.liebeblack.divtrack.core.common.utils.SourceKeys
 import com.liebeblack.divtrack.core.network.error.NetworkErrorMapper
 import com.liebeblack.divtrack.core.network.model.RemoteRate
 import com.liebeblack.divtrack.data.fake.FakeRateProvider
+import com.liebeblack.divtrack.data.fake.FakeTimeProvider
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -21,6 +22,7 @@ class ProviderRegistryOrderTest {
         providers = providers.toSet(),
         errorMapper = NetworkErrorMapper(),
         logger = NoOpLogger,
+        timeProvider = FakeTimeProvider(),
     )
 
     private val dolarApi = FakeRateProvider(

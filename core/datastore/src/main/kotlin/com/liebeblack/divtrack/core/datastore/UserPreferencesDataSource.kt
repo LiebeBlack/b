@@ -6,7 +6,6 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.liebeblack.divtrack.core.common.utils.AppConstants
 import com.liebeblack.divtrack.core.common.utils.ProviderIds
@@ -36,8 +35,6 @@ interface UserPreferencesDataSource {
     suspend fun setAutoSyncEnabled(enabled: Boolean)
 
     suspend fun setSyncIntervalMinutes(minutes: Int)
-
-    suspend fun setLastSyncAt(millis: Long)
 
     /** Vacío = orden automático por prioridad del proyecto. */
     suspend fun setPreferredProvider(providerId: String)
@@ -85,10 +82,6 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         }
     }
 
-    override suspend fun setLastSyncAt(millis: Long) {
-        dataStore.edit { it[Keys.LAST_SYNC_AT] = millis }
-    }
-
     override suspend fun setPreferredProvider(providerId: String) {
         val normalised = providerId.trim().takeIf { it in ProviderIds.ordered }.orEmpty()
         dataStore.edit { it[Keys.PREFERRED_PROVIDER] = normalised }
@@ -119,7 +112,6 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         autoSyncEnabled = this[Keys.AUTO_SYNC] ?: true,
         syncIntervalMinutes = this[Keys.SYNC_INTERVAL]
             ?: AppConstants.SYNC_DEFAULT_INTERVAL_MINUTES,
-        lastSyncAtMillis = this[Keys.LAST_SYNC_AT],
         preferredProviderId = this[Keys.PREFERRED_PROVIDER].orEmpty(),
         syncOnWifiOnly = this[Keys.SYNC_ON_WIFI_ONLY] ?: false,
         welcomeCompleted = this[Keys.WELCOME_COMPLETED] ?: false,
@@ -132,7 +124,6 @@ class DataStoreUserPreferencesDataSource @Inject constructor(
         val IGTF_ENABLED = booleanPreferencesKey("igtf_enabled")
         val AUTO_SYNC = booleanPreferencesKey("auto_sync_enabled")
         val SYNC_INTERVAL = intPreferencesKey("sync_interval_minutes")
-        val LAST_SYNC_AT = longPreferencesKey("last_sync_at")
         val PREFERRED_PROVIDER = stringPreferencesKey("preferred_provider_id")
         val SYNC_ON_WIFI_ONLY = booleanPreferencesKey("sync_on_wifi_only")
         val WELCOME_COMPLETED = booleanPreferencesKey("welcome_completed")

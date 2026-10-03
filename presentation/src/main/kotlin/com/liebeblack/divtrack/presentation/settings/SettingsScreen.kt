@@ -47,6 +47,7 @@ import com.liebeblack.divtrack.presentation.common.labelRes
 import com.liebeblack.divtrack.presentation.components.SegmentedSelector
 import com.liebeblack.divtrack.presentation.components.SettingsSwitchRow
 import com.liebeblack.divtrack.presentation.theme.Spacing
+import java.time.Instant
 
 @Composable
 fun SettingsRoute(
@@ -287,7 +288,7 @@ private fun ProviderStatusRow(status: ProviderStatus, modifier: Modifier = Modif
     // La edad del dato es parte del diagnóstico: "OK" con un dato de ayer es justamente
     // el caso del banco que dejó de publicar, y así se lee.
     val lastUpdatedText = status.lastUpdatedAtMillis?.let { millis ->
-        runCatching { CurrencyFormatters.timestamp(java.time.Instant.ofEpochMilli(millis)) }.getOrNull()
+        runCatching { CurrencyFormatters.timestamp(Instant.ofEpochMilli(millis)) }.getOrNull()
     }
 
     Surface(

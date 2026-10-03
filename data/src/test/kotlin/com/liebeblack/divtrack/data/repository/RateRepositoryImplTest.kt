@@ -45,6 +45,8 @@ class RateRepositoryImplTest {
             providers = providers.toSet(),
             errorMapper = NetworkErrorMapper(),
             logger = NoOpLogger,
+            // El mismo reloj fijo que usa el repositorio: nada depende de la hora real.
+            timeProvider = clock,
         ),
         localDataSource = localDataSource,
         preferencesDataSource = preferences,

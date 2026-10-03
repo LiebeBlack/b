@@ -251,8 +251,6 @@ class CalculatorViewModel @Inject constructor(
             isSyncing = isSyncing,
             igtfEnabled = igtfEnabledValue,
             igtfRateText = AppConstants.IGTF_LABEL,
-            netUsdText = conversion?.let { CurrencyFormatters.amount(it.netUsd) } ?: "—",
-            netBsText = conversion?.let { CurrencyFormatters.amount(it.netBs) } ?: "—",
             igtfBsText = conversion?.let { CurrencyFormatters.amount(it.igtfBs) } ?: "—",
             totalBsText = conversion?.let { CurrencyFormatters.amount(it.totalBs) } ?: "—",
             totalUsdText = conversion?.let { CurrencyFormatters.amount(it.totalUsd) } ?: "—",

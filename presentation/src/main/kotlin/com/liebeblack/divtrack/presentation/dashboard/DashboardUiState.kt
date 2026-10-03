@@ -62,7 +62,7 @@ data class DashboardUiState(
 }
 
 /** Dominio -> UI. El formateo es-VE se hace una sola vez, aquí, no en cada recomposición. */
-internal fun ExchangeRate.toRateUiModel(nowMillis: Long = System.currentTimeMillis()): RateUiModel = RateUiModel(
+internal fun ExchangeRate.toRateUiModel(nowMillis: Long): RateUiModel = RateUiModel(
     source = source,
     valueText = CurrencyFormatters.bolivars(value),
     deltaText = changePercent?.takeIf { it.isFinite() }?.let { CurrencyFormatters.percent(it) },

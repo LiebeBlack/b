@@ -37,8 +37,6 @@ data class CalculatorUiState(
     val isSyncing: Boolean = false,
     val igtfEnabled: Boolean = false,
     val igtfRateText: String = "",
-    val netUsdText: String = "—",
-    val netBsText: String = "—",
     val igtfBsText: String = "—",
     val totalBsText: String = "—",
     val totalUsdText: String = "—",

@@ -22,8 +22,6 @@ val SlateText = Color(0xFF454E46)
 val Mint = Color(0xFF39F0A5)
 val MintDeep = Color(0xFF008F5B)
 val MintContrast = Color(0xFF006B46)
-val Sky = Color(0xFF4C8DFF)
-val SkyDeep = Color(0xFF1F5FD0)
 val Amber = Color(0xFFFFB020)
 val ParallelMutedDark = Color(0xFFAAA092)
 val ParallelMutedLight = Color(0xFF746A5D)
@@ -46,6 +44,6 @@ val AmberDeep = Color(0xFFB45309)
 val OfficialAccent = Mint
 val ParallelAccent = Amber
 
-// Nota de legibilidad: las franjas de acento de las tarjetas (Sky/Amber) y los tokens
+// Nota de legibilidad: las franjas de acento de las tarjetas (Mint/Amber) y los tokens
 // semánticos brillantes son fondo sólido, nunca texto pequeño. El texto de variación
 // en claro usa los tokens *Deep* (ver [DivTrackColors]).

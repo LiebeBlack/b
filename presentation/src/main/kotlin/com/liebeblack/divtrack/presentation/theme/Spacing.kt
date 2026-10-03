@@ -9,5 +9,7 @@ object Spacing {
     val md = 12.dp
     val lg = 16.dp
     val xl = 24.dp
-    val xxl = 32.dp
+
+    // `xxl` (32 dp) existía solo para el estado vacío que se eliminó por inalcanzable; si
+    // vuelve a hacer falta, se añade aquí en una línea (ADR 19).
 }

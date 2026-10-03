@@ -142,10 +142,6 @@ private fun StatesPreview() {
                     retryLabel = "Reintentar",
                     onRetry = {},
                 )
-                EmptyState(
-                    title = "Todavía no hay tasas",
-                    message = "Desliza hacia abajo para obtener los valores más recientes.",
-                )
             }
         }
     }

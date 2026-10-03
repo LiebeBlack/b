@@ -56,8 +56,9 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.core)
-    // Iconos de pestañas (Calculate, Insights, TrendingUp). R8 elimina en release todo lo
-    // que no se usa, así que el coste real en el APK final son tres vectores.
+    // De todos los iconos de la app, solo dos son de `extended` (Calculate y TrendingUp, las
+    // pestañas); Refresh, Clear, Share, Warning, Info y Settings salen de `core`. R8 elimina en
+    // release todo lo que no se usa, así que el coste real en el APK final son dos vectores.
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)

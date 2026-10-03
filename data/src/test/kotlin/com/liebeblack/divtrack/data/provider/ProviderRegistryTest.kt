@@ -5,6 +5,7 @@ import com.liebeblack.divtrack.core.common.utils.SourceKeys
 import com.liebeblack.divtrack.core.network.error.NetworkErrorMapper
 import com.liebeblack.divtrack.core.network.model.RemoteRate
 import com.liebeblack.divtrack.data.fake.FakeRateProvider
+import com.liebeblack.divtrack.data.fake.FakeTimeProvider
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -16,6 +17,8 @@ class ProviderRegistryTest {
         providers = providers.toSet(),
         errorMapper = NetworkErrorMapper(),
         logger = NoOpLogger,
+        // Reloj fijo explícito: el registro no depende del reloj real ni siquiera por defecto.
+        timeProvider = FakeTimeProvider(),
     )
 
     @Test
